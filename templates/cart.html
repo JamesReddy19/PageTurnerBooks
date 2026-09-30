@@ -47,12 +47,26 @@
                 method="POST"
             >
 
+                <button
+                    type="button"
+                    onclick="decreaseQuantity(this)"
+                >
+                    -
+                </button>
+
                 <input
                     type="number"
                     name="quantity"
                     value="{{ item['quantity'] }}"
                     min="1"
                 >
+
+                <button
+                    type="button"
+                    onclick="increaseQuantity(this)"
+                >
+                    +
+                </button>
 
                 <button type="submit">
                     Update
@@ -103,5 +117,30 @@
 <a href="/">Continue shopping</a>
 
 {% endif %}
+
+
+<script>
+
+function increaseQuantity(button) {
+
+    let input = button.parentElement.querySelector("input");
+
+    input.value = Number(input.value) + 1;
+
+}
+
+
+function decreaseQuantity(button) {
+
+    let input = button.parentElement.querySelector("input");
+
+    if (Number(input.value) > 1) {
+        input.value = Number(input.value) - 1;
+    }
+
+}
+
+</script>
+
 
 {% endblock %}

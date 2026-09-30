@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="checkout-card">
+
+    <h1>Checkout</h1>
+
+    <p>
+        Cash on delivery. Tell us where to send your books.
+    </p>
+
+    <form action="/checkout" method="POST" onsubmit="return validatePhone()">
+
+        <label for="name">Full name</label>
+
+        <input
+            type="text"
+            id="name"
+            name="name"
+            required
+        >
+
+        <label for="phone">Phone</label>
+
+        <input
+            type="text"
+            id="phone"
+            name="phone"
+            maxlength="10"
+            required
+        >
+
+        <label for="address">Delivery address</label>
+
+        <textarea
+            id="address"
+            name="address"
+            rows="5"
+            required
+        ></textarea>
+
+        <div class="checkout-buttons">
+
+            <a href="/cart">
+                Back to cart
+            </a>
+
+            <button type="submit">
+                Place order
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

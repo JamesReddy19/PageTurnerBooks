@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 from flask import Flask, render_template, request, session, redirect, url_for
 
@@ -11,19 +12,37 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+@app.context_processor
+def cart_count():
+
+    cart = session.get("cart", {})
+
+    count = 0
+
+    for quantity in cart.values():
+        count = count + quantity
+
+    return {
+        "cart_count": count
+    }
+
 
 @app.route("/")
 def home():
+
     category = request.args.get("category")
 
     conn = get_db_connection()
 
     if category and category != "All":
+
         books = conn.execute(
             "SELECT * FROM books WHERE category = ?",
             (category,)
         ).fetchall()
+
     else:
+
         books = conn.execute(
             "SELECT * FROM books"
         ).fetchall()
@@ -50,6 +69,7 @@ def home():
 
 @app.route("/book/<int:id>")
 def book_detail(id):
+
     conn = get_db_connection()
 
     book = conn.execute(
@@ -59,12 +79,18 @@ def book_detail(id):
 
     conn.close()
 
-    return render_template("book.html", book=book)
+    return render_template(
+        "book.html",
+        book=book
+    )
 
 
 @app.route("/cart/add/<int:id>", methods=["POST"])
 def add_to_cart(id):
+
     cart = session.get("cart", {})
+
+    print("Cart before adding:", cart)
 
     book_id = str(id)
 
@@ -74,12 +100,16 @@ def add_to_cart(id):
         cart[book_id] = 1
 
     session["cart"] = cart
+    session.modified = True
 
-    return redirect(url_for("book_detail", id=id))
+    print("Cart after adding:", session["cart"])
+
+    return redirect(url_for("cart"))
 
 
 @app.route("/cart")
 def cart():
+
     cart = session.get("cart", {})
 
     conn = get_db_connection()
@@ -94,14 +124,17 @@ def cart():
             (int(book_id),)
         ).fetchone()
 
-        subtotal = book["price"] * quantity
-        total = total + subtotal
+        if book:
 
-        items.append({
-            "book": book,
-            "quantity": quantity,
-            "subtotal": subtotal
-        })
+            subtotal = book["price"] * quantity
+
+            total = total + subtotal
+
+            items.append({
+                "book": book,
+                "quantity": quantity,
+                "subtotal": subtotal
+            })
 
     conn.close()
 
@@ -114,6 +147,7 @@ def cart():
 
 @app.route("/cart/update/<int:id>", methods=["POST"])
 def update_cart(id):
+
     cart = session.get("cart", {})
 
     quantity = int(request.form["quantity"])
@@ -126,12 +160,14 @@ def update_cart(id):
         cart.pop(book_id, None)
 
     session["cart"] = cart
+    session.modified = True
 
     return redirect(url_for("cart"))
 
 
 @app.route("/cart/remove/<int:id>", methods=["POST"])
 def remove_from_cart(id):
+
     cart = session.get("cart", {})
 
     book_id = str(id)
@@ -139,8 +175,118 @@ def remove_from_cart(id):
     cart.pop(book_id, None)
 
     session["cart"] = cart
+    session.modified = True
 
     return redirect(url_for("cart"))
+
+
+@app.route("/checkout", methods=["GET", "POST"])
+def checkout():
+
+    if request.method == "POST":
+
+        name = request.form["name"]
+        phone = request.form["phone"]
+        address = request.form["address"]
+
+        cart = session.get("cart", {})
+
+        if not cart:
+            return redirect(url_for("cart"))
+
+        conn = get_db_connection()
+
+        total = 0
+
+        for book_id, quantity in cart.items():
+
+            book = conn.execute(
+                "SELECT * FROM books WHERE id = ?",
+                (int(book_id),)
+            ).fetchone()
+
+            if book:
+                total = total + (book["price"] * quantity)
+
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor = conn.execute(
+            """
+            INSERT INTO orders
+            (name, phone, address, total, date)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (name, phone, address, total, date)
+        )
+
+        order_id = cursor.lastrowid
+
+        for book_id, quantity in cart.items():
+
+            book = conn.execute(
+                "SELECT * FROM books WHERE id = ?",
+                (int(book_id),)
+            ).fetchone()
+
+            if book:
+
+                conn.execute(
+                    """
+                    INSERT INTO order_items
+                    (order_id, book_id, quantity, price)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        order_id,
+                        int(book_id),
+                        quantity,
+                        book["price"]
+                    )
+                )
+
+        conn.commit()
+        conn.close()
+
+        session["cart"] = {}
+        session.modified = True
+
+        return redirect(
+            url_for("order_confirmation", id=order_id)
+        )
+
+    return render_template("checkout.html")
+
+
+@app.route("/order/<int:id>")
+def order_confirmation(id):
+
+    conn = get_db_connection()
+
+    order = conn.execute(
+        "SELECT * FROM orders WHERE id = ?",
+        (id,)
+    ).fetchone()
+
+    items = conn.execute(
+        """
+        SELECT books.title,
+               order_items.quantity,
+               order_items.price
+        FROM order_items
+        JOIN books
+        ON order_items.book_id = books.id
+        WHERE order_items.order_id = ?
+        """,
+        (id,)
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "order.html",
+        order=order,
+        items=items
+    )
 
 
 if __name__ == "__main__":

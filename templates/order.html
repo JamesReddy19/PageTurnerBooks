@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="order-card">
+
+    <div class="success-circle">✓</div>
+
+    <h1>Thank you, {{ order["name"] }}!</h1>
+
+    <p>
+        Order #{{ order["id"] }} placed on {{ order["date"] }}
+    </p>
+
+    <div class="order-items">
+
+        {% for item in items %}
+
+        <div class="order-item">
+
+            <span>
+                {{ item["title"] }} × {{ item["quantity"] }}
+            </span>
+
+            <strong>
+                ₹{{ item["price"] * item["quantity"] }}
+            </strong>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    <h2>
+        Total: ₹{{ order["total"] }}
+    </h2>
+
+    <p>
+        <strong>Delivering to:</strong>
+        {{ order["address"] }}
+    </p>
+
+    <a href="/" class="add-button">
+        Continue shopping
+    </a>
+
+</div>
+
+{% endblock %}

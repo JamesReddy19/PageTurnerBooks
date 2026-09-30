@@ -1,32 +1,65 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
     <title>PageTurner Books</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 </head>
+
 
 <body>
 
-    <nav class="navbar">
-        <div class="logo">📚 PageTurner Books</div>
 
-        <div class="nav-links">
-            <a href="/">Shop</a>
-            <a href="/cart" class="cart-button">
-                🛒 Cart <span class="cart-count">0</span>
-            </a>
-        </div>
-    </nav>
+<nav class="navbar">
 
-    <main>
-        {% block content %}
-        {% endblock %}
-    </main>
+    <div class="logo">
+        📚 PageTurner Books
+    </div>
 
-    <footer>
-        PageTurner Books · Built with Flask · SQLite · HTML · CSS · JavaScript
-    </footer>
+
+    <div class="nav-links">
+
+        <a href="/">
+            Shop
+        </a>
+
+
+        <a href="/cart" class="cart-button">
+
+            🛒 Cart <span class="cart-count">{{ cart_count }}</span>
+
+        </a>
+
+    </div>
+
+</nav>
+
+
+
+<main>
+
+    {% block content %}
+
+    {% endblock %}
+
+</main>
+
+
+
+<footer>
+
+    PageTurner Books · Built with Flask · SQLite · HTML · CSS · JavaScript
+
+</footer>
+
+
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
 
 </body>
+
 </html>
