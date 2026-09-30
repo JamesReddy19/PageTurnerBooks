@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Your Cart</h1>
+
+{% if items %}
+
+<table class="cart-table">
+
+    <tr>
+        <th>Book</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Subtotal</th>
+        <th></th>
+    </tr>
+
+    {% for item in items %}
+
+    <tr>
+
+        <td>
+            <div class="cart-book">
+
+                <div
+                    class="small-cover"
+                    style="background-color: {{ item['book']['color'] }};"
+                ></div>
+
+                <div>
+                    <strong>{{ item["book"]["title"] }}</strong>
+                    <p>{{ item["book"]["author"] }}</p>
+                </div>
+
+            </div>
+        </td>
+
+        <td>
+            ₹{{ item["book"]["price"] }}
+        </td>
+
+        <td>
+            {{ item["quantity"] }}
+        </td>
+
+        <td>
+            ₹{{ item["subtotal"] }}
+        </td>
+
+        <td>
+            <button>Remove</button>
+        </td>
+
+    </tr>
+
+    {% endfor %}
+
+</table>
+
+<div class="cart-total">
+    <strong>Total: ₹{{ total }}</strong>
+</div>
+
+<div class="cart-actions">
+    <a href="/">Continue shopping</a>
+    <a href="/checkout">Proceed to checkout →</a>
+</div>
+
+{% else %}
+
+<p>Your cart is empty.</p>
+
+<a href="/">Continue shopping</a>
+
+{% endif %}
+
+{% endblock %}

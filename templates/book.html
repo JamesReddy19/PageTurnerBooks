@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<a href="/" class="back-link">← Back to shop</a>
+
+<div class="book-detail">
+
+    <div
+        class="detail-cover"
+        style="background-color: {{ book['color'] }};"
+    >
+        <h1>{{ book["title"] }}</h1>
+        <p>{{ book["author"] }}</p>
+    </div>
+
+    <div class="detail-info">
+
+        <span class="category-tag">
+            {{ book["category"] }}
+        </span>
+
+        <h1>{{ book["title"] }}</h1>
+
+        <p class="author">
+            by {{ book["author"] }}
+        </p>
+
+        <h2 class="detail-price">
+            ₹{{ book["price"] }}
+        </h2>
+
+        <p>
+            {{ book["description"] }}
+        </p>
+
+        <p class="stock">
+            ✓ In stock
+        </p>
+
+        <form action="/cart/add/{{ book['id'] }}" method="POST">
+            <button class="add-button" type="submit">
+                Add to cart
+            </button>
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

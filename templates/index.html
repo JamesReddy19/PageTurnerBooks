@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="hero">
+    <h1>Find your next favourite book</h1>
+    <p>
+        Fiction, technology, self-help and more, delivered to your door.
+    </p>
+</section>
+
+
+<div class="shop-controls">
+
+    <div class="categories">
+
+        {% for category in categories %}
+
+        <a
+            href="/?category={{ category }}"
+            class="{% if selected_category == category or (not selected_category and category == 'All') %}active{% endif %}"
+        >
+            {{ category }}
+        </a>
+
+        {% endfor %}
+
+    </div>
+
+    <input
+        type="text"
+        id="searchBox"
+        placeholder="Search title or author..."
+    >
+
+</div>
+
+
+<div class="book-grid">
+
+    {% for book in books %}
+
+    <div class="book-card">
+
+        <div
+            class="book-cover"
+            style="background-color: {{ book['color'] }};"
+        >
+            <h3>{{ book["title"] }}</h3>
+            <p>{{ book["author"] }}</p>
+        </div>
+
+        <div class="book-info">
+
+            <span class="category-tag">
+                {{ book["category"] }}
+            </span>
+
+            <h3>{{ book["title"] }}</h3>
+
+            <p>{{ book["author"] }}</p>
+
+            <div class="book-bottom">
+                <strong>₹{{ book["price"] }}</strong>
+
+                <button>Add to cart</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}
