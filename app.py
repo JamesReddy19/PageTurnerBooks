@@ -88,6 +88,7 @@ def cart():
     total = 0
 
     for book_id, quantity in cart.items():
+
         book = conn.execute(
             "SELECT * FROM books WHERE id = ?",
             (int(book_id),)
@@ -109,6 +110,37 @@ def cart():
         items=items,
         total=total
     )
+
+
+@app.route("/cart/update/<int:id>", methods=["POST"])
+def update_cart(id):
+    cart = session.get("cart", {})
+
+    quantity = int(request.form["quantity"])
+
+    book_id = str(id)
+
+    if quantity > 0:
+        cart[book_id] = quantity
+    else:
+        cart.pop(book_id, None)
+
+    session["cart"] = cart
+
+    return redirect(url_for("cart"))
+
+
+@app.route("/cart/remove/<int:id>", methods=["POST"])
+def remove_from_cart(id):
+    cart = session.get("cart", {})
+
+    book_id = str(id)
+
+    cart.pop(book_id, None)
+
+    session["cart"] = cart
+
+    return redirect(url_for("cart"))
 
 
 if __name__ == "__main__":

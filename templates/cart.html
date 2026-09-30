@@ -41,7 +41,25 @@
         </td>
 
         <td>
-            {{ item["quantity"] }}
+
+            <form
+                action="/cart/update/{{ item['book']['id'] }}"
+                method="POST"
+            >
+
+                <input
+                    type="number"
+                    name="quantity"
+                    value="{{ item['quantity'] }}"
+                    min="1"
+                >
+
+                <button type="submit">
+                    Update
+                </button>
+
+            </form>
+
         </td>
 
         <td>
@@ -49,7 +67,18 @@
         </td>
 
         <td>
-            <button>Remove</button>
+
+            <form
+                action="/cart/remove/{{ item['book']['id'] }}"
+                method="POST"
+            >
+
+                <button type="submit" class="remove-button">
+                    Remove
+                </button>
+
+            </form>
+
         </td>
 
     </tr>
