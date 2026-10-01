@@ -1,4 +1,3 @@
-```css
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -232,11 +231,15 @@ footer {
 .detail-cover {
     min-height: 450px;
     border-radius: 10px;
-    padding: 25px;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
+    overflow: hidden;
+}
+
+.detail-cover img {
+    width: 100%;
+    height: 100%;
+    min-height: 450px;
+    object-fit: cover;
+    display: block;
 }
 
 .detail-info {
@@ -263,3 +266,246 @@ footer {
     margin: 20px 0;
 }
 
+css
+/* Cart table */
+
+.cart-table {
+    width: 100%;
+    background-color: white;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cart-table th,
+.cart-table td {
+    padding: 18px;
+    text-align: left;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.cart-table th {
+    color: #555;
+    font-size: 14px;
+}
+
+.cart-book {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cart-book p {
+    margin: 5px 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.small-cover {
+    width: 45px;
+    height: 60px;
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+.cart-table input {
+    width: 50px;
+    padding: 7px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.cart-table button {
+    border: none;
+    background-color: #0f766e;
+    color: white;
+    padding: 7px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.remove-button {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
+}
+
+.cart-total td {
+    padding: 20px 18px;
+    border-top: 1px solid #eeeeee;
+    font-size: 22px;
+}
+
+.cart-total td:nth-child(4) {
+    color: #0f766e;
+}
+
+.cart-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.cart-actions a {
+    text-decoration: none;
+    padding: 11px 16px;
+    border-radius: 6px;
+}
+
+.cart-actions a:first-child {
+    color: #666;
+    background-color: #eeeeee;
+}
+
+.cart-actions a:last-child {
+    color: white;
+    background-color: #0f766e;
+}
+
+/* Checkout page */
+
+.checkout-card {
+    max-width: 500px;
+    margin: 20px auto;
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.checkout-card h1 {
+    margin-top: 0;
+}
+
+.checkout-note {
+    background-color: #f5f5f4;
+    color: #666;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 25px;
+}
+
+.checkout-card label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: bold;
+}
+
+.checkout-card input,
+.checkout-card textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    margin-bottom: 18px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+}
+
+.checkout-card input:focus,
+.checkout-card textarea:focus {
+    outline: none;
+    border-color: #0f766e;
+}
+
+.checkout-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.checkout-buttons a {
+    text-decoration: none;
+    background-color: #eeeeee;
+    color: #666;
+    padding: 11px 16px;
+    border-radius: 6px;
+}
+
+.checkout-buttons button {
+    border: none;
+    background-color: #0f766e;
+    color: white;
+    padding: 11px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+ /* Order confirmation page */
+
+.order-card {
+    max-width: 500px;
+    margin: 20px auto;
+    background-color: white;
+    padding: 35px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.success-circle {
+    width: 55px;
+    height: 55px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    background-color: #dcfce7;
+    color: #16a34a;
+    font-size: 32px;
+    line-height: 55px;
+    font-weight: bold;
+}
+
+.order-card h1 {
+    margin-bottom: 8px;
+}
+
+.order-date {
+    color: #777;
+    margin-bottom: 25px;
+}
+
+.order-items {
+    text-align: left;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 13px 0;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.order-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 18px 0;
+    font-size: 20px;
+    color: #0f766e;
+}
+
+.delivery-address {
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+.order-card .add-button {
+    display: inline-block;
+}
+
+.book-cover-image {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    display: block;
+}
+
+.detail-cover img {
+    width: 100%;
+    height: 450px;
+    object-fit: contain;
+    display: block;
+}

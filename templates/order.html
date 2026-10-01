@@ -8,7 +8,7 @@
 
     <h1>Thank you, {{ order["name"] }}!</h1>
 
-    <p>
+    <p class="order-date">
         Order #{{ order["id"] }} placed on {{ order["date"] }}
     </p>
 
@@ -32,11 +32,12 @@
 
     </div>
 
-    <h2>
-        Total: ₹{{ order["total"] }}
-    </h2>
+    <div class="order-total">
+        <strong>Total</strong>
+        <strong>₹{{ order["total"] }}</strong>
+    </div>
 
-    <p>
+    <p class="delivery-address">
         <strong>Delivering to:</strong>
         {{ order["address"] }}
     </p>

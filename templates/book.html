@@ -8,12 +8,13 @@
 
 <div class="book-detail">
 
-    <div
-        class="detail-cover"
-        style="background-color: {{ book['color'] }};"
-    >
-        <h1>{{ book["title"] }}</h1>
-        <p>{{ book["author"] }}</p>
+    <div class="detail-cover">
+
+        <img
+            src="{{ url_for('static', filename='images/' + book['image']) }}"
+            alt="{{ book['title'] }}"
+        >
+
     </div>
 
     <div class="detail-info">

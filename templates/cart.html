@@ -21,21 +21,26 @@
     <tr>
 
         <td>
-            <div class="cart-book">
 
-                <div
-                    class="small-cover"
-                    style="background-color: {{ item['book']['color'] }};"
-                ></div>
+    <div class="cart-book">
 
-                <div>
-                    <strong>{{ item["book"]["title"] }}</strong>
-                    <p>{{ item["book"]["author"] }}</p>
-                </div>
+        <img
+    
+            src="{{ url_for('static', filename='images/' + item['book']['image']) }}"
+            class="small-cover"
+            alt="{{ item['book']['title'] }}"
+        >
 
-            </div>
-        </td>
+        <p>{{ item["book"]["image"] }}</p>
+        
+        <div>
+            <strong>{{ item["book"]["title"] }}</strong>
+            <p>{{ item["book"]["author"] }}</p>
+        </div>
 
+    </div>
+
+</td>
         <td>
             ₹{{ item["book"]["price"] }}
         </td>
@@ -47,26 +52,12 @@
                 method="POST"
             >
 
-                <button
-                    type="button"
-                    onclick="decreaseQuantity(this)"
-                >
-                    -
-                </button>
-
                 <input
                     type="number"
                     name="quantity"
                     value="{{ item['quantity'] }}"
                     min="1"
                 >
-
-                <button
-                    type="button"
-                    onclick="increaseQuantity(this)"
-                >
-                    +
-                </button>
 
                 <button type="submit">
                     Update
@@ -87,7 +78,10 @@
                 method="POST"
             >
 
-                <button type="submit" class="remove-button">
+                <button
+                    type="submit"
+                    class="remove-button"
+                >
                     Remove
                 </button>
 
@@ -99,48 +93,44 @@
 
     {% endfor %}
 
+    <tr class="cart-total">
+
+        <td colspan="3">
+            <strong>Total</strong>
+        </td>
+
+        <td>
+            <strong>₹{{ total }}</strong>
+        </td>
+
+        <td></td>
+
+    </tr>
+
 </table>
 
-<div class="cart-total">
-    <strong>Total: ₹{{ total }}</strong>
-</div>
 
 <div class="cart-actions">
-    <a href="/">Continue shopping</a>
-    <a href="/checkout">Proceed to checkout →</a>
+
+    <a href="/">
+        Continue shopping
+    </a>
+
+    <a href="/checkout">
+        Proceed to checkout →
+    </a>
+
 </div>
+
 
 {% else %}
 
 <p>Your cart is empty.</p>
 
-<a href="/">Continue shopping</a>
+<a href="/">
+    Continue shopping
+</a>
 
 {% endif %}
-
-
-<script>
-
-function increaseQuantity(button) {
-
-    let input = button.parentElement.querySelector("input");
-
-    input.value = Number(input.value) + 1;
-
-}
-
-
-function decreaseQuantity(button) {
-
-    let input = button.parentElement.querySelector("input");
-
-    if (Number(input.value) > 1) {
-        input.value = Number(input.value) - 1;
-    }
-
-}
-
-</script>
-
 
 {% endblock %}

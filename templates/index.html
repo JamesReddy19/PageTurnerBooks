@@ -48,16 +48,11 @@
 
         <a href="{{ url_for('book_detail', id=book['id']) }}">
 
-            <div
-                class="book-cover"
-                style="background-color: {{ book['color'] }};"
+            <img
+                src="{{ url_for('static', filename='images/' + book['image']) }}"
+                class="book-cover-image"
+                alt="{{ book['title'] }}"
             >
-
-                <h3>{{ book["title"] }}</h3>
-
-                <p>{{ book["author"] }}</p>
-
-            </div>
 
         </a>
 

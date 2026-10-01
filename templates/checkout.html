@@ -6,13 +6,17 @@
 
     <h1>Checkout</h1>
 
-    <p>
+    <p class="checkout-note">
         Cash on delivery. Tell us where to send your books.
     </p>
 
-    <form action="/checkout" method="POST" onsubmit="return validatePhone()">
+    <form
+        action="/checkout"
+        method="POST"
+        onsubmit="return validatePhone()"
+    >
 
-        <label for="name">Full name</label>
+        <label for="name">Full Name *</label>
 
         <input
             type="text"
@@ -21,7 +25,7 @@
             required
         >
 
-        <label for="phone">Phone</label>
+        <label for="phone">Phone *</label>
 
         <input
             type="text"
@@ -31,7 +35,7 @@
             required
         >
 
-        <label for="address">Delivery address</label>
+        <label for="address">Delivery Address *</label>
 
         <textarea
             id="address"
