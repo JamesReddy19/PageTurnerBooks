@@ -1,16 +1,22 @@
 import sqlite3
 from datetime import datetime
 
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, request, session, redirect, url_for, flash
+
 
 app = Flask(__name__)
+
 app.secret_key = "pageturner-secret-key"
 
 
 def get_db_connection():
+
     conn = sqlite3.connect("database.db")
+
     conn.row_factory = sqlite3.Row
+
     return conn
+
 
 @app.context_processor
 def cart_count():
@@ -90,21 +96,23 @@ def add_to_cart(id):
 
     cart = session.get("cart", {})
 
-    print("Cart before adding:", cart)
-
     book_id = str(id)
 
     if book_id in cart:
+
         cart[book_id] = cart[book_id] + 1
+
     else:
+
         cart[book_id] = 1
 
     session["cart"] = cart
+
     session.modified = True
 
-    print("Cart after adding:", session["cart"])
+    flash("Added to cart!")
 
-    return redirect(url_for("cart"))
+    return redirect(url_for("book_detail", id=id))
 
 
 @app.route("/cart")
@@ -115,6 +123,7 @@ def cart():
     conn = get_db_connection()
 
     items = []
+
     total = 0
 
     for book_id, quantity in cart.items():
@@ -155,11 +164,15 @@ def update_cart(id):
     book_id = str(id)
 
     if quantity > 0:
+
         cart[book_id] = quantity
+
     else:
+
         cart.pop(book_id, None)
 
     session["cart"] = cart
+
     session.modified = True
 
     return redirect(url_for("cart"))
@@ -175,6 +188,7 @@ def remove_from_cart(id):
     cart.pop(book_id, None)
 
     session["cart"] = cart
+
     session.modified = True
 
     return redirect(url_for("cart"))
@@ -186,12 +200,15 @@ def checkout():
     if request.method == "POST":
 
         name = request.form["name"]
+
         phone = request.form["phone"]
+
         address = request.form["address"]
 
         cart = session.get("cart", {})
 
         if not cart:
+
             return redirect(url_for("cart"))
 
         conn = get_db_connection()
@@ -206,6 +223,7 @@ def checkout():
             ).fetchone()
 
             if book:
+
                 total = total + (book["price"] * quantity)
 
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -245,9 +263,11 @@ def checkout():
                 )
 
         conn.commit()
+
         conn.close()
 
         session["cart"] = {}
+
         session.modified = True
 
         return redirect(
@@ -290,4 +310,5 @@ def order_confirmation(id):
 
 
 if __name__ == "__main__":
+
     app.run(debug=True)

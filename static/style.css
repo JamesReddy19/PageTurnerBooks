@@ -1,23 +1,24 @@
+```css
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background-color: #f2f4f5;
+    background-color: #f5f5f4;
     color: #222;
 }
 
 .navbar {
     background-color: white;
-    padding: 18px 40px;
+    padding: 16px 40px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .logo {
     font-size: 22px;
     font-weight: bold;
-    color: #174a4a;
+    color: #0f766e;
 }
 
 .nav-links {
@@ -28,18 +29,18 @@ body {
 
 .nav-links a {
     text-decoration: none;
-    color: #174a4a;
+    color: #0f766e;
 }
 
 .cart-button {
-    background-color: #174a4a;
+    background-color: #0f766e;
     color: white !important;
     padding: 10px 16px;
     border-radius: 20px;
 }
 
 .cart-count {
-    background-color: orange;
+    background-color: #f59e0b;
     color: white;
     padding: 2px 7px;
     border-radius: 50%;
@@ -47,7 +48,9 @@ body {
 }
 
 main {
-    padding: 40px;
+    max-width: 1100px;
+    margin: auto;
+    padding: 35px 25px;
 }
 
 footer {
@@ -58,7 +61,7 @@ footer {
 }
 
 .hero {
-    background: linear-gradient(135deg, #174a4a, #287878);
+    background: linear-gradient(135deg, #0f766e, #159a91);
     color: white;
     padding: 45px;
     border-radius: 16px;
@@ -67,54 +70,60 @@ footer {
 
 .hero h1 {
     font-size: 36px;
-    margin-bottom: 10px;
+    margin: 0 0 10px;
 }
 
 .hero p {
     font-size: 17px;
+    margin: 0;
 }
-
 
 .shop-controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
+    gap: 20px;
 }
 
 .categories {
     display: flex;
-    gap: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .categories a {
     text-decoration: none;
-    color: #174a4a;
+    color: #0f766e;
     background-color: white;
-    padding: 9px 16px;
+    padding: 9px 15px;
     border-radius: 20px;
+    font-size: 14px;
 }
 
 .categories a.active {
-    background-color: #174a4a;
+    background-color: #0f766e;
     color: white;
 }
 
 #searchBox {
     width: 260px;
     padding: 11px 14px;
-    border: 1px solid #ccc;
+    border: 1px solid #d1d5db;
     border-radius: 20px;
     font-size: 14px;
+    outline: none;
 }
 
+#searchBox:focus {
+    border-color: #0f766e;
+}
 
 .book-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 25px;
+    gap: 24px;
 }
-
 
 .book-card {
     background-color: white;
@@ -123,9 +132,12 @@ footer {
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
 }
 
+.book-card > a {
+    text-decoration: none;
+}
 
 .book-cover {
-    height: 220px;
+    height: 210px;
     padding: 20px;
     color: white;
     display: flex;
@@ -134,13 +146,14 @@ footer {
 }
 
 .book-cover h3 {
-    margin: 0 0 5px;
+    margin: 0 0 6px;
+    font-size: 19px;
 }
 
 .book-cover p {
     margin: 0;
+    font-size: 14px;
 }
-
 
 .book-info {
     padding: 18px;
@@ -148,22 +161,23 @@ footer {
 
 .book-info h3 {
     margin: 12px 0 5px;
+    font-size: 18px;
 }
 
 .book-info p {
     color: #666;
     margin: 0;
+    font-size: 14px;
 }
 
-
 .category-tag {
-    background-color: #e6f0ef;
-    color: #174a4a;
+    display: inline-block;
+    background-color: #e6f4f2;
+    color: #0f766e;
     padding: 5px 9px;
     border-radius: 12px;
     font-size: 12px;
 }
-
 
 .book-bottom {
     display: flex;
@@ -174,14 +188,78 @@ footer {
 
 .book-bottom strong {
     font-size: 18px;
-    color: #174a4a;
+    color: #0f766e;
 }
 
-.book-bottom button {
+.book-bottom button,
+.add-button {
     border: none;
-    background-color: #174a4a;
+    background-color: #0f766e;
     color: white;
     padding: 9px 13px;
     border-radius: 6px;
     cursor: pointer;
+    text-decoration: none;
 }
+
+.flash-message {
+    background-color: #dcfce7;
+    color: #16a34a;
+    padding: 12px 16px;
+    margin: 15px auto;
+    max-width: 1100px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #0f766e;
+    text-decoration: none;
+}
+
+.book-detail {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 40% 60%;
+    gap: 30px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.detail-cover {
+    min-height: 450px;
+    border-radius: 10px;
+    padding: 25px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.detail-info {
+    padding: 10px;
+}
+
+.detail-info h1 {
+    font-size: 32px;
+    margin-bottom: 5px;
+}
+
+.author {
+    color: #666;
+}
+
+.detail-price {
+    color: #0f766e;
+    font-size: 28px;
+}
+
+.stock {
+    color: #16a34a;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
