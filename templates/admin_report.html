@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Admin Report</h1>
+
+<h2>Summary</h2>
+
+<div>
+
+    <p>
+        Total Orders:
+        {{ summary["total_orders"] }}
+    </p>
+
+    <p>
+        Total Revenue:
+        ₹{{ summary["total_revenue"] or 0 }}
+    </p>
+
+</div>
+
+<h2>Best-Selling Books</h2>
+
+{% if best_selling %}
+
+    {% for book in best_selling %}
+
+        <div>
+
+            <p>
+                <strong>{{ book["title"] }}</strong>
+            </p>
+
+            <p>
+                Sold: {{ book["total_sold"] }}
+            </p>
+
+        </div>
+
+        <hr>
+
+    {% endfor %}
+
+{% else %}
+
+    <p>No sales yet.</p>
+
+{% endif %}
+
+<h2>Orders Per Category</h2>
+
+{% if category_orders %}
+
+    {% for category in category_orders %}
+
+        <div>
+
+            <p>
+                <strong>{{ category["category"] }}</strong>
+            </p>
+
+            <p>
+                Orders: {{ category["order_count"] }}
+            </p>
+
+        </div>
+
+        <hr>
+
+    {% endfor %}
+
+{% else %}
+
+    <p>No category data yet.</p>
+
+{% endif %}
+
+<a href="{{ url_for('admin') }}">
+    Back to Admin
+</a>
+
+{% endblock %}

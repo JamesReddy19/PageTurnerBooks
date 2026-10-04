@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+import hashlib
 
 from flask import Flask, render_template, request, session, redirect, url_for, flash
 
@@ -8,6 +9,7 @@ app = Flask(__name__)
 
 app.secret_key = "pageturner-secret-key"
 
+admin_password = hashlib.sha256("admin123".encode()).hexdigest()
 
 def get_db_connection():
 
@@ -17,6 +19,188 @@ def get_db_connection():
 
     return conn
 
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+
+    if request.method == "POST":
+
+        password = request.form["password"]
+
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+
+        if password_hash == admin_password:
+            session["admin"] = True
+            return redirect(url_for("admin"))
+
+        flash("Wrong password!")
+
+    return render_template("admin_login.html")
+
+@app.route("/admin")
+def admin():
+
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
+    conn = get_db_connection()
+
+    books = conn.execute(
+        "SELECT * FROM books ORDER BY id"
+    ).fetchall()
+
+    conn.close()
+
+    return render_template("admin.html", books=books)
+
+@app.route("/admin/add", methods=["POST"])
+def admin_add():
+
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
+    title = request.form["title"]
+    author = request.form["author"]
+    category = request.form["category"]
+    price = request.form["price"]
+    description = request.form["description"]
+    stock = request.form["stock"]
+    color = request.form["color"]
+    image = request.form["image"]
+
+    conn = get_db_connection()
+
+    conn.execute(
+        """
+        INSERT INTO books
+        (title, author, category, price, description, stock, color, image)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            title,
+            author,
+            category,
+            price,
+            description,
+            stock,
+            color,
+            image
+        )
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Book added!")
+
+    return redirect(url_for("admin"))
+
+@app.route("/admin/edit/<int:id>", methods=["POST"])
+def admin_edit(id):
+
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
+    title = request.form["title"]
+    author = request.form["author"]
+    price = request.form["price"]
+    stock = request.form["stock"]
+
+    conn = get_db_connection()
+
+    conn.execute(
+        """
+        UPDATE books
+        SET title = ?, author = ?, price = ?, stock = ?
+        WHERE id = ?
+        """,
+        (title, author, price, stock, id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Book updated!")
+
+    return redirect(url_for("admin"))
+
+@app.route("/admin/delete/<int:id>", methods=["POST"])
+def admin_delete(id):
+
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
+    conn = get_db_connection()
+
+    conn.execute(
+        "DELETE FROM books WHERE id = ?",
+        (id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Book deleted!")
+
+    return redirect(url_for("admin"))
+
+@app.route("/admin/report")
+def admin_report():
+
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
+    conn = get_db_connection()
+
+    summary = conn.execute(
+        """
+        SELECT
+            COUNT(*) AS total_orders,
+            SUM(total) AS total_revenue
+        FROM orders
+        """
+    ).fetchone()
+
+    best_selling = conn.execute(
+        """
+        SELECT
+            books.title,
+            SUM(order_items.quantity) AS total_sold
+        FROM order_items
+        JOIN books
+            ON order_items.book_id = books.id
+        GROUP BY books.id, books.title
+        ORDER BY total_sold DESC
+        """
+    ).fetchall()
+
+    category_orders = conn.execute(
+        """
+        SELECT
+            books.category,
+            COUNT(DISTINCT order_items.order_id) AS order_count
+        FROM order_items
+        JOIN books
+            ON order_items.book_id = books.id
+        GROUP BY books.category
+        ORDER BY order_count DESC
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "admin_report.html",
+        summary=summary,
+        best_selling=best_selling,
+        category_orders=category_orders
+    )
+
+@app.route("/admin/logout")
+def admin_logout():
+
+    session.pop("admin", None)
+
+    return redirect(url_for("admin_login"))
 
 @app.context_processor
 def cart_count():
@@ -37,23 +221,54 @@ def cart_count():
 def home():
 
     category = request.args.get("category")
+    sort = request.args.get("sort", "title")
+    page = int(request.args.get("page", 1))
+
+    per_page = 6
+    offset = (page - 1) * per_page
 
     conn = get_db_connection()
+
+    if sort == "price":
+        order = "price"
+    else:
+        order = "title"
 
     if category and category != "All":
 
         books = conn.execute(
-            "SELECT * FROM books WHERE category = ?",
-            (category,)
+            f"""
+            SELECT * FROM books
+            WHERE category = ?
+            ORDER BY {order}
+            LIMIT ? OFFSET ?
+            """,
+            (category, per_page, offset)
         ).fetchall()
+
+        count = conn.execute(
+            "SELECT COUNT(*) FROM books WHERE category = ?",
+            (category,)
+        ).fetchone()[0]
 
     else:
 
         books = conn.execute(
-            "SELECT * FROM books"
+            f"""
+            SELECT * FROM books
+            ORDER BY {order}
+            LIMIT ? OFFSET ?
+            """,
+            (per_page, offset)
         ).fetchall()
 
+        count = conn.execute(
+            "SELECT COUNT(*) FROM books"
+        ).fetchone()[0]
+
     conn.close()
+
+    total_pages = (count + per_page - 1) // per_page
 
     categories = [
         "All",
@@ -69,10 +284,11 @@ def home():
         "index.html",
         books=books,
         categories=categories,
-        selected_category=category
+        selected_category=category,
+        sort=sort,
+        page=page,
+        total_pages=total_pages
     )
-
-
 @app.route("/book/<int:id>")
 def book_detail(id):
 
@@ -83,13 +299,57 @@ def book_detail(id):
         (id,)
     ).fetchone()
 
+    reviews = conn.execute(
+        """
+        SELECT * FROM reviews
+        WHERE book_id = ?
+        ORDER BY id DESC
+        """,
+        (id,)
+    ).fetchall()
+
+    average = conn.execute(
+        """
+        SELECT AVG(rating)
+        FROM reviews
+        WHERE book_id = ?
+        """,
+        (id,)
+    ).fetchone()[0]
+
     conn.close()
 
     return render_template(
         "book.html",
-        book=book
+        book=book,
+        reviews=reviews,
+        average=average
     )
 
+@app.route("/book/<int:id>/review", methods=["POST"])
+def add_review(id):
+
+    name = request.form["name"]
+    rating = int(request.form["rating"])
+    comment = request.form["comment"]
+
+    conn = get_db_connection()
+
+    conn.execute(
+        """
+        INSERT INTO reviews
+        (book_id, name, rating, comment)
+        VALUES (?, ?, ?, ?)
+        """,
+        (id, name, rating, comment)
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Review added!")
+
+    return redirect(url_for("book_detail", id=id))
 
 @app.route("/cart/add/<int:id>", methods=["POST"])
 def add_to_cart(id):
@@ -98,19 +358,35 @@ def add_to_cart(id):
 
     book_id = str(id)
 
-    if book_id in cart:
+    conn = get_db_connection()
 
-        cart[book_id] = cart[book_id] + 1
+    book = conn.execute(
+        "SELECT stock FROM books WHERE id = ?",
+        (id,)
+    ).fetchone()
 
+    conn.close()
+
+    if not book:
+        flash("Book not found!")
+        return redirect(url_for("home"))
+
+    if book["stock"] == 0:
+        flash("Out of stock!")
+        return redirect(url_for("book_detail", id=id))
+
+    current_quantity = cart.get(book_id, 0)
+
+    if current_quantity >= book["stock"]:
+        flash("No more copies available!")
     else:
+        cart[book_id] = current_quantity + 1
 
-        cart[book_id] = 1
+        session["cart"] = cart
 
-    session["cart"] = cart
+        session.modified = True
 
-    session.modified = True
-
-    flash("Added to cart!")
+        flash("Added to cart!")
 
     return redirect(url_for("book_detail", id=id))
 
@@ -193,6 +469,52 @@ def remove_from_cart(id):
 
     return redirect(url_for("cart"))
 
+@app.route("/order-history", methods=["GET", "POST"])
+def order_history():
+
+    orders = []
+    searched = False
+
+    if request.method == "POST":
+
+        phone = request.form["phone"]
+
+        conn = get_db_connection()
+
+        orders = conn.execute(
+            """
+            SELECT
+                orders.id,
+                orders.date,
+                orders.total,
+                books.title,
+                order_items.quantity
+            FROM orders
+            JOIN order_items
+                ON orders.id = order_items.order_id
+            JOIN books
+                ON order_items.book_id = books.id
+            WHERE orders.phone = ?
+            GROUP BY
+                orders.id,
+                orders.date,
+                orders.total,
+                books.title,
+                order_items.quantity
+            ORDER BY orders.id DESC
+            """,
+            (phone,)
+        ).fetchall()
+
+        conn.close()
+
+        searched = True
+
+    return render_template(
+        "order_history.html",
+        orders=orders,
+        searched=searched
+    )
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
@@ -200,53 +522,60 @@ def checkout():
     if request.method == "POST":
 
         name = request.form["name"]
-
         phone = request.form["phone"]
-
         address = request.form["address"]
 
         cart = session.get("cart", {})
 
         if not cart:
-
+            flash("Your cart is empty!")
             return redirect(url_for("cart"))
 
         conn = get_db_connection()
 
-        total = 0
+        try:
+            conn.execute("BEGIN IMMEDIATE")
 
-        for book_id, quantity in cart.items():
+            total = 0
+            books = []
 
-            book = conn.execute(
-                "SELECT * FROM books WHERE id = ?",
-                (int(book_id),)
-            ).fetchone()
+            for book_id, quantity in cart.items():
 
-            if book:
+                book = conn.execute(
+                    "SELECT * FROM books WHERE id = ?",
+                    (int(book_id),)
+                ).fetchone()
 
-                total = total + (book["price"] * quantity)
+                if not book or quantity <= 0 or book["stock"] < quantity:
+                    conn.rollback()
+                    flash("Not enough stock available!")
+                    return redirect(url_for("cart"))
 
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                total = total + book["price"] * quantity
+                books.append((book, int(book_id), quantity))
 
-        cursor = conn.execute(
-            """
-            INSERT INTO orders
-            (name, phone, address, total, date)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (name, phone, address, total, date)
-        )
+            date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        order_id = cursor.lastrowid
+            cursor = conn.execute(
+                """
+                INSERT INTO orders (name, phone, address, total, date)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (name, phone, address, total, date)
+            )
 
-        for book_id, quantity in cart.items():
+            order_id = cursor.lastrowid
 
-            book = conn.execute(
-                "SELECT * FROM books WHERE id = ?",
-                (int(book_id),)
-            ).fetchone()
+            for book, book_id, quantity in books:
 
-            if book:
+                conn.execute(
+                    """
+                    UPDATE books
+                    SET stock = stock - ?
+                    WHERE id = ? AND stock >= ?
+                    """,
+                    (quantity, book_id, quantity)
+                )
 
                 conn.execute(
                     """
@@ -254,25 +583,23 @@ def checkout():
                     (order_id, book_id, quantity, price)
                     VALUES (?, ?, ?, ?)
                     """,
-                    (
-                        order_id,
-                        int(book_id),
-                        quantity,
-                        book["price"]
-                    )
+                    (order_id, book_id, quantity, book["price"])
                 )
 
-        conn.commit()
+            conn.commit()
 
-        conn.close()
+        except Exception:
+            conn.rollback()
+            flash("Order could not be placed. Please try again.")
+            return redirect(url_for("cart"))
+
+        finally:
+            conn.close()
 
         session["cart"] = {}
-
         session.modified = True
 
-        return redirect(
-            url_for("order_confirmation", id=order_id)
-        )
+        return redirect(url_for("order_confirmation", id=order_id))
 
     return render_template("checkout.html")
 

@@ -2,9 +2,7 @@
 
 {% block content %}
 
-<a href="/" class="back-link">
-    ← Back to shop
-</a>
+<a href="/" class="back-link">← Back to shop</a>
 
 <div class="book-detail">
 
@@ -23,9 +21,7 @@
             {{ book["category"] }}
         </span>
 
-        <h1>
-            {{ book["title"] }}
-        </h1>
+        <h1>{{ book["title"] }}</h1>
 
         <p class="author">
             by {{ book["author"] }}
@@ -39,26 +35,109 @@
             {{ book["description"] }}
         </p>
 
-        <p class="stock">
-            ✓ In stock
-        </p>
+        {% if book["stock"] > 0 %}
 
-        <form
-            action="{{ url_for('add_to_cart', id=book['id']) }}"
-            method="POST"
-        >
+            <p class="stock">
+                ✓ In stock ({{ book["stock"] }} available)
+            </p>
 
-            <button
-                class="add-button"
-                type="submit"
+            <form
+                action="{{ url_for('add_to_cart', id=book['id']) }}"
+                method="POST"
             >
-                Add to cart
+                <button class="add-button" type="submit">
+                    Add to cart
+                </button>
+            </form>
+
+        {% else %}
+
+            <p class="stock">
+                Out of stock
+            </p>
+
+            <button class="add-button" disabled>
+                Out of stock
             </button>
 
-        </form>
+        {% endif %}
 
     </div>
 
 </div>
+
+<hr>
+
+<h2>Reviews</h2>
+
+{% if average %}
+
+    <p>
+        Average rating: {{ "%.1f"|format(average) }} / 5
+    </p>
+
+{% else %}
+
+    <p>No reviews yet.</p>
+
+{% endif %}
+
+{% for review in reviews %}
+
+    <div class="review">
+
+        <strong>{{ review["name"] }}</strong>
+
+        <p>
+            Rating: {{ review["rating"] }} / 5
+        </p>
+
+        <p>
+            {{ review["comment"] }}
+        </p>
+
+    </div>
+
+{% endfor %}
+
+<h2>Write a review</h2>
+
+<form
+    action="{{ url_for('add_review', id=book['id']) }}"
+    method="POST"
+>
+
+    <label>Name</label>
+
+    <input
+        type="text"
+        name="name"
+        required
+    >
+
+    <label>Rating</label>
+
+    <select name="rating" required>
+
+        <option value="5">5</option>
+        <option value="4">4</option>
+        <option value="3">3</option>
+        <option value="2">2</option>
+        <option value="1">1</option>
+
+    </select>
+
+    <label>Comment</label>
+
+    <textarea
+        name="comment"
+        required
+    ></textarea>
+
+    <button type="submit" class="add-button">
+        Submit review
+    </button>
+
+</form>
 
 {% endblock %}

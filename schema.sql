@@ -31,3 +31,12 @@ CREATE TABLE IF NOT EXISTS order_items (
     FOREIGN KEY (order_id) REFERENCES orders(id),
     FOREIGN KEY (book_id) REFERENCES books(id)
 );
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    rating INTEGER NOT NULL,
+    comment TEXT NOT NULL,
+    FOREIGN KEY (book_id) REFERENCES books(id)
+);

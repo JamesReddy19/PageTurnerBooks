@@ -12,7 +12,6 @@
 
 </section>
 
-
 <div class="shop-controls">
 
     <div class="categories">
@@ -20,7 +19,7 @@
         {% for category in categories %}
 
         <a
-            href="/?category={{ category }}"
+            href="/?category={{ category }}&sort={{ sort }}"
             class="{% if selected_category == category or (not selected_category and category == 'All') %}active{% endif %}"
         >
             {{ category }}
@@ -30,15 +29,25 @@
 
     </div>
 
-
     <input
         type="text"
         id="searchBox"
         placeholder="Search title or author..."
     >
 
-</div>
+    <div class="sorting">
 
+        <a href="/?category={{ selected_category or 'All' }}&sort=title">
+            Sort by Title
+        </a>
+
+        <a href="/?category={{ selected_category or 'All' }}&sort=price">
+            Sort by Price
+        </a>
+
+    </div>
+
+</div>
 
 <div class="book-grid">
 
@@ -56,7 +65,6 @@
 
         </a>
 
-
         <div class="book-info">
 
             <span class="category-tag">
@@ -67,27 +75,30 @@
 
             <p>{{ book["author"] }}</p>
 
-
             <div class="book-bottom">
 
-                <strong>
-                    ₹{{ book["price"] }}
-                </strong>
+                <strong>₹{{ book["price"] }}</strong>
 
+                {% if book["stock"] > 0 %}
 
                 <form
                     action="{{ url_for('add_to_cart', id=book['id']) }}"
                     method="POST"
                 >
 
-                    <button
-                        type="submit"
-                        class="add-button"
-                    >
+                    <button type="submit" class="add-button">
                         Add to cart
                     </button>
 
                 </form>
+
+                {% else %}
+
+                <button type="button" class="add-button" disabled>
+                    Out of stock
+                </button>
+
+                {% endif %}
 
             </div>
 
@@ -96,6 +107,34 @@
     </div>
 
     {% endfor %}
+
+</div>
+
+<div class="pagination">
+
+    {% if page > 1 %}
+
+    <a
+        href="/?category={{ selected_category or 'All' }}&sort={{ sort }}&page={{ page - 1 }}"
+    >
+        Previous
+    </a>
+
+    {% endif %}
+
+    <span>
+        Page {{ page }} of {{ total_pages }}
+    </span>
+
+    {% if page < total_pages %}
+
+    <a
+        href="/?category={{ selected_category or 'All' }}&sort={{ sort }}&page={{ page + 1 }}"
+    >
+        Next
+    </a>
+
+    {% endif %}
 
 </div>
 

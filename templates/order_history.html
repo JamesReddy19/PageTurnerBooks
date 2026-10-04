@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Find My Orders</h1>
+
+<form action="{{ url_for('order_history') }}" method="POST">
+
+    <label>Phone Number</label>
+
+    <input
+        type="text"
+        name="phone"
+        required
+    >
+
+    <button type="submit" class="add-button">
+        Find Orders
+    </button>
+
+</form>
+
+{% if orders %}
+
+    <h2>Your Orders</h2>
+
+    {% for order in orders %}
+
+        <div>
+
+            <h3>Order #{{ order["id"] }}</h3>
+
+            <p>Date: {{ order["date"] }}</p>
+
+            <p>Book: {{ order["title"] }}</p>
+
+            <p>Quantity: {{ order["quantity"] }}</p>
+
+            <p>Total: ₹{{ order["total"] }}</p>
+
+            <a href="{{ url_for('order_confirmation', id=order['id']) }}">
+                View Order
+            </a>
+
+        </div>
+
+        <hr>
+
+    {% endfor %}
+
+{% elif searched %}
+
+    <p>No orders found for this phone number.</p>
+
+{% endif %}
+
+{% endblock %}
