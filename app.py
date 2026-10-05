@@ -548,6 +548,30 @@ def order_history():
         searched=searched
     )
 
+@app.route("/orders")
+def orders():
+
+    conn = get_db_connection()
+
+    orders = conn.execute(
+        """
+        SELECT
+            orders.id,
+            orders.name,
+            orders.phone,
+            orders.total,
+            orders.date
+        FROM orders
+        ORDER BY orders.id DESC
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "orders.html",
+        orders=orders
+    )
 
 # Process checkout, create the order, reduce stock, and empty the cart.
 @app.route("/checkout", methods=["GET", "POST"])
