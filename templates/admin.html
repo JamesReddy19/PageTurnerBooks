@@ -2,112 +2,126 @@
 
 {% block content %}
 
-<h1>Admin Panel</h1>
+<div class="admin-page">
 
-<p>Welcome, Admin!</p>
+    <div class="admin-header">
 
-<a href="{{ url_for('admin_logout') }}">
-    Logout
-</a>
+        <div>
+            <h1>Admin Dashboard</h1>
+            <p>Welcome back, Admin!</p>
+        </div>
 
-<h2>Add Book</h2>
+        <a href="{{ url_for('admin_logout') }}" class="admin-logout">
+            Logout
+        </a>
 
-<form action="{{ url_for('admin_add') }}" method="POST">
+    </div>
 
-    <input type="text" name="title" placeholder="Title" required>
 
-    <input type="text" name="author" placeholder="Author" required>
+    <div class="dashboard-cards">
 
-    <input type="text" name="category" placeholder="Category" required>
+        <div class="dashboard-card">
+            <h3>Total Orders</h3>
+            <p>{{ total_orders }}</p>
+        </div>
 
-    <input type="number" name="price" placeholder="Price" required>
+        <div class="dashboard-card">
+            <h3>Total Revenue</h3>
+            <p>₹{{ total_revenue }}</p>
+        </div>
 
-    <input
-        type="text"
-        name="description"
-        placeholder="Description"
-        required
-    >
+        <div class="dashboard-card">
+            <h3>Inventory</h3>
+            <p>{{ total_inventory }}</p>
+        </div>
 
-    <input type="number" name="stock" placeholder="Stock" required>
+        <div class="dashboard-card">
+            <h3>Books Sold</h3>
+            <p>{{ books_sold }}</p>
+        </div>
 
-    <input type="text" name="color" placeholder="Color" required>
+    </div>
 
-    <input
-        type="text"
-        name="image"
-        placeholder="Image filename"
-        required
-    >
 
-    <button type="submit" class="add-button">
-        Add Book
-    </button>
+    <div class="dashboard-section best-selling-section">
 
-</form>
+        <h2>Best-Selling Books</h2>
 
-<h2>Books</h2>
+        {% if best_selling %}
 
-{% for book in books %}
+            {% for book in best_selling %}
 
-<div>
+                <div class="dashboard-row">
 
-    <h3>{{ book["title"] }}</h3>
+                    <span>
+                        {{ book["title"] }}
+                    </span>
 
-    <form
-        action="{{ url_for('admin_edit', id=book['id']) }}"
-        method="POST"
-    >
+                    <strong>
+                        {{ book["total_sold"] }} sold
+                    </strong>
 
-        <input
-            type="text"
-            name="title"
-            value="{{ book['title'] }}"
-            required
-        >
+                </div>
 
-        <input
-            type="text"
-            name="author"
-            value="{{ book['author'] }}"
-            required
-        >
+            {% endfor %}
 
-        <input
-            type="number"
-            name="price"
-            value="{{ book['price'] }}"
-            required
-        >
+        {% else %}
 
-        <input
-            type="number"
-            name="stock"
-            value="{{ book['stock'] }}"
-            required
-        >
+            <p>No sales data yet.</p>
 
-        <button type="submit" class="add-button">
-            Update
-        </button>
+        {% endif %}
 
-    </form>
+    </div>
 
-    <form
-        action="{{ url_for('admin_delete', id=book['id']) }}"
-        method="POST"
-    >
 
-        <button type="submit">
-            Delete
-        </button>
+    <div class="dashboard-section category-section">
 
-    </form>
+        <h2>Orders by Category</h2>
+
+        {% if category_orders %}
+
+            {% for category in category_orders %}
+
+                <div class="dashboard-row">
+
+                    <span>
+                        {{ category["category"] }}
+                    </span>
+
+                    <strong>
+                        {{ category["order_count"] }}
+                        {% if category["order_count"] == 1 %}
+                            order
+                        {% else %}
+                            orders
+                        {% endif %}
+                    </strong>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>No category data yet.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="admin-actions">
+
+        <a href="{{ url_for('manage_books') }}" class="admin-action-button">
+            Manage Books
+        </a>
+
+        <a href="{{ url_for('orders') }}" class="admin-action-button">
+            All Orders
+        </a>
+
+    </div>
 
 </div>
-
-<hr>
-
-{% endfor %}
 
 {% endblock %}

@@ -2,38 +2,90 @@
 
 {% block content %}
 
-<h1>All Orders</h1>
+<div class="admin-page">
 
-{% if orders %}
-
-    {% for order in orders %}
+    <div class="admin-header">
 
         <div>
+            <h1>All Orders</h1>
+            <p>View all customer orders placed in the store.</p>
+        </div>
 
-            <h2>Order #{{ order["id"] }}</h2>
+        <a href="{{ url_for('admin') }}" class="admin-logout">
+            Back to Dashboard
+        </a>
 
-            <p>Name: {{ order["name"] }}</p>
+    </div>
 
-            <p>Phone: {{ order["phone"] }}</p>
 
-            <p>Total: ₹{{ order["total"] }}</p>
+    {% if orders %}
 
-            <p>Date: {{ order["date"] }}</p>
+        <div class="orders-list">
 
-            <a href="{{ url_for('order_confirmation', id=order['id']) }}">
-                View Order
-            </a>
+            {% for order in orders %}
+
+                <div class="order-card">
+
+                    <div class="order-card-header">
+
+                        <h2>
+                            Order #{{ order["id"] }}
+                        </h2>
+
+                        <span>
+                            {{ order["date"] }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="order-card-details">
+
+                        <p>
+                            <strong>Customer:</strong>
+                            {{ order["name"] }}
+                        </p>
+
+                        <p>
+                            <strong>Phone:</strong>
+                            {{ order["phone"] }}
+                        </p>
+
+                        <p>
+                            <strong>Total:</strong>
+                            ₹{{ order["total"] }}
+                        </p>
+
+                    </div>
+
+
+                    <a
+                        href="{{ url_for('order_confirmation', id=order['id']) }}"
+                        class="admin-action-button"
+                    >
+                        View Order
+                    </a>
+
+                </div>
+
+            {% endfor %}
 
         </div>
 
-        <hr>
+    {% else %}
 
-    {% endfor %}
+        <div class="admin-section">
 
-{% else %}
+            <h2>No Orders Yet</h2>
 
-    <p>No orders yet.</p>
+            <p>
+                There are no customer orders in the database yet.
+            </p>
 
-{% endif %}
+        </div>
+
+    {% endif %}
+
+</div>
 
 {% endblock %}

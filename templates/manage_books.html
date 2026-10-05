@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="admin-page">
+
+    <div class="admin-header">
+
+        <div>
+            <h1>Manage Books</h1>
+            <p>Add, update or remove books from the store.</p>
+        </div>
+
+        <a href="{{ url_for('admin') }}" class="admin-logout">
+            Back to Dashboard
+        </a>
+
+    </div>
+
+
+    <div class="admin-section">
+
+        <h2>Add New Book</h2>
+
+        <form action="{{ url_for('admin_add') }}" method="POST">
+
+            <input
+                type="text"
+                name="title"
+                placeholder="Title"
+                required
+            >
+
+            <input
+                type="text"
+                name="author"
+                placeholder="Author"
+                required
+            >
+
+            <input
+                type="text"
+                name="category"
+                placeholder="Category"
+                required
+            >
+
+            <input
+                type="number"
+                name="price"
+                placeholder="Price"
+                required
+            >
+
+            <input
+                type="text"
+                name="description"
+                placeholder="Description"
+                required
+            >
+
+            <input
+                type="number"
+                name="stock"
+                placeholder="Stock"
+                required
+            >
+
+            <input
+                type="text"
+                name="color"
+                placeholder="Color"
+                required
+            >
+
+            <input
+                type="text"
+                name="image"
+                placeholder="Image filename"
+                required
+            >
+
+            <button type="submit" class="add-button">
+                Add Book
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <div class="admin-section">
+
+        <h2>Existing Books</h2>
+
+        {% for book in books %}
+
+            <div class="admin-book">
+
+                <div>
+
+                    <h3>{{ book["title"] }}</h3>
+
+                    <p>
+                        {{ book["author"] }}
+                    </p>
+
+                    <p>
+                        ₹{{ book["price"] }}
+                        · Stock: {{ book["stock"] }}
+                    </p>
+
+                </div>
+
+
+                <div class="admin-book-actions">
+
+                    <form
+                        action="{{ url_for('admin_edit', id=book['id']) }}"
+                        method="POST"
+                    >
+
+                        <input
+                            type="text"
+                            name="title"
+                            value="{{ book['title'] }}"
+                            required
+                        >
+
+                        <input
+                            type="text"
+                            name="author"
+                            value="{{ book['author'] }}"
+                            required
+                        >
+
+                        <input
+                            type="number"
+                            name="price"
+                            value="{{ book['price'] }}"
+                            required
+                        >
+
+                        <input
+                            type="number"
+                            name="stock"
+                            value="{{ book['stock'] }}"
+                            required
+                        >
+
+                        <button type="submit" class="add-button">
+                            Update
+                        </button>
+
+                    </form>
+
+
+                    <form
+                        action="{{ url_for('admin_delete', id=book['id']) }}"
+                        method="POST"
+                    >
+
+                        <button type="submit" class="delete-button">
+                            Delete
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

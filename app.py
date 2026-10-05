@@ -51,15 +51,56 @@ def admin():
 
     conn = get_db_connection()
 
-    books = conn.execute(
-        "SELECT * FROM books ORDER BY id"
+    total_orders = conn.execute(
+        "SELECT COUNT(*) AS total FROM orders"
+    ).fetchone()["total"]
+
+    total_revenue = conn.execute(
+        "SELECT SUM(total) AS revenue FROM orders"
+    ).fetchone()["revenue"]
+
+    total_inventory = conn.execute(
+        "SELECT SUM(stock) AS inventory FROM books"
+    ).fetchone()["inventory"]
+
+    books_sold = conn.execute(
+        "SELECT SUM(quantity) AS sold FROM order_items"
+    ).fetchone()["sold"]
+
+    best_selling = conn.execute(
+        """
+        SELECT books.title, SUM(order_items.quantity) AS total_sold
+        FROM order_items
+        JOIN books
+            ON order_items.book_id = books.id
+        GROUP BY books.id
+        ORDER BY total_sold DESC
+        LIMIT 5
+        """
+    ).fetchall()
+
+    category_orders = conn.execute(
+        """
+        SELECT books.category, COUNT(DISTINCT order_items.order_id) AS order_count
+        FROM order_items
+        JOIN books
+            ON order_items.book_id = books.id
+        GROUP BY books.category
+        ORDER BY order_count DESC
+        """
     ).fetchall()
 
     conn.close()
 
-    return render_template("admin.html", books=books)
-
-
+    return render_template(
+        "admin.html",
+        total_orders=total_orders,
+        total_revenue=total_revenue or 0,
+        total_inventory=total_inventory or 0,
+        books_sold=books_sold or 0,
+        best_selling=best_selling,
+        category_orders=category_orders
+    )
 # Add a new book to the database from the admin panel.
 @app.route("/admin/add", methods=["POST"])
 def admin_add():
@@ -103,6 +144,24 @@ def admin_add():
 
     return redirect(url_for("admin"))
 
+@app.route("/admin/books")
+def manage_books():
+
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
+    conn = get_db_connection()
+
+    books = conn.execute(
+        "SELECT * FROM books ORDER BY title"
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "manage_books.html",
+        books=books
+    )
 
 # Edit the title, author, price, and stock of an existing book.
 @app.route("/admin/edit/<int:id>", methods=["POST"])
@@ -155,60 +214,6 @@ def admin_delete(id):
     flash("Book deleted!")
 
     return redirect(url_for("admin"))
-
-
-# Generate the admin report with order, revenue, sales, and category information.
-@app.route("/admin/report")
-def admin_report():
-
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
-
-    conn = get_db_connection()
-
-    summary = conn.execute(
-        """
-        SELECT
-            COUNT(*) AS total_orders,
-            SUM(total) AS total_revenue
-        FROM orders
-        """
-    ).fetchone()
-
-    best_selling = conn.execute(
-        """
-        SELECT
-            books.title,
-            SUM(order_items.quantity) AS total_sold
-        FROM order_items
-        JOIN books
-            ON order_items.book_id = books.id
-        GROUP BY books.id, books.title
-        ORDER BY total_sold DESC
-        """
-    ).fetchall()
-
-    category_orders = conn.execute(
-        """
-        SELECT
-            books.category,
-            COUNT(DISTINCT order_items.order_id) AS order_count
-        FROM order_items
-        JOIN books
-            ON order_items.book_id = books.id
-        GROUP BY books.category
-        ORDER BY order_count DESC
-        """
-    ).fetchall()
-
-    conn.close()
-
-    return render_template(
-        "admin_report.html",
-        summary=summary,
-        best_selling=best_selling,
-        category_orders=category_orders
-    )
 
 
 # Log the admin out by removing the admin login information from the session.
@@ -551,19 +556,13 @@ def order_history():
 @app.route("/orders")
 def orders():
 
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
     conn = get_db_connection()
 
     orders = conn.execute(
-        """
-        SELECT
-            orders.id,
-            orders.name,
-            orders.phone,
-            orders.total,
-            orders.date
-        FROM orders
-        ORDER BY orders.id DESC
-        """
+        "SELECT * FROM orders ORDER BY id DESC"
     ).fetchall()
 
     conn.close()

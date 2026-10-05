@@ -59,6 +59,9 @@ footer {
     font-size: 14px;
 }
 
+
+/* Home page */
+
 .hero {
     background: linear-gradient(135deg, #0f766e, #159a91);
     color: white;
@@ -118,6 +121,9 @@ footer {
     border-color: #0f766e;
 }
 
+
+/* Book cards */
+
 .book-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -131,7 +137,6 @@ footer {
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-
 }
 
 .book-card img {
@@ -210,6 +215,9 @@ footer {
     text-decoration: none;
 }
 
+
+/* Flash message */
+
 .flash-message {
     background-color: #dcfce7;
     color: #16a34a;
@@ -219,6 +227,9 @@ footer {
     border-radius: 8px;
     text-align: center;
 }
+
+
+/* Book details */
 
 .back-link {
     display: inline-block;
@@ -245,9 +256,8 @@ footer {
 
 .detail-cover img {
     width: 100%;
-    height: 100%;
-    min-height: 450px;
-    object-fit: cover;
+    height: 450px;
+    object-fit: contain;
     display: block;
 }
 
@@ -275,7 +285,14 @@ footer {
     margin: 20px 0;
 }
 
-css
+.book-cover-image {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    display: block;
+}
+
+
 /* Cart table */
 
 .cart-table {
@@ -372,6 +389,7 @@ css
     background-color: #0f766e;
 }
 
+
 /* Checkout page */
 
 .checkout-card {
@@ -443,7 +461,8 @@ css
     cursor: pointer;
 }
 
- /* Order confirmation page */
+
+/* Order confirmation page */
 
 .order-card {
     max-width: 500px;
@@ -505,19 +524,8 @@ css
     display: inline-block;
 }
 
-.book-cover-image {
-    width: 100%;
-    height: 250px;
-    object-fit: cover;
-    display: block;
-}
 
-.detail-cover img {
-    width: 100%;
-    height: 450px;
-    object-fit: contain;
-    display: block;
-}
+/* Phone input */
 
 .phone-input {
     display: flex;
@@ -541,6 +549,342 @@ css
     margin: 0;
     border-radius: 0 6px 6px 0;
 }
+
+
+/* Admin dashboard */
+
+.admin-page {
+    max-width: 1100px;
+    margin: 40px auto;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.admin-header h1 {
+    margin-bottom: 5px;
+    color: #164e63;
+}
+
+.admin-header p {
+    margin: 0;
+    color: #666;
+}
+
+.admin-logout {
+    background-color: #fff0f0;
+    color: #b42318;
+    padding: 10px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: 1px solid #ffd5d5;
+}
+
+.admin-logout:hover {
+    background-color: #ffe1e1;
+}
+
+
+/* Dashboard summary cards */
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.dashboard-card {
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.10);
+    border-top: 5px solid;
+}
+
+.dashboard-card:nth-child(1) {
+    background: linear-gradient(135deg, #164e63, #087f8c);
+    border-color: #38bdf8;
+}
+
+.dashboard-card:nth-child(2) {
+    background: linear-gradient(135deg, #176b4d, #24915f);
+    border-color: #86efac;
+}
+
+.dashboard-card:nth-child(3) {
+    background: linear-gradient(135deg, #a45b00, #d97706);
+    border-color: #fbbf24;
+}
+
+.dashboard-card:nth-child(4) {
+    background: linear-gradient(135deg, #55318a, #7c3aed);
+    border-color: #c4b5fd;
+}
+
+.dashboard-card h3 {
+    margin-top: 0;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.dashboard-card p {
+    margin-bottom: 0;
+    font-size: 30px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+
+/* Dashboard report sections */
+
+.dashboard-section {
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+
+/* Best-Selling Books */
+
+.admin-page > .dashboard-section:nth-child(3) {
+    background: linear-gradient(135deg, #24123a, #4a2168);
+    border-left: 6px solid #c084fc;
+}
+
+.admin-page > .dashboard-section:nth-child(3) h2 {
+    color: #ffffff !important;
+    margin-top: 0;
+    margin-bottom: 18px;
+}
+
+.admin-page > .dashboard-section:nth-child(3) .dashboard-row {
+    background-color: #382052;
+}
+
+
+/* Orders by Category */
+
+.admin-page > .dashboard-section:nth-child(4) {
+    background: linear-gradient(135deg, #102a43, #164e63);
+    border-left: 6px solid #38bdf8;
+}
+
+.admin-page > .dashboard-section:nth-child(4) h2 {
+    color: #ffffff !important;
+    margin-top: 0;
+    margin-bottom: 18px;
+}
+
+.admin-page > .dashboard-section:nth-child(4) .dashboard-row {
+    background-color: #1d4358;
+}
+
+
+/* Dashboard rows */
+
+.dashboard-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border-radius: 9px;
+}
+
+.dashboard-row:last-child {
+    margin-bottom: 0;
+}
+
+.dashboard-row span {
+    color: #ffffff !important;
+}
+
+.dashboard-row strong {
+    color: #ffd166 !important;
+    font-size: 16px;
+}
+
+
+/* Dashboard action buttons */
+
+.admin-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.admin-action-button {
+    display: inline-block;
+    background-color: #164e63;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.admin-action-button:hover {
+    background-color: #0f3d4d;
+}
+
+
+/* Manage books */
+
+.admin-section {
+    background-color: #eef7ff;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.admin-section h2 {
+    margin-top: 0;
+    color: #164e63;
+}
+
+.admin-section form {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-section input {
+    padding: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+}
+
+.admin-book {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.admin-book:last-child {
+    border-bottom: none;
+}
+
+.admin-book h3 {
+    margin-top: 0;
+    color: #164e63;
+}
+
+.admin-book p {
+    margin: 6px 0;
+    color: #555;
+}
+
+.admin-book-actions {
+    min-width: 300px;
+}
+
+.admin-book-actions form {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.admin-book-actions input {
+    padding: 8px;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+}
+
+.delete-button {
+    background-color: #b42318;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.delete-button:hover {
+    background-color: #8f1d15;
+}
+
+
+/* All orders */
+
+.orders-list {
+    display: grid;
+    gap: 22px;
+}
+
+.orders-list .order-card {
+    max-width: none;
+    margin: 0;
+    background: linear-gradient(135deg, #eef7ff, #f8fbff);
+    padding: 25px;
+    border-radius: 16px;
+    border-left: 6px solid #164e63;
+    text-align: left;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.08);
+}
+
+.orders-list .order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.orders-list .order-card-header h2 {
+    margin: 0;
+    color: #164e63;
+}
+
+.orders-list .order-card-header span {
+    background-color: #fff1dc;
+    color: #b76e00;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.orders-list .order-card-details {
+    background-color: white;
+    padding: 15px 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.orders-list .order-card-details p {
+    margin: 9px 0;
+    color: #555;
+}
+
+.orders-list .order-card-details strong {
+    color: #164e63;
+}
+
+.orders-list .order-card-details p:last-child {
+    color: #16834f;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.orders-list .order-card .admin-action-button {
+    background-color: #164e63;
+    transition: 0.2s;
+}
+
+.orders-list .order-card .admin-action-button:hover {
+    background-color: #0f3d4d;
+    transform: translateY(-2px);
+}
+
+
+/* Mobile */
 
 @media (max-width: 600px) {
 
@@ -592,4 +936,58 @@ css
         min-width: 0;
     }
 
+    .admin-page {
+        margin: 25px 15px;
+    }
+
+    .admin-header {
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .dashboard-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .dashboard-card {
+        padding: 18px;
+    }
+
+    .dashboard-card p {
+        font-size: 24px;
+    }
+
+    .dashboard-row {
+        gap: 10px;
+    }
+
+    .admin-actions {
+        flex-direction: column;
+    }
+
+    .admin-action-button {
+        text-align: center;
+    }
+
+    .admin-book {
+        flex-direction: column;
+    }
+
+    .admin-book-actions {
+        min-width: 0;
+    }
+
+    .orders-list .order-card-header {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .orders-list .order-card-header span {
+        text-align: right;
+    }
+
+    .orders-list .order-card {
+        padding: 18px;
+    }
 }
