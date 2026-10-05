@@ -5,12 +5,15 @@ import hashlib
 from flask import Flask, render_template, request, session, redirect, url_for, flash
 
 
+# Create the Flask application and set the secret key and admin password.
 app = Flask(__name__)
 
 app.secret_key = "pageturner-secret-key"
 
 admin_password = hashlib.sha256("admin123".encode()).hexdigest()
 
+
+# Create a reusable function to connect to the SQLite database.
 def get_db_connection():
 
     conn = sqlite3.connect("database.db")
@@ -19,6 +22,8 @@ def get_db_connection():
 
     return conn
 
+
+# Handle admin login and verify the entered password.
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
 
@@ -36,6 +41,8 @@ def admin_login():
 
     return render_template("admin_login.html")
 
+
+# Display the admin panel and show all books.
 @app.route("/admin")
 def admin():
 
@@ -52,6 +59,8 @@ def admin():
 
     return render_template("admin.html", books=books)
 
+
+# Add a new book to the database from the admin panel.
 @app.route("/admin/add", methods=["POST"])
 def admin_add():
 
@@ -94,6 +103,8 @@ def admin_add():
 
     return redirect(url_for("admin"))
 
+
+# Edit the title, author, price, and stock of an existing book.
 @app.route("/admin/edit/<int:id>", methods=["POST"])
 def admin_edit(id):
 
@@ -123,6 +134,8 @@ def admin_edit(id):
 
     return redirect(url_for("admin"))
 
+
+# Delete an existing book from the database.
 @app.route("/admin/delete/<int:id>", methods=["POST"])
 def admin_delete(id):
 
@@ -143,6 +156,8 @@ def admin_delete(id):
 
     return redirect(url_for("admin"))
 
+
+# Generate the admin report with order, revenue, sales, and category information.
 @app.route("/admin/report")
 def admin_report():
 
@@ -195,6 +210,8 @@ def admin_report():
         category_orders=category_orders
     )
 
+
+# Log the admin out by removing the admin login information from the session.
 @app.route("/admin/logout")
 def admin_logout():
 
@@ -202,6 +219,8 @@ def admin_logout():
 
     return redirect(url_for("admin_login"))
 
+
+# Calculate the total number of books in the cart for the navbar.
 @app.context_processor
 def cart_count():
 
@@ -217,6 +236,7 @@ def cart_count():
     }
 
 
+# Display books with category filtering, sorting, and pagination.
 @app.route("/")
 def home():
 
@@ -289,6 +309,9 @@ def home():
         page=page,
         total_pages=total_pages
     )
+
+
+# Display the selected book along with its reviews and average rating.
 @app.route("/book/<int:id>")
 def book_detail(id):
 
@@ -326,6 +349,8 @@ def book_detail(id):
         average=average
     )
 
+
+# Save a customer's review and rating for a book.
 @app.route("/book/<int:id>/review", methods=["POST"])
 def add_review(id):
 
@@ -351,6 +376,8 @@ def add_review(id):
 
     return redirect(url_for("book_detail", id=id))
 
+
+# Add a selected book to the cart while checking its available stock.
 @app.route("/cart/add/<int:id>", methods=["POST"])
 def add_to_cart(id):
 
@@ -391,6 +418,7 @@ def add_to_cart(id):
     return redirect(url_for("book_detail", id=id))
 
 
+# Display the cart items and calculate the total price.
 @app.route("/cart")
 def cart():
 
@@ -430,6 +458,7 @@ def cart():
     )
 
 
+# Update the quantity of a book already present in the cart.
 @app.route("/cart/update/<int:id>", methods=["POST"])
 def update_cart(id):
 
@@ -454,6 +483,7 @@ def update_cart(id):
     return redirect(url_for("cart"))
 
 
+# Remove a book completely from the cart.
 @app.route("/cart/remove/<int:id>", methods=["POST"])
 def remove_from_cart(id):
 
@@ -469,6 +499,8 @@ def remove_from_cart(id):
 
     return redirect(url_for("cart"))
 
+
+# Find previous orders using the customer's phone number.
 @app.route("/order-history", methods=["GET", "POST"])
 def order_history():
 
@@ -516,6 +548,8 @@ def order_history():
         searched=searched
     )
 
+
+# Process checkout, create the order, reduce stock, and empty the cart.
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
 
@@ -604,6 +638,7 @@ def checkout():
     return render_template("checkout.html")
 
 
+# Display the completed order and the books included in that order.
 @app.route("/order/<int:id>")
 def order_confirmation(id):
 
@@ -636,6 +671,7 @@ def order_confirmation(id):
     )
 
 
+# Start the Flask development server when this file is run directly.
 if __name__ == "__main__":
 
     app.run(debug=True)

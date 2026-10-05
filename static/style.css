@@ -120,15 +120,24 @@ footer {
 
 .book-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
 }
 
 .book-card {
-    background-color: white;
+    background: white;
+    padding: 20px;
     border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+}
+
+.book-card img {
+    width: 100%;
+    height: 260px;
+    object-fit: contain;
 }
 
 .book-card > a {
