@@ -11,6 +11,13 @@ function validatePhone() {
         return false;
     }
 
+    if (!["6", "7", "8", "9"].includes(phone[0])) {
+
+        alert("Phone number must start with 6, 7, 8 or 9.");
+
+        return false;
+    }
+
     return true;
 }
 
