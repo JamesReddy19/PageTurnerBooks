@@ -541,3 +541,55 @@ css
     margin: 0;
     border-radius: 0 6px 6px 0;
 }
+
+@media (max-width: 600px) {
+
+    .book-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .book-card img {
+        height: 200px;
+    }
+
+    .navbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .cart-table {
+        font-size: 14px;
+    }
+
+    .cart-table th,
+    .cart-table td {
+        padding: 8px 4px;
+    }
+
+    form {
+        width: 100%;
+    }
+
+    input,
+    textarea,
+    button {
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    .phone-input {
+        width: 100%;
+    }
+
+    .phone-input input {
+        min-width: 0;
+    }
+
+}
