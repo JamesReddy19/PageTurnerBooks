@@ -2,34 +2,34 @@
 
 {% block content %}
 
-<a href="/" class="back-link">← Back to shop</a>
+<a href="/" class="back-link">
+    ← Back to shop
+</a>
 
 <div class="book-detail">
 
-    <div class="detail-cover">
+    <img
+        src="{{ url_for('static', filename='images/' + book['image']) }}"
+        alt="{{ book['title'] }}"
+    >
 
-        <img
-            src="{{ url_for('static', filename='images/' + book['image']) }}"
-            alt="{{ book['title'] }}"
-        >
+    <div>
 
-    </div>
-
-    <div class="detail-info">
-
-        <span class="category-tag">
+        <p>
             {{ book["category"] }}
-        </span>
+        </p>
 
-        <h1>{{ book["title"] }}</h1>
+        <h1>
+            {{ book["title"] }}
+        </h1>
 
-        <p class="author">
+        <p>
             by {{ book["author"] }}
         </p>
 
-        <h2 class="detail-price">
+        <p class="book-detail-price">
             ₹{{ book["price"] }}
-        </h2>
+        </p>
 
         <p>
             {{ book["description"] }}
@@ -37,7 +37,7 @@
 
         {% if book["stock"] > 0 %}
 
-            <p class="stock">
+            <p>
                 ✓ In stock ({{ book["stock"] }} available)
             </p>
 
@@ -45,18 +45,26 @@
                 action="{{ url_for('add_to_cart', id=book['id']) }}"
                 method="POST"
             >
-                <button class="add-button" type="submit">
+
+                <button
+                    class="add-button"
+                    type="submit"
+                >
                     Add to cart
                 </button>
+
             </form>
 
         {% else %}
 
-            <p class="stock">
+            <p>
                 Out of stock
             </p>
 
-            <button class="add-button" disabled>
+            <button
+                class="add-button"
+                disabled
+            >
                 Out of stock
             </button>
 
@@ -66,7 +74,9 @@
 
 </div>
 
+
 <hr>
+
 
 <h2>Reviews</h2>
 
@@ -78,15 +88,20 @@
 
 {% else %}
 
-    <p>No reviews yet.</p>
+    <p>
+        No reviews yet.
+    </p>
 
 {% endif %}
 
+
 {% for review in reviews %}
 
-    <div class="review">
+    <div>
 
-        <strong>{{ review["name"] }}</strong>
+        <strong>
+            {{ review["name"] }}
+        </strong>
 
         <p>
             Rating: {{ review["rating"] }} / 5
@@ -100,6 +115,7 @@
 
 {% endfor %}
 
+
 <h2>Write a review</h2>
 
 <form
@@ -107,7 +123,9 @@
     method="POST"
 >
 
-    <label>Name</label>
+    <label>
+        Name
+    </label>
 
     <input
         type="text"
@@ -115,9 +133,15 @@
         required
     >
 
-    <label>Rating</label>
 
-    <select name="rating" required>
+    <label>
+        Rating
+    </label>
+
+    <select
+        name="rating"
+        required
+    >
 
         <option value="5">5</option>
         <option value="4">4</option>
@@ -127,14 +151,21 @@
 
     </select>
 
-    <label>Comment</label>
+
+    <label>
+        Comment
+    </label>
 
     <textarea
         name="comment"
         required
     ></textarea>
 
-    <button type="submit" class="add-button">
+
+    <button
+        type="submit"
+        class="add-button"
+    >
         Submit review
     </button>
 

@@ -2,56 +2,95 @@
 
 {% block content %}
 
-<h1>Find My Orders</h1>
+<div class="order-history">
 
-<form action="{{ url_for('order_history') }}" method="POST">
+    <div class="history-card">
 
-    <label>Phone Number</label>
+        <h1>Find My Orders</h1>
 
-    <input
-        type="text"
-        name="phone"
-        required
-    >
+        <form
+            action="{{ url_for('order_history') }}"
+            method="POST"
+        >
 
-    <button type="submit" class="add-button">
-        Find Orders
-    </button>
+            <label for="phone">
+                Phone Number
+            </label>
 
-</form>
+            <input
+                type="text"
+                id="phone"
+                name="phone"
+                required
+            >
 
-{% if orders %}
+            <button
+                type="submit"
+                class="add-button"
+            >
+                Find Orders
+            </button>
 
-    <h2>Your Orders</h2>
+        </form>
 
-    {% for order in orders %}
+    </div>
 
-        <div>
 
-            <h3>Order #{{ order["id"] }}</h3>
+    {% if orders %}
 
-            <p>Date: {{ order["date"] }}</p>
+        <h2>Your Orders</h2>
 
-            <p>Book: {{ order["title"] }}</p>
+        {% for order in orders %}
 
-            <p>Quantity: {{ order["quantity"] }}</p>
+            <div class="history-card">
 
-            <p>Total: ₹{{ order["total"] }}</p>
+                <h2>
+                    Order #{{ order["id"] }}
+                </h2>
 
-            <a href="{{ url_for('order_confirmation', id=order['id']) }}">
-                View Order
-            </a>
+                <p>
+                    <strong>Date:</strong>
+                    {{ order["date"] }}
+                </p>
+
+                <p>
+                    <strong>Book:</strong>
+                    {{ order["title"] }}
+                </p>
+
+                <p>
+                    <strong>Quantity:</strong>
+                    {{ order["quantity"] }}
+                </p>
+
+                <p>
+                    <strong>Total:</strong>
+                    ₹{{ order["total"] }}
+                </p>
+
+                <a
+                    href="{{ url_for('order_confirmation', id=order['id']) }}"
+                >
+                    View Order
+                </a>
+
+            </div>
+
+        {% endfor %}
+
+
+    {% elif searched %}
+
+        <div class="history-card">
+
+            <p>
+                No orders found for this phone number.
+            </p>
 
         </div>
 
-        <hr>
+    {% endif %}
 
-    {% endfor %}
-
-{% elif searched %}
-
-    <p>No orders found for this phone number.</p>
-
-{% endif %}
+</div>
 
 {% endblock %}

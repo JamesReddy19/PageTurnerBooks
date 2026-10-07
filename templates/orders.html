@@ -7,11 +7,20 @@
     <div class="admin-header">
 
         <div>
+
             <h1>All Orders</h1>
-            <p>View all customer orders placed in the store.</p>
+
+            <p>
+                View all customer orders placed in the store.
+            </p>
+
         </div>
 
-        <a href="{{ url_for('admin') }}" class="admin-logout">
+
+        <a
+            href="{{ url_for('admin') }}"
+            class="admin-logout"
+        >
             Back to Dashboard
         </a>
 
@@ -26,37 +35,29 @@
 
                 <div class="order-card">
 
-                    <div class="order-card-header">
+                    <h2>
+                        Order #{{ order["id"] }}
+                    </h2>
 
-                        <h2>
-                            Order #{{ order["id"] }}
-                        </h2>
+                    <p>
+                        <strong>Date:</strong>
+                        {{ order["date"] }}
+                    </p>
 
-                        <span>
-                            {{ order["date"] }}
-                        </span>
+                    <p>
+                        <strong>Customer:</strong>
+                        {{ order["name"] }}
+                    </p>
 
-                    </div>
+                    <p>
+                        <strong>Phone:</strong>
+                        {{ order["phone"] }}
+                    </p>
 
-
-                    <div class="order-card-details">
-
-                        <p>
-                            <strong>Customer:</strong>
-                            {{ order["name"] }}
-                        </p>
-
-                        <p>
-                            <strong>Phone:</strong>
-                            {{ order["phone"] }}
-                        </p>
-
-                        <p>
-                            <strong>Total:</strong>
-                            ₹{{ order["total"] }}
-                        </p>
-
-                    </div>
+                    <p>
+                        <strong>Total:</strong>
+                        ₹{{ order["total"] }}
+                    </p>
 
 
                     <a

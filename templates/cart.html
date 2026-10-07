@@ -6,130 +6,151 @@
 
 {% if items %}
 
-<table class="cart-table">
+<div class="cart-container">
 
-    <tr>
-        <th>Book</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Subtotal</th>
-        <th></th>
-    </tr>
+    <table class="cart-table">
 
-    {% for item in items %}
+        <tr>
+            <th>Book</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Subtotal</th>
+            <th></th>
+        </tr>
 
-    <tr>
 
-        <td>
+        {% for item in items %}
 
-    <div class="cart-book">
+        <tr>
 
-        <img
-    
-            src="{{ url_for('static', filename='images/' + item['book']['image']) }}"
-            class="small-cover"
-            alt="{{ item['book']['title'] }}"
-        >
+            <td>
 
-        <p>{{ item["book"]["image"] }}</p>
-        
-        <div>
-            <strong>{{ item["book"]["title"] }}</strong>
-            <p>{{ item["book"]["author"] }}</p>
-        </div>
+                <div class="cart-book">
+
+                    <img
+                        src="{{ url_for('static', filename='images/' + item['book']['image']) }}"
+                        class="small-cover"
+                        alt="{{ item['book']['title'] }}"
+                    >
+
+                    <div>
+
+                        <strong>
+                            {{ item["book"]["title"] }}
+                        </strong>
+
+                        <p>
+                            {{ item["book"]["author"] }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </td>
+
+
+            <td>
+                ₹{{ item["book"]["price"] }}
+            </td>
+
+
+            <td>
+
+                <form
+                    action="/cart/update/{{ item['book']['id'] }}"
+                    method="POST"
+                >
+
+                    <input
+                        type="number"
+                        name="quantity"
+                        value="{{ item['quantity'] }}"
+                        min="1"
+                    >
+
+                    <button type="submit">
+                        Update
+                    </button>
+
+                </form>
+
+            </td>
+
+
+            <td>
+                ₹{{ item["subtotal"] }}
+            </td>
+
+
+            <td>
+
+                <form
+                    action="/cart/remove/{{ item['book']['id'] }}"
+                    method="POST"
+                >
+
+                    <button
+                        type="submit"
+                        class="remove-button"
+                    >
+                        Remove
+                    </button>
+
+                </form>
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+
+        <tr class="cart-total">
+
+            <td colspan="3">
+                <strong>Total</strong>
+            </td>
+
+            <td>
+                <strong>₹{{ total }}</strong>
+            </td>
+
+            <td></td>
+
+        </tr>
+
+    </table>
+
+
+    <div class="cart-actions">
+
+        <a href="/">
+            Continue shopping
+        </a>
+
+        <a href="/checkout">
+            Proceed to checkout →
+        </a>
 
     </div>
-
-</td>
-        <td>
-            ₹{{ item["book"]["price"] }}
-        </td>
-
-        <td>
-
-            <form
-                action="/cart/update/{{ item['book']['id'] }}"
-                method="POST"
-            >
-
-                <input
-                    type="number"
-                    name="quantity"
-                    value="{{ item['quantity'] }}"
-                    min="1"
-                >
-
-                <button type="submit">
-                    Update
-                </button>
-
-            </form>
-
-        </td>
-
-        <td>
-            ₹{{ item["subtotal"] }}
-        </td>
-
-        <td>
-
-            <form
-                action="/cart/remove/{{ item['book']['id'] }}"
-                method="POST"
-            >
-
-                <button
-                    type="submit"
-                    class="remove-button"
-                >
-                    Remove
-                </button>
-
-            </form>
-
-        </td>
-
-    </tr>
-
-    {% endfor %}
-
-    <tr class="cart-total">
-
-        <td colspan="3">
-            <strong>Total</strong>
-        </td>
-
-        <td>
-            <strong>₹{{ total }}</strong>
-        </td>
-
-        <td></td>
-
-    </tr>
-
-</table>
-
-
-<div class="cart-actions">
-
-    <a href="/">
-        Continue shopping
-    </a>
-
-    <a href="/checkout">
-        Proceed to checkout →
-    </a>
 
 </div>
 
 
 {% else %}
 
-<p>Your cart is empty.</p>
+<div class="cart-container">
 
-<a href="/">
-    Continue shopping
-</a>
+    <p>
+        Your cart is empty.
+    </p>
+
+    <a href="/">
+        Continue shopping
+    </a>
+
+</div>
 
 {% endif %}
 

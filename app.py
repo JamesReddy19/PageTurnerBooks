@@ -1,16 +1,31 @@
 import sqlite3
+import os
 from datetime import datetime
-import hashlib
 
 from flask import Flask, render_template, request, session, redirect, url_for, flash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
-# Create the Flask application and set the secret key and admin password.
+# Create the Flask application.
 app = Flask(__name__)
 
 app.secret_key = "pageturner-secret-key"
 
-admin_password = hashlib.sha256("admin123".encode()).hexdigest()
+admin_password = os.environ.get("ADMIN_PASSWORD")
+
+if not admin_password:
+    raise ValueError("ADMIN_PASSWORD is not set")
+
+admin_password_hash = generate_password_hash(admin_password)
+
+
+# Check whether the admin is logged in.
+def admin_required():
+
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
+    return None
 
 
 # Create a reusable function to connect to the SQLite database.
@@ -31,10 +46,10 @@ def admin_login():
 
         password = request.form["password"]
 
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        if check_password_hash(admin_password_hash, password):
 
-        if password_hash == admin_password:
             session["admin"] = True
+
             return redirect(url_for("admin"))
 
         flash("Wrong password!")
@@ -42,12 +57,14 @@ def admin_login():
     return render_template("admin_login.html")
 
 
-# Display the admin panel and show all books.
+# Display the admin dashboard.
 @app.route("/admin")
 def admin():
 
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
+    check = admin_required()
+
+    if check:
+        return check
 
     conn = get_db_connection()
 
@@ -101,12 +118,16 @@ def admin():
         best_selling=best_selling,
         category_orders=category_orders
     )
+
+
 # Add a new book to the database from the admin panel.
 @app.route("/admin/add", methods=["POST"])
 def admin_add():
 
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
+    check = admin_required()
+
+    if check:
+        return check
 
     title = request.form["title"]
     author = request.form["author"]
@@ -144,11 +165,15 @@ def admin_add():
 
     return redirect(url_for("admin"))
 
+
+# Display all books in the admin book-management page.
 @app.route("/admin/books")
 def manage_books():
 
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
+    check = admin_required()
+
+    if check:
+        return check
 
     conn = get_db_connection()
 
@@ -163,12 +188,15 @@ def manage_books():
         books=books
     )
 
+
 # Edit the title, author, price, and stock of an existing book.
 @app.route("/admin/edit/<int:id>", methods=["POST"])
 def admin_edit(id):
 
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
+    check = admin_required()
+
+    if check:
+        return check
 
     title = request.form["title"]
     author = request.form["author"]
@@ -198,8 +226,10 @@ def admin_edit(id):
 @app.route("/admin/delete/<int:id>", methods=["POST"])
 def admin_delete(id):
 
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
+    check = admin_required()
+
+    if check:
+        return check
 
     conn = get_db_connection()
 
@@ -216,7 +246,7 @@ def admin_delete(id):
     return redirect(url_for("admin"))
 
 
-# Log the admin out by removing the admin login information from the session.
+# Log the admin out by removing the admin session.
 @app.route("/admin/logout")
 def admin_logout():
 
@@ -553,11 +583,15 @@ def order_history():
         searched=searched
     )
 
+
+# Display all customer orders for the admin.
 @app.route("/orders")
 def orders():
 
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
+    check = admin_required()
+
+    if check:
+        return check
 
     conn = get_db_connection()
 
@@ -571,6 +605,7 @@ def orders():
         "orders.html",
         orders=orders
     )
+
 
 # Process checkout, create the order, reduce stock, and empty the cart.
 @app.route("/checkout", methods=["GET", "POST"])
@@ -591,11 +626,14 @@ def checkout():
         conn = get_db_connection()
 
         try:
+
+            # Start one database transaction for the whole checkout.
             conn.execute("BEGIN IMMEDIATE")
 
             total = 0
             books = []
 
+            # Get the current book information and calculate the total.
             for book_id, quantity in cart.items():
 
                 book = conn.execute(
@@ -603,16 +641,23 @@ def checkout():
                     (int(book_id),)
                 ).fetchone()
 
-                if not book or quantity <= 0 or book["stock"] < quantity:
+                if not book or quantity <= 0:
+
                     conn.rollback()
-                    flash("Not enough stock available!")
+
+                    flash("Sorry, this order could not be placed.")
+
                     return redirect(url_for("cart"))
 
                 total = total + book["price"] * quantity
-                books.append((book, int(book_id), quantity))
+
+                books.append(
+                    (book, int(book_id), quantity)
+                )
 
             date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+            # Create the order inside the same transaction.
             cursor = conn.execute(
                 """
                 INSERT INTO orders (name, phone, address, total, date)
@@ -623,9 +668,10 @@ def checkout():
 
             order_id = cursor.lastrowid
 
+            # Reduce stock and create the order items.
             for book, book_id, quantity in books:
 
-                conn.execute(
+                cursor = conn.execute(
                     """
                     UPDATE books
                     SET stock = stock - ?
@@ -633,6 +679,15 @@ def checkout():
                     """,
                     (quantity, book_id, quantity)
                 )
+
+                # rowcount tells us how many database rows were changed.
+                if cursor.rowcount == 0:
+
+                    conn.rollback()
+
+                    flash("Sorry, just sold out.")
+
+                    return redirect(url_for("cart"))
 
                 conn.execute(
                     """
@@ -643,17 +698,25 @@ def checkout():
                     (order_id, book_id, quantity, book["price"])
                 )
 
+            # Save the complete checkout only after everything succeeds.
             conn.commit()
 
         except Exception:
+
+            # Undo all database changes if any error occurs.
             conn.rollback()
+
             flash("Order could not be placed. Please try again.")
+
             return redirect(url_for("cart"))
 
         finally:
+
+            # Always close the database connection.
             conn.close()
 
         session["cart"] = {}
+
         session.modified = True
 
         return redirect(url_for("order_confirmation", id=order_id))

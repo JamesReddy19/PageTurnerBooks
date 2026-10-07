@@ -2,13 +2,14 @@
 
 {% block content %}
 
-<div class="checkout-card">
+<div class="checkout-form">
 
     <h1>Checkout</h1>
 
-    <p class="checkout-note">
+    <p>
         Cash on delivery. Tell us where to send your books.
     </p>
+
 
     <form
         action="/checkout"
@@ -16,7 +17,9 @@
         onsubmit="return validatePhone()"
     >
 
-        <label for="name">Full Name *</label>
+        <label for="name">
+            Full Name *
+        </label>
 
         <input
             type="text"
@@ -25,24 +28,29 @@
             required
         >
 
-        <label>Phone Number</label>
 
-<div class="phone-input">
+        <label for="phone">
+            Phone Number *
+        </label>
 
-    <span>+91</span>
+        <div class="phone-input">
 
-    <input
-        type="text"
-        id="phone"
-        name="phone"
-        placeholder="Enter 10 digit number"
-        required
-    >
+            <span>+91</span>
 
-</div>
-    
+            <input
+                type="text"
+                id="phone"
+                name="phone"
+                placeholder="Enter 10 digit number"
+                required
+            >
 
-        <label for="address">Delivery Address *</label>
+        </div>
+
+
+        <label for="address">
+            Delivery Address *
+        </label>
 
         <textarea
             id="address"
@@ -51,7 +59,8 @@
             required
         ></textarea>
 
-        <div class="checkout-buttons">
+
+        <div>
 
             <a href="/cart">
                 Back to cart
