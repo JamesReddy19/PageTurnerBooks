@@ -1,4 +1,5 @@
 // Check that the phone number has exactly 10 digits
+
 function validatePhone() {
 
     let phone = document.getElementById("phone").value;
@@ -34,56 +35,203 @@ if (flashMessage) {
 }
 
 
-// Search books by title or author
-let searchBox = document.getElementById("searchBox");
+// Add a book to the cart without refreshing the page
+function setupCartButtons() {
 
-let books = document.querySelectorAll(".book-card");
+    let cartButtons =
+        document.querySelectorAll(".add-to-cart-button");
 
-if (searchBox) {
+    for (let button of cartButtons) {
 
-    searchBox.addEventListener("input", function() {
+        button.addEventListener("click", async function() {
 
-        let searchText = searchBox.value.toLowerCase();
+            let bookId = button.dataset.bookId;
 
-        for (let book of books) {
+            let response = await fetch(
+                "/cart/add/" + bookId,
+                {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                }
+            );
 
-            let bookText = book.innerText.toLowerCase();
+            let result = await response.json();
 
-            if (bookText.includes(searchText)) {
+            if (result.status === "added") {
 
-                book.style.display = "";
+                let cartCount =
+                    document.querySelector(".cart-count");
+
+                if (cartCount) {
+
+                    cartCount.textContent = result.cart_count;
+                }
+
+                button.textContent = "Added";
+
+                setTimeout(function() {
+
+                    button.textContent = "Add to cart";
+
+                }, 1000);
 
             } else {
 
-                book.style.display = "none";
+                alert(result.message);
             }
-        }
-    });
+        });
+    }
 }
 
 
 // Add or remove a book from the wishlist
-let wishlistButtons = document.querySelectorAll(".wishlist-button");
+function setupWishlistButtons() {
 
-for (let button of wishlistButtons) {
+    let wishlistButtons =
+        document.querySelectorAll(".wishlist-button");
 
-    button.addEventListener("click", async function() {
+    for (let button of wishlistButtons) {
 
-        let bookId = button.dataset.bookId;
+        button.addEventListener("click", async function() {
 
-        let response = await fetch("/wishlist/add/" + bookId, {
-            method: "POST"
+            let bookId = button.dataset.bookId;
+
+            let response = await fetch(
+                "/wishlist/add/" + bookId,
+                {
+                    method: "POST"
+                }
+            );
+
+            let result = await response.json();
+
+            if (result.status === "added") {
+
+                button.classList.add("wishlist-active");
+
+            } else {
+
+                button.classList.remove("wishlist-active");
+            }
         });
+    }
+}
 
-        let result = await response.json();
 
-        if (result.status === "added") {
+// Search books from the server using fetch()
+let searchBox = document.getElementById("searchBox");
 
-            button.classList.add("wishlist-active");
+if (searchBox) {
 
-        } else {
+    searchBox.addEventListener("input", async function() {
 
-            button.classList.remove("wishlist-active");
+        let query = searchBox.value;
+
+        let response = await fetch(
+            "/api/books?q=" + encodeURIComponent(query)
+        );
+
+        let books = await response.json();
+
+        let bookGrid =
+            document.getElementById("bookGrid");
+
+        bookGrid.innerHTML = "";
+
+
+        if (books.length === 0) {
+
+            bookGrid.innerHTML = `
+                <div class="no-books">
+                    <h2>No books found</h2>
+                    <p>Try a different search.</p>
+                </div>
+            `;
+
+            return;
         }
+
+
+        for (let book of books) {
+
+            let bookCard =
+                document.createElement("div");
+
+            bookCard.className = "book-card";
+
+
+            bookCard.innerHTML = `
+                <a href="/book/${book.id}">
+
+                    <img
+                        src="/static/images/${book.image}"
+                        alt="${book.title}"
+                    >
+
+                </a>
+
+                <div class="book-card-content">
+
+                    <span class="category-tag">
+                        ${book.category}
+                    </span>
+
+                    <h2>
+                        ${book.title}
+                    </h2>
+
+                    <p>
+                        ${book.author}
+                    </p>
+
+                    <div class="book-bottom">
+
+                        <strong class="book-price">
+                            ₹${book.price}
+                        </strong>
+
+                        ${
+                            book.stock > 0
+                            ?
+                            `<button
+                                type="button"
+                                class="add-button add-to-cart-button"
+                                data-book-id="${book.id}"
+                            >
+                                Add to cart
+                            </button>`
+                            :
+                            `<button
+                                type="button"
+                                class="add-button"
+                                disabled
+                            >
+                                Out of stock
+                            </button>`
+                        }
+
+                    </div>
+
+                </div>
+            `;
+
+
+            bookGrid.appendChild(bookCard);
+        }
+
+
+        setupCartButtons();
+
     });
 }
+
+
+// Set up cart buttons when the page first loads
+setupCartButtons();
+
+
+// Set up wishlist buttons when the page first loads
+setupWishlistButtons();
+

@@ -2,7 +2,17 @@ import sqlite3
 import os
 from datetime import datetime
 
-from flask import Flask, render_template, request, session, redirect, url_for, flash
+from flask import (
+    Flask,
+    render_template,
+    request,
+    session,
+    redirect,
+    url_for,
+    flash,
+    jsonify
+)
+
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -11,6 +21,8 @@ app = Flask(__name__)
 
 app.secret_key = "pageturner-secret-key"
 
+
+# Get the admin password from the environment variable.
 admin_password = os.environ.get("ADMIN_PASSWORD")
 
 if not admin_password:
@@ -38,13 +50,46 @@ def get_db_connection():
     return conn
 
 
-# Handle admin login and verify the entered password.
+# Create indexes that improve commonly used searches.
+def create_indexes():
+
+    conn = get_db_connection()
+
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_books_category
+        ON books(category)
+        """
+    )
+
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_orders_user_id
+        ON orders(user_id)
+        """
+    )
+
+    conn.commit()
+    conn.close()
+
+
+# Create the indexes when the application starts.
+create_indexes()
+
+
+# Handle admin login.
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
 
     if request.method == "POST":
 
-        password = request.form["password"]
+        password = request.form.get("password", "").strip()
+
+        if not password:
+
+            flash("Password is required.")
+
+            return redirect(url_for("admin_login"))
 
         if check_password_hash(admin_password_hash, password):
 
@@ -86,7 +131,8 @@ def admin():
 
     best_selling = conn.execute(
         """
-        SELECT books.title, SUM(order_items.quantity) AS total_sold
+        SELECT books.title,
+               SUM(order_items.quantity) AS total_sold
         FROM order_items
         JOIN books
             ON order_items.book_id = books.id
@@ -98,7 +144,8 @@ def admin():
 
     category_orders = conn.execute(
         """
-        SELECT books.category, COUNT(DISTINCT order_items.order_id) AS order_count
+        SELECT books.category,
+               COUNT(DISTINCT order_items.order_id) AS order_count
         FROM order_items
         JOIN books
             ON order_items.book_id = books.id
@@ -120,7 +167,7 @@ def admin():
     )
 
 
-# Add a new book to the database from the admin panel.
+# Add a new book from the admin panel.
 @app.route("/admin/add", methods=["POST"])
 def admin_add():
 
@@ -132,11 +179,35 @@ def admin_add():
     title = request.form["title"]
     author = request.form["author"]
     category = request.form["category"]
-    price = request.form["price"]
+    price_text = request.form["price"]
     description = request.form["description"]
-    stock = request.form["stock"]
+    stock_text = request.form["stock"]
     color = request.form["color"]
     image = request.form["image"]
+
+    if not title or not author or not category or not price_text or not stock_text:
+        flash("Title, author, category, price and stock are required.")
+        return redirect(url_for("admin"))
+
+    try:
+        price = float(price_text)
+    except ValueError:
+        flash("Price must be a number.")
+        return redirect(url_for("admin"))
+
+    try:
+        stock = int(stock_text)
+    except ValueError:
+        flash("Stock must be a whole number.")
+        return redirect(url_for("admin"))
+
+    if price < 0:
+        flash("Price cannot be negative.")
+        return redirect(url_for("admin"))
+
+    if stock < 0:
+        flash("Stock cannot be negative.")
+        return redirect(url_for("admin"))
 
     conn = get_db_connection()
 
@@ -165,7 +236,6 @@ def admin_add():
 
     return redirect(url_for("admin"))
 
-
 # Display all books in the admin book-management page.
 @app.route("/admin/books")
 def manage_books():
@@ -189,7 +259,7 @@ def manage_books():
     )
 
 
-# Edit the title, author, price, and stock of an existing book.
+# Edit an existing book.
 @app.route("/admin/edit/<int:id>", methods=["POST"])
 def admin_edit(id):
 
@@ -198,10 +268,48 @@ def admin_edit(id):
     if check:
         return check
 
-    title = request.form["title"]
-    author = request.form["author"]
-    price = request.form["price"]
-    stock = request.form["stock"]
+    title = request.form.get("title", "").strip()
+    author = request.form.get("author", "").strip()
+    price_text = request.form.get("price", "").strip()
+    stock_text = request.form.get("stock", "").strip()
+
+    if not title or not author or not price_text or not stock_text:
+
+        flash("Title, author, price and stock are required.")
+
+        return redirect(url_for("manage_books"))
+
+    try:
+
+        price = float(price_text)
+
+    except ValueError:
+
+        flash("Price must be a number.")
+
+        return redirect(url_for("manage_books"))
+
+    try:
+
+        stock = int(stock_text)
+
+    except ValueError:
+
+        flash("Stock must be a whole number.")
+
+        return redirect(url_for("manage_books"))
+
+    if price < 0:
+
+        flash("Price cannot be negative.")
+
+        return redirect(url_for("manage_books"))
+
+    if stock < 0:
+
+        flash("Stock cannot be negative.")
+
+        return redirect(url_for("manage_books"))
 
     conn = get_db_connection()
 
@@ -219,10 +327,10 @@ def admin_edit(id):
 
     flash("Book updated!")
 
-    return redirect(url_for("admin"))
+    return redirect(url_for("manage_books"))
 
 
-# Delete an existing book from the database.
+# Delete an existing book.
 @app.route("/admin/delete/<int:id>", methods=["POST"])
 def admin_delete(id):
 
@@ -243,10 +351,10 @@ def admin_delete(id):
 
     flash("Book deleted!")
 
-    return redirect(url_for("admin"))
+    return redirect(url_for("manage_books"))
 
 
-# Log the admin out by removing the admin session.
+# Log the admin out.
 @app.route("/admin/logout")
 def admin_logout():
 
@@ -254,16 +362,87 @@ def admin_logout():
 
     return redirect(url_for("admin_login"))
 
-#register user
 
+# Display all customer orders for the admin.
+@app.route("/orders")
+def orders():
+
+    check = admin_required()
+
+    if check:
+        return check
+
+    conn = get_db_connection()
+
+    orders = conn.execute(
+        "SELECT * FROM orders ORDER BY id DESC"
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "orders.html",
+        orders=orders
+    )
+
+
+# Update an order status.
+@app.route("/admin/order-status/<int:id>", methods=["POST"])
+def update_order_status(id):
+
+    check = admin_required()
+
+    if check:
+        return check
+
+    status = request.form.get("status", "").strip()
+
+    allowed_statuses = [
+        "Placed",
+        "Packed",
+        "Delivered"
+    ]
+
+    if status not in allowed_statuses:
+
+        flash("Invalid order status.")
+
+        return redirect(url_for("orders"))
+
+    conn = get_db_connection()
+
+    conn.execute(
+        """
+        UPDATE orders
+        SET status = ?
+        WHERE id = ?
+        """,
+        (status, id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Order status updated.")
+
+    return redirect(url_for("orders"))
+
+
+# Register a new customer.
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
     if request.method == "POST":
 
-        name = request.form["name"]
-        email = request.form["email"]
-        password = request.form["password"]
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        if not name or not email or not password:
+
+            flash("Name, email and password are required.")
+
+            return redirect(url_for("register"))
 
         password_hash = generate_password_hash(password)
 
@@ -273,7 +452,8 @@ def register():
 
             conn.execute(
                 """
-                INSERT INTO users (name, email, password_hash)
+                INSERT INTO users
+                (name, email, password_hash)
                 VALUES (?, ?, ?)
                 """,
                 (name, email, password_hash)
@@ -298,13 +478,20 @@ def register():
     return render_template("register.html")
 
 
+# Login a customer.
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
     if request.method == "POST":
 
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        if not email or not password:
+
+            flash("Email and password are required.")
+
+            return redirect(url_for("login"))
 
         conn = get_db_connection()
 
@@ -336,6 +523,7 @@ def login():
     return render_template("login.html")
 
 
+# Log the customer out.
 @app.route("/logout")
 def logout():
 
@@ -346,121 +534,8 @@ def logout():
 
     return redirect(url_for("home"))
 
-# Add to Wishlist 
 
-@app.route("/wishlist/add/<int:id>", methods=["POST"])
-def add_to_wishlist(id):
-
-    if not session.get("user_id"):
-        return {
-            "status": "login_required"
-        }, 401
-
-    user_id = session.get("user_id")
-
-    conn = get_db_connection()
-
-    existing = conn.execute(
-        """
-        SELECT *
-        FROM wishlist
-        WHERE user_id = ? AND book_id = ?
-        """,
-        (user_id, id)
-    ).fetchone()
-
-    if existing:
-
-        conn.execute(
-            """
-            DELETE FROM wishlist
-            WHERE user_id = ? AND book_id = ?
-            """,
-            (user_id, id)
-        )
-
-        conn.commit()
-        conn.close()
-
-        return {
-            "status": "removed"
-        }
-
-    conn.execute(
-        """
-        INSERT INTO wishlist (user_id, book_id)
-        VALUES (?, ?)
-        """,
-        (user_id, id)
-    )
-
-    conn.commit()
-    conn.close()
-
-    return {
-        "status": "added"
-    }
-
-# remove from wishlist
-@app.route("/wishlist/remove/<int:id>", methods=["POST"])
-def remove_from_wishlist(id):
-
-    if not session.get("user_id"):
-        flash("Please login to manage your wishlist.")
-        return redirect(url_for("login"))
-
-    user_id = session.get("user_id")
-
-    conn = get_db_connection()
-
-    conn.execute(
-        """
-        DELETE FROM wishlist
-        WHERE user_id = ? AND book_id = ?
-        """,
-        (user_id, id)
-    )
-
-    conn.commit()
-    conn.close()
-
-    flash("Book removed from your wishlist.")
-
-    return redirect(url_for("wishlist"))
-
-# view wishlist
-
-@app.route("/wishlist")
-def wishlist():
-
-    if not session.get("user_id"):
-        flash("Please login to view your wishlist.")
-        return redirect(url_for("login"))
-
-    user_id = session.get("user_id")
-
-    conn = get_db_connection()
-
-    books = conn.execute(
-        """
-        SELECT books.*
-        FROM wishlist
-        JOIN books
-            ON wishlist.book_id = books.id
-        WHERE wishlist.user_id = ?
-        ORDER BY wishlist.id DESC
-        """,
-        (user_id,)
-    ).fetchall()
-
-    conn.close()
-
-    return render_template(
-        "wishlist.html",
-        books=books
-    )
-
-# Calculate the total number of books in the cart for the navbar.
+# Calculate the cart count for the navbar.
 @app.context_processor
 def cart_count():
 
@@ -469,6 +544,7 @@ def cart_count():
     count = 0
 
     for quantity in cart.values():
+
         count = count + quantity
 
     return {
@@ -476,54 +552,106 @@ def cart_count():
     }
 
 
-# Display books with category filtering, sorting, and pagination.
+# Display books with search, category filtering, sorting and pagination.
 @app.route("/")
 def home():
 
+    query = request.args.get("q", "").strip()
+
     category = request.args.get("category")
+
     sort = request.args.get("sort", "title")
-    page = int(request.args.get("page", 1))
+
+    try:
+
+        page = int(request.args.get("page", 1))
+
+    except ValueError:
+
+        page = 1
+
+    if page < 1:
+
+        page = 1
 
     per_page = 6
+
     offset = (page - 1) * per_page
 
     conn = get_db_connection()
 
     if sort == "price":
+
         order = "price"
+
     else:
+
         order = "title"
+
+    search_text = "%" + query + "%"
 
     if category and category != "All":
 
         books = conn.execute(
             f"""
-            SELECT * FROM books
+            SELECT *
+            FROM books
             WHERE category = ?
+            AND (title LIKE ? OR author LIKE ?)
             ORDER BY {order}
             LIMIT ? OFFSET ?
             """,
-            (category, per_page, offset)
+            (
+                category,
+                search_text,
+                search_text,
+                per_page,
+                offset
+            )
         ).fetchall()
 
         count = conn.execute(
-            "SELECT COUNT(*) FROM books WHERE category = ?",
-            (category,)
+            """
+            SELECT COUNT(*)
+            FROM books
+            WHERE category = ?
+            AND (title LIKE ? OR author LIKE ?)
+            """,
+            (
+                category,
+                search_text,
+                search_text
+            )
         ).fetchone()[0]
 
     else:
 
         books = conn.execute(
             f"""
-            SELECT * FROM books
+            SELECT *
+            FROM books
+            WHERE title LIKE ? OR author LIKE ?
             ORDER BY {order}
             LIMIT ? OFFSET ?
             """,
-            (per_page, offset)
+            (
+                search_text,
+                search_text,
+                per_page,
+                offset
+            )
         ).fetchall()
 
         count = conn.execute(
-            "SELECT COUNT(*) FROM books"
+            """
+            SELECT COUNT(*)
+            FROM books
+            WHERE title LIKE ? OR author LIKE ?
+            """,
+            (
+                search_text,
+                search_text
+            )
         ).fetchone()[0]
 
     wishlist_ids = []
@@ -540,6 +668,7 @@ def home():
         ).fetchall()
 
         for row in wishlist_rows:
+
             wishlist_ids.append(row["book_id"])
 
     conn.close()
@@ -564,11 +693,12 @@ def home():
         sort=sort,
         page=page,
         total_pages=total_pages,
-        wishlist_ids=wishlist_ids
+        wishlist_ids=wishlist_ids,
+        query=query
     )
 
 
-# Display the selected book along with its reviews and average rating.
+# Display one book and its reviews.
 @app.route("/book/<int:id>")
 def book_detail(id):
 
@@ -579,9 +709,16 @@ def book_detail(id):
         (id,)
     ).fetchone()
 
+    if not book:
+
+        conn.close()
+
+        return render_template("404.html"), 404
+
     reviews = conn.execute(
         """
-        SELECT * FROM reviews
+        SELECT *
+        FROM reviews
         WHERE book_id = ?
         ORDER BY id DESC
         """,
@@ -607,15 +744,48 @@ def book_detail(id):
     )
 
 
-# Save a customer's review and rating for a book.
+# Add a review for a book.
 @app.route("/book/<int:id>/review", methods=["POST"])
 def add_review(id):
 
-    name = request.form["name"]
-    rating = int(request.form["rating"])
-    comment = request.form["comment"]
+    name = request.form.get("name", "").strip()
+    rating_text = request.form.get("rating", "").strip()
+    comment = request.form.get("comment", "").strip()
+
+    if not name or not rating_text or not comment:
+
+        flash("Name, rating and comment are required.")
+
+        return redirect(url_for("book_detail", id=id))
+
+    try:
+
+        rating = int(rating_text)
+
+    except ValueError:
+
+        flash("Rating must be a number from 1 to 5.")
+
+        return redirect(url_for("book_detail", id=id))
+
+    if rating < 1 or rating > 5:
+
+        flash("Rating must be between 1 and 5.")
+
+        return redirect(url_for("book_detail", id=id))
 
     conn = get_db_connection()
+
+    book = conn.execute(
+        "SELECT id FROM books WHERE id = ?",
+        (id,)
+    ).fetchone()
+
+    if not book:
+
+        conn.close()
+
+        return render_template("404.html"), 404
 
     conn.execute(
         """
@@ -634,7 +804,7 @@ def add_review(id):
     return redirect(url_for("book_detail", id=id))
 
 
-# Add a selected book to the cart while checking its available stock.
+# Add a selected book to the cart.
 @app.route("/cart/add/<int:id>", methods=["POST"])
 def add_to_cart(id):
 
@@ -652,30 +822,67 @@ def add_to_cart(id):
     conn.close()
 
     if not book:
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+
+            return {
+                "status": "error",
+                "message": "Book not found!"
+            }, 404
+
         flash("Book not found!")
+
         return redirect(url_for("home"))
 
     if book["stock"] == 0:
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+
+            return {
+                "status": "error",
+                "message": "Out of stock!"
+            }, 400
+
         flash("Out of stock!")
+
         return redirect(url_for("book_detail", id=id))
 
     current_quantity = cart.get(book_id, 0)
 
     if current_quantity >= book["stock"]:
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+
+            return {
+                "status": "error",
+                "message": "No more copies available!",
+                "cart_count": sum(cart.values())
+            }, 400
+
         flash("No more copies available!")
+
     else:
+
         cart[book_id] = current_quantity + 1
 
         session["cart"] = cart
 
         session.modified = True
 
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+
+            return {
+                "status": "added",
+                "message": "Added to cart!",
+                "cart_count": sum(cart.values())
+            }
+
         flash("Added to cart!")
 
     return redirect(url_for("book_detail", id=id))
 
 
-# Display the cart items and calculate the total price.
+# Display the cart.
 @app.route("/cart")
 def cart():
 
@@ -707,6 +914,7 @@ def cart():
             })
 
     discount = 0
+
     coupon_code = session.get("coupon_code")
 
     if coupon_code:
@@ -729,6 +937,7 @@ def cart():
         else:
 
             session.pop("coupon_code", None)
+
             coupon_code = None
 
     final_total = total - discount
@@ -743,12 +952,98 @@ def cart():
         final_total=final_total,
         coupon_code=coupon_code
     )
-# coupon apply
 
+
+# Update a cart quantity.
+@app.route("/cart/update/<int:id>", methods=["POST"])
+def update_cart(id):
+
+    cart = session.get("cart", {})
+
+    quantity_text = request.form.get("quantity", "").strip()
+
+    if not quantity_text:
+
+        flash("Quantity is required.")
+
+        return redirect(url_for("cart"))
+
+    try:
+
+        quantity = int(quantity_text)
+
+    except ValueError:
+
+        flash("Quantity must be a number.")
+
+        return redirect(url_for("cart"))
+
+    if quantity < 0:
+
+        flash("Quantity cannot be negative.")
+
+        return redirect(url_for("cart"))
+
+    if quantity == 0:
+
+        cart.pop(str(id), None)
+
+    else:
+
+        conn = get_db_connection()
+
+        book = conn.execute(
+            "SELECT stock FROM books WHERE id = ?",
+            (id,)
+        ).fetchone()
+
+        conn.close()
+
+        if not book:
+
+            flash("Book not found.")
+
+            return redirect(url_for("cart"))
+
+        if quantity > book["stock"]:
+
+            flash(
+                f"Only {book['stock']} copies are available."
+            )
+
+            return redirect(url_for("cart"))
+
+        cart[str(id)] = quantity
+
+    session["cart"] = cart
+
+    session.modified = True
+
+    return redirect(url_for("cart"))
+
+
+# Remove a book from the cart.
+@app.route("/cart/remove/<int:id>", methods=["POST"])
+def remove_from_cart(id):
+
+    cart = session.get("cart", {})
+
+    book_id = str(id)
+
+    cart.pop(book_id, None)
+
+    session["cart"] = cart
+
+    session.modified = True
+
+    return redirect(url_for("cart"))
+
+
+# Apply a coupon.
 @app.route("/apply-coupon", methods=["POST"])
 def apply_coupon():
 
-    code = request.form["code"].strip().upper()
+    code = request.form.get("code", "").strip().upper()
 
     if not code:
 
@@ -797,8 +1092,8 @@ def apply_coupon():
 
     return redirect(url_for("cart"))
 
-# remove coupon
 
+# Remove the current coupon.
 @app.route("/remove-coupon", methods=["POST"])
 def remove_coupon():
 
@@ -808,174 +1103,108 @@ def remove_coupon():
 
     return redirect(url_for("cart"))
 
-# Update the quantity of a book already present in the cart.
-@app.route("/cart/update/<int:id>", methods=["POST"])
-def update_cart(id):
-
-    cart = session.get("cart", {})
-
-    quantity = int(request.form["quantity"])
-
-    book_id = str(id)
-
-    if quantity > 0:
-
-        cart[book_id] = quantity
-
-    else:
-
-        cart.pop(book_id, None)
-
-    session["cart"] = cart
-
-    session.modified = True
-
-    return redirect(url_for("cart"))
-
-
-# Remove a book completely from the cart.
-@app.route("/cart/remove/<int:id>", methods=["POST"])
-def remove_from_cart(id):
-
-    cart = session.get("cart", {})
-
-    book_id = str(id)
-
-    cart.pop(book_id, None)
-
-    session["cart"] = cart
-
-    session.modified = True
-
-    return redirect(url_for("cart"))
-
 
 # Find previous orders using the customer's phone number.
-@app.route("/order-history")
+@app.route("/order-history", methods=["GET", "POST"])
 def order_history():
 
-    if not session.get("user_id"):
-        flash("Please login to view your order history.")
-        return redirect(url_for("login"))
+    orders = []
 
-    user_id = session.get("user_id")
+    searched = False
 
-    conn = get_db_connection()
+    if request.method == "POST":
 
-    orders = conn.execute(
-        """
-        SELECT
-            orders.id,
-            orders.date,
-            orders.total,
-            books.title,
-            order_items.quantity
-        FROM orders
-        JOIN order_items
-            ON orders.id = order_items.order_id
-        JOIN books
-            ON order_items.book_id = books.id
-        WHERE orders.user_id = ?
-        GROUP BY
-            orders.id,
-            orders.date,
-            orders.total,
-            books.title,
-            order_items.quantity
-        ORDER BY orders.id DESC
-        """,
-        (user_id,)
-    ).fetchall()
+        phone = request.form.get("phone", "").strip()
 
-    conn.close()
+        if not phone:
+
+            flash("Phone number is required.")
+
+            return redirect(url_for("order_history"))
+
+        conn = get_db_connection()
+
+        orders = conn.execute(
+            """
+            SELECT
+                orders.id,
+                orders.date,
+                orders.total,
+                books.title,
+                order_items.quantity
+            FROM orders
+            JOIN order_items
+                ON orders.id = order_items.order_id
+            JOIN books
+                ON order_items.book_id = books.id
+            WHERE orders.phone = ?
+            GROUP BY
+                orders.id,
+                orders.date,
+                orders.total,
+                books.title,
+                order_items.quantity
+            ORDER BY orders.id DESC
+            """,
+            (phone,)
+        ).fetchall()
+
+        conn.close()
+
+        searched = True
 
     return render_template(
         "order_history.html",
-        orders=orders
+        orders=orders,
+        searched=searched
     )
 
-# Display all customer orders for the admin.
-@app.route("/orders")
-def orders():
 
-    check = admin_required()
-
-    if check:
-        return check
-
-    conn = get_db_connection()
-
-    orders = conn.execute(
-        "SELECT * FROM orders ORDER BY id DESC"
-    ).fetchall()
-
-    conn.close()
-
-    return render_template(
-        "orders.html",
-        orders=orders
-    )
-
-@app.route("/admin/order-status/<int:id>", methods=["POST"])
-def update_order_status(id):
-
-    admin_required()
-
-    status = request.form["status"]
-
-    allowed_statuses = [
-        "Placed",
-        "Packed",
-        "Delivered"
-    ]
-
-    if status not in allowed_statuses:
-
-        flash("Invalid order status.")
-
-        return redirect(url_for("orders"))
-
-    conn = get_db_connection()
-
-    conn.execute(
-        """
-        UPDATE orders
-        SET status = ?
-        WHERE id = ?
-        """,
-        (status, id)
-    )
-
-    conn.commit()
-    conn.close()
-
-    flash("Order status updated.")
-
-    return redirect(url_for("orders"))
-
-# Process checkout, create the order, reduce stock,empty the cart and coupan.
-
+# Process checkout.
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
 
     if not session.get("user_id"):
+
         flash("Please login before checkout.")
+
         return redirect(url_for("login"))
 
     if request.method == "GET":
+
         return render_template("checkout.html")
+
+    name = request.form.get("name", "").strip()
+    phone = request.form.get("phone", "").strip()
+    address = request.form.get("address", "").strip()
+
+    if not name or not phone or not address:
+
+        flash("Name, phone and address are required.")
+
+        return redirect(url_for("checkout"))
+
+    if not phone.isdigit() or len(phone) != 10:
+
+        flash("Phone number must be exactly 10 digits.")
+
+        return redirect(url_for("checkout"))
+
+    if phone[0] not in ["6", "7", "8", "9"]:
+
+        flash("Phone number must start with 6, 7, 8 or 9.")
+
+        return redirect(url_for("checkout"))
 
     cart = session.get("cart", {})
 
     if not cart:
+
         flash("Your cart is empty.")
+
         return redirect(url_for("cart"))
 
     user_id = session.get("user_id")
-
-    name = request.form["name"]
-    phone = request.form["phone"]
-    address = request.form["address"]
 
     conn = get_db_connection()
 
@@ -984,10 +1213,16 @@ def checkout():
         conn.execute("BEGIN IMMEDIATE")
 
         total = 0
+
         discount = 0
+
         books = []
 
         for book_id, quantity in cart.items():
+
+            if not isinstance(quantity, int) or quantity <= 0:
+
+                raise ValueError("Invalid cart quantity.")
 
             book = conn.execute(
                 """
@@ -995,21 +1230,25 @@ def checkout():
                 FROM books
                 WHERE id = ?
                 """,
-                (book_id,)
+                (int(book_id),)
             ).fetchone()
 
             if not book:
+
                 raise ValueError("Book not found.")
 
             if quantity > book["stock"]:
+
                 raise ValueError(
-                    f"Only {book['stock']} copies of {book['title']} are available."
+                    f"Only {book['stock']} copies of "
+                    f"{book['title']} are available."
                 )
 
             total = total + (book["price"] * quantity)
 
-            books.append((book, quantity))
-
+            books.append(
+                (book, int(book_id), quantity)
+            )
 
         coupon_code = session.get("coupon_code")
 
@@ -1033,12 +1272,14 @@ def checkout():
             else:
 
                 session.pop("coupon_code", None)
-                coupon_code = None
 
+                coupon_code = None
 
         final_total = total - discount
 
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        date = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
 
         cursor = conn.execute(
             """
@@ -1059,17 +1300,26 @@ def checkout():
 
         order_id = cursor.lastrowid
 
+        for book, book_id, quantity in books:
 
-        for book, quantity in books:
-
-            conn.execute(
+            cursor = conn.execute(
                 """
                 UPDATE books
                 SET stock = stock - ?
-                WHERE id = ?
+                WHERE id = ? AND stock >= ?
                 """,
-                (quantity, book["id"])
+                (
+                    quantity,
+                    book_id,
+                    quantity
+                )
             )
+
+            if cursor.rowcount == 0:
+
+                raise ValueError(
+                    "Sorry, just sold out."
+                )
 
             conn.execute(
                 """
@@ -1079,22 +1329,13 @@ def checkout():
                 """,
                 (
                     order_id,
-                    book["id"],
+                    book_id,
                     quantity,
                     book["price"]
                 )
             )
 
-
         conn.commit()
-
-        session["cart"] = {}
-        session.pop("coupon_code", None)
-
-        return redirect(
-            url_for("order_confirmation", id=order_id)
-        )
-
 
     except Exception as error:
 
@@ -1104,12 +1345,22 @@ def checkout():
 
         return redirect(url_for("cart"))
 
-
     finally:
 
         conn.close()
 
-# Display the completed order and the books included in that order.
+    session["cart"] = {}
+
+    session.pop("coupon_code", None)
+
+    session.modified = True
+
+    return redirect(
+        url_for("order_confirmation", id=order_id)
+    )
+
+
+# Display the completed order.
 @app.route("/order/<int:id>")
 def order_confirmation(id):
 
@@ -1120,14 +1371,21 @@ def order_confirmation(id):
         (id,)
     ).fetchone()
 
+    if not order:
+
+        conn.close()
+
+        return render_template("404.html"), 404
+
     items = conn.execute(
         """
-        SELECT books.title,
-               order_items.quantity,
-               order_items.price
+        SELECT
+            books.title,
+            order_items.quantity,
+            order_items.price
         FROM order_items
         JOIN books
-        ON order_items.book_id = books.id
+            ON order_items.book_id = books.id
         WHERE order_items.order_id = ?
         """,
         (id,)
@@ -1142,7 +1400,229 @@ def order_confirmation(id):
     )
 
 
-# Start the Flask development server when this file is run directly.
+# Add or remove a book from the wishlist.
+@app.route("/wishlist/add/<int:id>", methods=["POST"])
+def add_to_wishlist(id):
+
+    if not session.get("user_id"):
+
+        return {
+            "status": "login_required"
+        }, 401
+
+    user_id = session.get("user_id")
+
+    conn = get_db_connection()
+
+    book = conn.execute(
+        "SELECT id FROM books WHERE id = ?",
+        (id,)
+    ).fetchone()
+
+    if not book:
+
+        conn.close()
+
+        return {
+            "status": "error",
+            "message": "Book not found."
+        }, 404
+
+    existing = conn.execute(
+        """
+        SELECT *
+        FROM wishlist
+        WHERE user_id = ? AND book_id = ?
+        """,
+        (user_id, id)
+    ).fetchone()
+
+    if existing:
+
+        conn.execute(
+            """
+            DELETE FROM wishlist
+            WHERE user_id = ? AND book_id = ?
+            """,
+            (user_id, id)
+        )
+
+        conn.commit()
+        conn.close()
+
+        return {
+            "status": "removed"
+        }
+
+    conn.execute(
+        """
+        INSERT INTO wishlist
+        (user_id, book_id)
+        VALUES (?, ?)
+        """,
+        (user_id, id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "status": "added"
+    }
+
+
+# Display the user's wishlist.
+@app.route("/wishlist")
+def wishlist():
+
+    if not session.get("user_id"):
+
+        flash("Please login to view your wishlist.")
+
+        return redirect(url_for("login"))
+
+    user_id = session.get("user_id")
+
+    conn = get_db_connection()
+
+    books = conn.execute(
+        """
+        SELECT books.*
+        FROM wishlist
+        JOIN books
+            ON wishlist.book_id = books.id
+        WHERE wishlist.user_id = ?
+        ORDER BY wishlist.id DESC
+        """,
+        (user_id,)
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "wishlist.html",
+        books=books
+    )
+
+
+# Remove a book from the wishlist.
+@app.route("/wishlist/remove/<int:id>", methods=["POST"])
+def remove_from_wishlist(id):
+
+    if not session.get("user_id"):
+
+        flash("Please login to manage your wishlist.")
+
+        return redirect(url_for("login"))
+
+    user_id = session.get("user_id")
+
+    conn = get_db_connection()
+
+    conn.execute(
+        """
+        DELETE FROM wishlist
+        WHERE user_id = ? AND book_id = ?
+        """,
+        (user_id, id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Book removed from your wishlist.")
+
+    return redirect(url_for("wishlist"))
+
+
+# Return books as JSON for JavaScript fetch().
+@app.route("/api/books")
+def api_books():
+
+    query = request.args.get("q", "").strip()
+
+    category = request.args.get("category")
+
+    sort = request.args.get("sort", "title")
+
+    conn = get_db_connection()
+
+    if sort == "price":
+
+        order = "price"
+
+    else:
+
+        order = "title"
+
+    search_text = "%" + query + "%"
+
+    if category and category != "All":
+
+        books = conn.execute(
+            f"""
+            SELECT *
+            FROM books
+            WHERE category = ?
+            AND (title LIKE ? OR author LIKE ?)
+            ORDER BY {order}
+            """,
+            (
+                category,
+                search_text,
+                search_text
+            )
+        ).fetchall()
+
+    else:
+
+        books = conn.execute(
+            f"""
+            SELECT *
+            FROM books
+            WHERE title LIKE ? OR author LIKE ?
+            ORDER BY {order}
+            """,
+            (
+                search_text,
+                search_text
+            )
+        ).fetchall()
+
+    conn.close()
+
+    book_list = []
+
+    for book in books:
+
+        book_list.append({
+            "id": book["id"],
+            "title": book["title"],
+            "author": book["author"],
+            "category": book["category"],
+            "price": book["price"],
+            "stock": book["stock"],
+            "image": book["image"]
+        })
+
+    return jsonify(book_list)
+
+
+# Display a custom 404 page.
+@app.errorhandler(404)
+def page_not_found(error):
+
+    return render_template("404.html"), 404
+
+
+# Display a custom 500 page.
+@app.errorhandler(500)
+def server_error(error):
+
+    return render_template("500.html"), 500
+
+
+# Start the Flask development server.
 if __name__ == "__main__":
 
     app.run(debug=True)
