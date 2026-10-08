@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import csv
 from datetime import datetime
 
 from flask import (
@@ -166,6 +167,75 @@ def admin():
         category_orders=category_orders
     )
 
+
+# csv file rout
+
+@app.route("/admin/export")
+def export_orders():
+
+    check = admin_required()
+
+    if check:
+        return check
+
+    conn = get_db_connection()
+
+    orders = conn.execute(
+        """
+        SELECT
+            id,
+            name,
+            phone,
+            address,
+            total,
+            date,
+            status
+        FROM orders
+        ORDER BY id DESC
+        """
+    ).fetchall()
+
+    conn.close()
+
+    output = []
+
+    output.append([
+        "Order ID",
+        "Customer",
+        "Phone",
+        "Address",
+        "Total",
+        "Date",
+        "Status"
+    ])
+
+    for order in orders:
+
+        output.append([
+            order["id"],
+            order["name"],
+            order["phone"],
+            order["address"],
+            order["total"],
+            order["date"],
+            order["status"]
+        ])
+
+    from io import StringIO
+
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
+
+    writer.writerows(output)
+
+    response = app.response_class(
+        csv_file.getvalue(),
+        mimetype="text/csv"
+    )
+
+    response.headers["Content-Disposition"] = "attachment; filename=orders.csv"
+
+    return response
 
 # Add a new book from the admin panel.
 @app.route("/admin/add", methods=["POST"])
