@@ -4,166 +4,166 @@
 
 <section class="hero">
 
+    <h1>Find your next favourite book</h1>
 
-<h1>Find your next favourite book</h1>
-
-<p>
-    Fiction, technology, self-help and more, delivered to your door.
-</p>
-
+    <p>
+        Fiction, technology, self-help and more, delivered to your door.
+    </p>
 
 </section>
 
 <div class="search-box">
 
-
-<input
-    type="text"
-    id="searchBox"
-    placeholder="Search title or author..."
->
-
+    <input
+        type="text"
+        id="searchBox"
+        placeholder="Search title or author..."
+    >
 
 </div>
 
 <div class="category-filters">
 
+    {% for category in categories %}
 
-{% for category in categories %}
+        <a
+            href="/?category={{ category }}&sort={{ sort }}"
+            class="{% if selected_category == category or (not selected_category and category == 'All') %}active{% endif %}"
+        >
+            {{ category }}
+        </a>
 
-    <a
-        href="/?category={{ category }}&sort={{ sort }}"
-        class="{% if selected_category == category or (not selected_category and category == 'All') %}active{% endif %}"
-    >
-        {{ category }}
-    </a>
-
-{% endfor %}
-
+    {% endfor %}
 
 </div>
 
 <div class="sorting">
 
+    <a href="/?category={{ selected_category or 'All' }}&sort=title">
+        Sort by Title
+    </a>
 
-<a href="/?category={{ selected_category or 'All' }}&sort=title">
-    Sort by Title
-</a>
-
-<a href="/?category={{ selected_category or 'All' }}&sort=price">
-    Sort by Price
-</a>
-
+    <a href="/?category={{ selected_category or 'All' }}&sort=price">
+        Sort by Price
+    </a>
 
 </div>
 
 <div class="book-grid">
 
+    {% for book in books %}
 
-{% for book in books %}
+        <div class="book-card">
 
-    <div class="book-card">
+            <a href="{{ url_for('book_detail', id=book['id']) }}">
 
-        <a href="{{ url_for('book_detail', id=book['id']) }}">
+                <img
+                    src="{{ url_for('static', filename='images/' + book['image']) }}"
+                    alt="{{ book['title'] }}"
+                >
 
-            <img
-                src="{{ url_for('static', filename='images/' + book['image']) }}"
-                alt="{{ book['title'] }}"
-            >
+            </a>
 
-        </a>
+            <div class="book-card-content">
 
+                <span class="category-tag">
+                    {{ book["category"] }}
+                </span>
 
-        <div class="book-card-content">
+                <h2>
+                    {{ book["title"] }}
+                </h2>
 
-            <span class="category-tag">
-                {{ book["category"] }}
-            </span>
+                <p>
+                    {{ book["author"] }}
+                </p>
 
-            <h2>
-                {{ book["title"] }}
-            </h2>
-
-            <p>
-                {{ book["author"] }}
-            </p>
-
-
-            <div class="book-bottom">
-
-                <strong class="book-price">
-                    ₹{{ book["price"] }}
-                </strong>
-
-
-                {% if book["stock"] > 0 %}
-
-                    <form
-                        action="{{ url_for('add_to_cart', id=book['id']) }}"
-                        method="POST"
-                    >
-
-                        <button
-                            type="submit"
-                            class="add-button"
-                        >
-                            Add to cart
-                        </button>
-
-                    </form>
-
-                {% else %}
+                <form
+                    action="{{ url_for('add_to_wishlist', id=book['id']) }}"
+                    method="POST"
+                    class="wishlist-form"
+                >
 
                     <button
                         type="button"
-                        class="add-button"
-                        disabled
+                        class="wishlist-button {% if book['id'] in wishlist_ids %}wishlist-active{% endif %}"
+                        data-book-id="{{ book['id'] }}"
+                        title="Wishlist"
                     >
-                        Out of stock
+                        ♥
                     </button>
 
-                {% endif %}
+                </form>
+
+                <div class="book-bottom">
+
+                    <strong class="book-price">
+                        ₹{{ book["price"] }}
+                    </strong>
+
+                    {% if book["stock"] > 0 %}
+
+                        <form
+                            action="{{ url_for('add_to_cart', id=book['id']) }}"
+                            method="POST"
+                        >
+
+                            <button
+                                type="submit"
+                                class="add-button"
+                            >
+                                Add to cart
+                            </button>
+
+                        </form>
+
+                    {% else %}
+
+                        <button
+                            type="button"
+                            class="add-button"
+                            disabled
+                        >
+                            Out of stock
+                        </button>
+
+                    {% endif %}
+
+                </div>
 
             </div>
 
         </div>
 
-    </div>
-
-{% endfor %}
-
+    {% endfor %}
 
 </div>
 
 <div class="pagination">
 
+    {% if page > 1 %}
 
-{% if page > 1 %}
+        <a
+            href="/?category={{ selected_category or 'All' }}&sort={{ sort }}&page={{ page - 1 }}"
+        >
+            Previous
+        </a>
 
-    <a
-        href="/?category={{ selected_category or 'All' }}&sort={{ sort }}&page={{ page - 1 }}"
-    >
-        Previous
-    </a>
+    {% endif %}
 
-{% endif %}
+    <span>
+        Page {{ page }} of {{ total_pages }}
+    </span>
 
+    {% if page < total_pages %}
 
-<span>
-    Page {{ page }} of {{ total_pages }}
-</span>
+        <a
+            href="/?category={{ selected_category or 'All' }}&sort={{ sort }}&page={{ page + 1 }}"
+        >
+            Next
+        </a>
 
-
-{% if page < total_pages %}
-
-    <a
-        href="/?category={{ selected_category or 'All' }}&sort={{ sort }}&page={{ page + 1 }}"
-    >
-        Next
-    </a>
-
-{% endif %}
-
+    {% endif %}
 
 </div>
 

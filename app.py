@@ -254,6 +254,211 @@ def admin_logout():
 
     return redirect(url_for("admin_login"))
 
+#register user
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "POST":
+
+        name = request.form["name"]
+        email = request.form["email"]
+        password = request.form["password"]
+
+        password_hash = generate_password_hash(password)
+
+        conn = get_db_connection()
+
+        try:
+
+            conn.execute(
+                """
+                INSERT INTO users (name, email, password_hash)
+                VALUES (?, ?, ?)
+                """,
+                (name, email, password_hash)
+            )
+
+            conn.commit()
+
+        except sqlite3.IntegrityError:
+
+            conn.close()
+
+            flash("Email already registered.")
+
+            return redirect(url_for("register"))
+
+        conn.close()
+
+        flash("Registration successful. Please login.")
+
+        return redirect(url_for("login"))
+
+    return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+
+    if request.method == "POST":
+
+        email = request.form["email"]
+        password = request.form["password"]
+
+        conn = get_db_connection()
+
+        user = conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE email = ?
+            """,
+            (email,)
+        ).fetchone()
+
+        conn.close()
+
+        if user and check_password_hash(
+            user["password_hash"],
+            password
+        ):
+
+            session["user_id"] = user["id"]
+            session["user_name"] = user["name"]
+
+            flash("Login successful.")
+
+            return redirect(url_for("home"))
+
+        flash("Invalid email or password.")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+
+    session.pop("user_id", None)
+    session.pop("user_name", None)
+
+    flash("You have been logged out.")
+
+    return redirect(url_for("home"))
+
+# Add to Wishlist 
+
+@app.route("/wishlist/add/<int:id>", methods=["POST"])
+def add_to_wishlist(id):
+
+    if not session.get("user_id"):
+        return {
+            "status": "login_required"
+        }, 401
+
+    user_id = session.get("user_id")
+
+    conn = get_db_connection()
+
+    existing = conn.execute(
+        """
+        SELECT *
+        FROM wishlist
+        WHERE user_id = ? AND book_id = ?
+        """,
+        (user_id, id)
+    ).fetchone()
+
+    if existing:
+
+        conn.execute(
+            """
+            DELETE FROM wishlist
+            WHERE user_id = ? AND book_id = ?
+            """,
+            (user_id, id)
+        )
+
+        conn.commit()
+        conn.close()
+
+        return {
+            "status": "removed"
+        }
+
+    conn.execute(
+        """
+        INSERT INTO wishlist (user_id, book_id)
+        VALUES (?, ?)
+        """,
+        (user_id, id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "status": "added"
+    }
+
+# remove from wishlist
+@app.route("/wishlist/remove/<int:id>", methods=["POST"])
+def remove_from_wishlist(id):
+
+    if not session.get("user_id"):
+        flash("Please login to manage your wishlist.")
+        return redirect(url_for("login"))
+
+    user_id = session.get("user_id")
+
+    conn = get_db_connection()
+
+    conn.execute(
+        """
+        DELETE FROM wishlist
+        WHERE user_id = ? AND book_id = ?
+        """,
+        (user_id, id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Book removed from your wishlist.")
+
+    return redirect(url_for("wishlist"))
+
+# view wishlist
+
+@app.route("/wishlist")
+def wishlist():
+
+    if not session.get("user_id"):
+        flash("Please login to view your wishlist.")
+        return redirect(url_for("login"))
+
+    user_id = session.get("user_id")
+
+    conn = get_db_connection()
+
+    books = conn.execute(
+        """
+        SELECT books.*
+        FROM wishlist
+        JOIN books
+            ON wishlist.book_id = books.id
+        WHERE wishlist.user_id = ?
+        ORDER BY wishlist.id DESC
+        """,
+        (user_id,)
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "wishlist.html",
+        books=books
+    )
 
 # Calculate the total number of books in the cart for the navbar.
 @app.context_processor
@@ -321,6 +526,22 @@ def home():
             "SELECT COUNT(*) FROM books"
         ).fetchone()[0]
 
+    wishlist_ids = []
+
+    if session.get("user_id"):
+
+        wishlist_rows = conn.execute(
+            """
+            SELECT book_id
+            FROM wishlist
+            WHERE user_id = ?
+            """,
+            (session.get("user_id"),)
+        ).fetchall()
+
+        for row in wishlist_rows:
+            wishlist_ids.append(row["book_id"])
+
     conn.close()
 
     total_pages = (count + per_page - 1) // per_page
@@ -342,7 +563,8 @@ def home():
         selected_category=category,
         sort=sort,
         page=page,
-        total_pages=total_pages
+        total_pages=total_pages,
+        wishlist_ids=wishlist_ids
     )
 
 
@@ -484,14 +706,107 @@ def cart():
                 "subtotal": subtotal
             })
 
+    discount = 0
+    coupon_code = session.get("coupon_code")
+
+    if coupon_code:
+
+        coupon = conn.execute(
+            """
+            SELECT *
+            FROM coupons
+            WHERE code = ?
+            """,
+            (coupon_code,)
+        ).fetchone()
+
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        if coupon and coupon["active"] and coupon["expiry_date"] >= today:
+
+            discount = total * coupon["percent"] / 100
+
+        else:
+
+            session.pop("coupon_code", None)
+            coupon_code = None
+
+    final_total = total - discount
+
     conn.close()
 
     return render_template(
         "cart.html",
         items=items,
-        total=total
+        total=total,
+        discount=discount,
+        final_total=final_total,
+        coupon_code=coupon_code
+    )
+# coupon apply
+
+@app.route("/apply-coupon", methods=["POST"])
+def apply_coupon():
+
+    code = request.form["code"].strip().upper()
+
+    if not code:
+
+        flash("Please enter a coupon code.")
+
+        return redirect(url_for("cart"))
+
+    conn = get_db_connection()
+
+    coupon = conn.execute(
+        """
+        SELECT *
+        FROM coupons
+        WHERE code = ?
+        """,
+        (code,)
+    ).fetchone()
+
+    conn.close()
+
+    if not coupon:
+
+        flash("Invalid coupon code.")
+
+        return redirect(url_for("cart"))
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    if not coupon["active"]:
+
+        flash("This coupon is no longer active.")
+
+        return redirect(url_for("cart"))
+
+    if coupon["expiry_date"] < today:
+
+        flash("This coupon has expired.")
+
+        return redirect(url_for("cart"))
+
+    session["coupon_code"] = code
+
+    flash(
+        f"Coupon applied. You saved {coupon['percent']}%."
     )
 
+    return redirect(url_for("cart"))
+
+# remove coupon
+
+@app.route("/remove-coupon", methods=["POST"])
+def remove_coupon():
+
+    session.pop("coupon_code", None)
+
+    flash("Coupon removed.")
+
+    return redirect(url_for("cart"))
 
 # Update the quantity of a book already present in the cart.
 @app.route("/cart/update/<int:id>", methods=["POST"])
@@ -536,53 +851,48 @@ def remove_from_cart(id):
 
 
 # Find previous orders using the customer's phone number.
-@app.route("/order-history", methods=["GET", "POST"])
+@app.route("/order-history")
 def order_history():
 
-    orders = []
-    searched = False
+    if not session.get("user_id"):
+        flash("Please login to view your order history.")
+        return redirect(url_for("login"))
 
-    if request.method == "POST":
+    user_id = session.get("user_id")
 
-        phone = request.form["phone"]
+    conn = get_db_connection()
 
-        conn = get_db_connection()
+    orders = conn.execute(
+        """
+        SELECT
+            orders.id,
+            orders.date,
+            orders.total,
+            books.title,
+            order_items.quantity
+        FROM orders
+        JOIN order_items
+            ON orders.id = order_items.order_id
+        JOIN books
+            ON order_items.book_id = books.id
+        WHERE orders.user_id = ?
+        GROUP BY
+            orders.id,
+            orders.date,
+            orders.total,
+            books.title,
+            order_items.quantity
+        ORDER BY orders.id DESC
+        """,
+        (user_id,)
+    ).fetchall()
 
-        orders = conn.execute(
-            """
-            SELECT
-                orders.id,
-                orders.date,
-                orders.total,
-                books.title,
-                order_items.quantity
-            FROM orders
-            JOIN order_items
-                ON orders.id = order_items.order_id
-            JOIN books
-                ON order_items.book_id = books.id
-            WHERE orders.phone = ?
-            GROUP BY
-                orders.id,
-                orders.date,
-                orders.total,
-                books.title,
-                order_items.quantity
-            ORDER BY orders.id DESC
-            """,
-            (phone,)
-        ).fetchall()
-
-        conn.close()
-
-        searched = True
+    conn.close()
 
     return render_template(
         "order_history.html",
-        orders=orders,
-        searched=searched
+        orders=orders
     )
-
 
 # Display all customer orders for the admin.
 @app.route("/orders")
@@ -606,123 +916,198 @@ def orders():
         orders=orders
     )
 
+@app.route("/admin/order-status/<int:id>", methods=["POST"])
+def update_order_status(id):
 
-# Process checkout, create the order, reduce stock, and empty the cart.
+    admin_required()
+
+    status = request.form["status"]
+
+    allowed_statuses = [
+        "Placed",
+        "Packed",
+        "Delivered"
+    ]
+
+    if status not in allowed_statuses:
+
+        flash("Invalid order status.")
+
+        return redirect(url_for("orders"))
+
+    conn = get_db_connection()
+
+    conn.execute(
+        """
+        UPDATE orders
+        SET status = ?
+        WHERE id = ?
+        """,
+        (status, id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Order status updated.")
+
+    return redirect(url_for("orders"))
+
+# Process checkout, create the order, reduce stock,empty the cart and coupan.
+
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
 
-    if request.method == "POST":
+    if not session.get("user_id"):
+        flash("Please login before checkout.")
+        return redirect(url_for("login"))
 
-        name = request.form["name"]
-        phone = request.form["phone"]
-        address = request.form["address"]
+    if request.method == "GET":
+        return render_template("checkout.html")
 
-        cart = session.get("cart", {})
+    cart = session.get("cart", {})
 
-        if not cart:
-            flash("Your cart is empty!")
-            return redirect(url_for("cart"))
+    if not cart:
+        flash("Your cart is empty.")
+        return redirect(url_for("cart"))
 
-        conn = get_db_connection()
+    user_id = session.get("user_id")
 
-        try:
+    name = request.form["name"]
+    phone = request.form["phone"]
+    address = request.form["address"]
 
-            # Start one database transaction for the whole checkout.
-            conn.execute("BEGIN IMMEDIATE")
+    conn = get_db_connection()
 
-            total = 0
-            books = []
+    try:
 
-            # Get the current book information and calculate the total.
-            for book_id, quantity in cart.items():
+        conn.execute("BEGIN IMMEDIATE")
 
-                book = conn.execute(
-                    "SELECT * FROM books WHERE id = ?",
-                    (int(book_id),)
-                ).fetchone()
+        total = 0
+        discount = 0
+        books = []
 
-                if not book or quantity <= 0:
+        for book_id, quantity in cart.items():
 
-                    conn.rollback()
+            book = conn.execute(
+                """
+                SELECT *
+                FROM books
+                WHERE id = ?
+                """,
+                (book_id,)
+            ).fetchone()
 
-                    flash("Sorry, this order could not be placed.")
+            if not book:
+                raise ValueError("Book not found.")
 
-                    return redirect(url_for("cart"))
-
-                total = total + book["price"] * quantity
-
-                books.append(
-                    (book, int(book_id), quantity)
+            if quantity > book["stock"]:
+                raise ValueError(
+                    f"Only {book['stock']} copies of {book['title']} are available."
                 )
 
-            date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            total = total + (book["price"] * quantity)
 
-            # Create the order inside the same transaction.
-            cursor = conn.execute(
+            books.append((book, quantity))
+
+
+        coupon_code = session.get("coupon_code")
+
+        if coupon_code:
+
+            coupon = conn.execute(
                 """
-                INSERT INTO orders (name, phone, address, total, date)
-                VALUES (?, ?, ?, ?, ?)
+                SELECT *
+                FROM coupons
+                WHERE code = ?
                 """,
-                (name, phone, address, total, date)
+                (coupon_code,)
+            ).fetchone()
+
+            today = datetime.now().strftime("%Y-%m-%d")
+
+            if coupon and coupon["active"] and coupon["expiry_date"] >= today:
+
+                discount = total * coupon["percent"] / 100
+
+            else:
+
+                session.pop("coupon_code", None)
+                coupon_code = None
+
+
+        final_total = total - discount
+
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor = conn.execute(
+            """
+            INSERT INTO orders
+            (user_id, name, phone, address, total, date, discount)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                name,
+                phone,
+                address,
+                final_total,
+                date,
+                discount
+            )
+        )
+
+        order_id = cursor.lastrowid
+
+
+        for book, quantity in books:
+
+            conn.execute(
+                """
+                UPDATE books
+                SET stock = stock - ?
+                WHERE id = ?
+                """,
+                (quantity, book["id"])
             )
 
-            order_id = cursor.lastrowid
-
-            # Reduce stock and create the order items.
-            for book, book_id, quantity in books:
-
-                cursor = conn.execute(
-                    """
-                    UPDATE books
-                    SET stock = stock - ?
-                    WHERE id = ? AND stock >= ?
-                    """,
-                    (quantity, book_id, quantity)
+            conn.execute(
+                """
+                INSERT INTO order_items
+                (order_id, book_id, quantity, price)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    order_id,
+                    book["id"],
+                    quantity,
+                    book["price"]
                 )
+            )
 
-                # rowcount tells us how many database rows were changed.
-                if cursor.rowcount == 0:
 
-                    conn.rollback()
-
-                    flash("Sorry, just sold out.")
-
-                    return redirect(url_for("cart"))
-
-                conn.execute(
-                    """
-                    INSERT INTO order_items
-                    (order_id, book_id, quantity, price)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (order_id, book_id, quantity, book["price"])
-                )
-
-            # Save the complete checkout only after everything succeeds.
-            conn.commit()
-
-        except Exception:
-
-            # Undo all database changes if any error occurs.
-            conn.rollback()
-
-            flash("Order could not be placed. Please try again.")
-
-            return redirect(url_for("cart"))
-
-        finally:
-
-            # Always close the database connection.
-            conn.close()
+        conn.commit()
 
         session["cart"] = {}
+        session.pop("coupon_code", None)
 
-        session.modified = True
+        return redirect(
+            url_for("order_confirmation", id=order_id)
+        )
 
-        return redirect(url_for("order_confirmation", id=order_id))
 
-    return render_template("checkout.html")
+    except Exception as error:
 
+        conn.rollback()
+
+        flash(str(error))
+
+        return redirect(url_for("cart"))
+
+
+    finally:
+
+        conn.close()
 
 # Display the completed order and the books included in that order.
 @app.route("/order/<int:id>")

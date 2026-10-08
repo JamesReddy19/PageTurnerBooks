@@ -33,14 +33,34 @@
     </div>
 
     <div class="order-total">
+
         <strong>Total</strong>
-        <strong>₹{{ order["total"] }}</strong>
+
+        <strong>
+            ₹{{ order["total"] }}
+        </strong>
+
     </div>
 
     <p class="delivery-address">
+
         <strong>Delivering to:</strong>
+
         {{ order["address"] }}
+
     </p>
+
+
+    <div class="order-status">
+
+        <strong>Status:</strong>
+
+        <span>
+            {{ order["status"] }}
+        </span>
+
+    </div>
+
 
     <a href="/" class="add-button">
         Continue shopping

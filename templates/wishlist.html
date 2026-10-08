@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="order-history">
+
+    <div class="history-card">
+
+        <h1>My Wishlist</h1>
+
+        <p>
+            Books you have saved for later.
+        </p>
+
+    </div>
+
+    {% if books %}
+
+        <div class="book-grid">
+
+            {% for book in books %}
+
+                <div class="book-card">
+
+                    <a href="{{ url_for('book_detail', id=book['id']) }}">
+
+                        <img
+                            src="{{ url_for('static', filename='images/' + book['image']) }}"
+                            alt="{{ book['title'] }}"
+                        >
+
+                    </a>
+
+                    <div class="book-card-content">
+
+                        <span class="category-tag">
+                            {{ book["category"] }}
+                        </span>
+
+                        <h2>
+                            {{ book["title"] }}
+                        </h2>
+
+                        <p>
+                            {{ book["author"] }}
+                        </p>
+
+                        <strong class="book-price">
+                            ₹{{ book["price"] }}
+                        </strong>
+
+                        <div class="wishlist-actions">
+
+                            {% if book["stock"] > 0 %}
+
+                                <form
+                                    action="{{ url_for('add_to_cart', id=book['id']) }}"
+                                    method="POST"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="add-button"
+                                    >
+                                        Add to cart
+                                    </button>
+
+                                </form>
+
+                            {% else %}
+
+                                <button
+                                    type="button"
+                                    class="add-button"
+                                    disabled
+                                >
+                                    Out of stock
+                                </button>
+
+                            {% endif %}
+
+                            <form
+                                action="{{ url_for('remove_from_wishlist', id=book['id']) }}"
+                                method="POST"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="remove-wishlist-button"
+                                >
+                                    Remove
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="history-card">
+
+            <p>
+                Your wishlist is empty.
+            </p>
+
+            <a href="/">
+                Start Shopping
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

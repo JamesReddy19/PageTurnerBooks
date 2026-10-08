@@ -1,4 +1,3 @@
-//javascript
 // Check that the phone number has exactly 10 digits
 function validatePhone() {
 
@@ -62,3 +61,29 @@ if (searchBox) {
     });
 }
 
+
+// Add or remove a book from the wishlist
+let wishlistButtons = document.querySelectorAll(".wishlist-button");
+
+for (let button of wishlistButtons) {
+
+    button.addEventListener("click", async function() {
+
+        let bookId = button.dataset.bookId;
+
+        let response = await fetch("/wishlist/add/" + bookId, {
+            method: "POST"
+        });
+
+        let result = await response.json();
+
+        if (result.status === "added") {
+
+            button.classList.add("wishlist-active");
+
+        } else {
+
+            button.classList.remove("wishlist-active");
+        }
+    });
+}

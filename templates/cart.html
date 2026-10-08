@@ -18,7 +18,6 @@
             <th></th>
         </tr>
 
-
         {% for item in items %}
 
         <tr>
@@ -49,11 +48,9 @@
 
             </td>
 
-
             <td>
                 ₹{{ item["book"]["price"] }}
             </td>
-
 
             <td>
 
@@ -77,11 +74,9 @@
 
             </td>
 
-
             <td>
                 ₹{{ item["subtotal"] }}
             </td>
-
 
             <td>
 
@@ -105,22 +100,84 @@
 
         {% endfor %}
 
-
-        <tr class="cart-total">
-
-            <td colspan="3">
-                <strong>Total</strong>
-            </td>
-
-            <td>
-                <strong>₹{{ total }}</strong>
-            </td>
-
-            <td></td>
-
-        </tr>
-
     </table>
+
+
+    <!-- Coupon section -->
+
+    <div class="coupon-box">
+
+        <h3>Have a coupon?</h3>
+
+        <form
+            action="{{ url_for('apply_coupon') }}"
+            method="POST"
+        >
+
+            <input
+                type="text"
+                name="code"
+                placeholder="Enter coupon code"
+                value="{{ coupon_code or '' }}"
+            >
+
+            <button type="submit">
+                Apply
+            </button>
+
+        </form>
+
+
+        {% if coupon_code %}
+
+        <p>
+            Applied coupon:
+            <strong>{{ coupon_code }}</strong>
+        </p>
+
+        <form
+            action="{{ url_for('remove_coupon') }}"
+            method="POST"
+        >
+
+            <button type="submit">
+                Remove Coupon
+            </button>
+
+        </form>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- Cart total -->
+
+    <div class="cart-summary">
+
+        <p>
+            <strong>Subtotal:</strong>
+            ₹{{ total }}
+        </p>
+
+        {% if discount > 0 %}
+
+        <p>
+            <strong>Discount:</strong>
+            -₹{{ discount }}
+        </p>
+
+        {% endif %}
+
+        <p class="cart-total">
+
+            <strong>
+                Total: ₹{{ final_total }}
+            </strong>
+
+        </p>
+
+    </div>
 
 
     <div class="cart-actions">

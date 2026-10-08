@@ -6,39 +6,16 @@
 
     <div class="history-card">
 
-        <h1>Find My Orders</h1>
+        <h1>My Order History</h1>
 
-        <form
-            action="{{ url_for('order_history') }}"
-            method="POST"
-        >
-
-            <label for="phone">
-                Phone Number
-            </label>
-
-            <input
-                type="text"
-                id="phone"
-                name="phone"
-                required
-            >
-
-            <button
-                type="submit"
-                class="add-button"
-            >
-                Find Orders
-            </button>
-
-        </form>
+        <p>
+            Here you can view all the orders you have placed.
+        </p>
 
     </div>
 
 
     {% if orders %}
-
-        <h2>Your Orders</h2>
 
         {% for order in orders %}
 
@@ -78,14 +55,17 @@
 
         {% endfor %}
 
-
-    {% elif searched %}
+    {% else %}
 
         <div class="history-card">
 
             <p>
-                No orders found for this phone number.
+                You have not placed any orders yet.
             </p>
+
+            <a href="/">
+                Start Shopping
+            </a>
 
         </div>
 
@@ -94,3 +74,4 @@
 </div>
 
 {% endblock %}
+
