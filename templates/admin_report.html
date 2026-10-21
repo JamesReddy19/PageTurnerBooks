@@ -1,83 +1,68 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
+{% block title %}Reports · PageTurner Books
+{% endblock %}
 {% block content %}
+<h1>Sales reports</h1>
+<form method="get" class="inline-form panel">
+<label>From <input type="date" name="start" value="{{ start }}" required>
+</label>
+<label>To <input type="date" name="end" value="{{ end }}" required>
+</label>
+<button>Run report</button>
+<a class="button secondary" href="{{ url_for('admin.reports_csv', start=start, end=end) }}">Download CSV</a>
+</form>
+<section class="stats-grid">
+<article class="stat-card">
+<span>Orders</span>
+<strong>{{ summary.order_count }}</strong>
+</article>
+<article class="stat-card">
+<span>Revenue</span>
+<strong>{{ money(summary.revenue) }}</strong>
+</article>
+<article class="stat-card">
+<span>Average order value</span>
+<strong>{{ money(summary.average) }}</strong>
+</article>
+<article class="stat-card">
+<span>Approved returns</span>
+<strong>{{ returns_count }}</strong>
+</article>
+</section>
+<section class="panel">
+<h2>Best category</h2>
+<p>
+{% if best_category %}{{ best_category.name }} — {{ best_category.sold }} copies{% else %}
+No sales in this date range.
+{% endif %}
+</p>
+<h2>Daily totals</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Orders</th>
+<th>Revenue</th>
+</tr>
+</thead>
+<tbody>
+{% for row in daily %}
+<tr>
+<td>{{ row.day }}</td>
+<td>{{ row.orders }}</td>
+<td>{{ money(row.revenue) }}</td>
+</tr>
+{% else %}
 
-<h1>Admin Report</h1>
+<tr>
+<td colspan="3">No data.</td>
+</tr>
 
-<h2>Summary</h2>
-
-<div>
-
-    <p>
-        Total Orders:
-        {{ summary["total_orders"] }}
-    </p>
-
-    <p>
-        Total Revenue:
-        ₹{{ summary["total_revenue"] or 0 }}
-    </p>
-
+{% endfor %}
+</tbody>
+</table>
 </div>
-
-<h2>Best-Selling Books</h2>
-
-{% if best_selling %}
-
-    {% for book in best_selling %}
-
-        <div>
-
-            <p>
-                <strong>{{ book["title"] }}</strong>
-            </p>
-
-            <p>
-                Sold: {{ book["total_sold"] }}
-            </p>
-
-        </div>
-
-        <hr>
-
-    {% endfor %}
-
-{% else %}
-
-    <p>No sales yet.</p>
-
-{% endif %}
-
-<h2>Orders Per Category</h2>
-
-{% if category_orders %}
-
-    {% for category in category_orders %}
-
-        <div>
-
-            <p>
-                <strong>{{ category["category"] }}</strong>
-            </p>
-
-            <p>
-                Orders: {{ category["order_count"] }}
-            </p>
-
-        </div>
-
-        <hr>
-
-    {% endfor %}
-
-{% else %}
-
-    <p>No category data yet.</p>
-
-{% endif %}
-
-<a href="{{ url_for('admin') }}">
-    Back to Admin
-</a>
+</section>
 
 {% endblock %}

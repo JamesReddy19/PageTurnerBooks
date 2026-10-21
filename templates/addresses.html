@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Saved addresses · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Saved addresses</h1>
+<div class="two-column">
+<section class="panel">
+<h2>Add an address</h2>
+<form method="post" class="stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Label<input name="label" value="Home" required maxlength="40">
+</label>
+<label>Address<input name="line1" required maxlength="250">
+</label>
+<label>City<input name="city" required maxlength="80">
+</label>
+<label>6-digit pincode<input name="pincode" pattern="[0-9]{6}" maxlength="6" required>
+</label>
+<label class="checkbox-label">
+<input type="checkbox" name="is_default"> Make default</label>
+<button>Save address</button>
+</form>
+</section>
+<section class="panel">
+<h2>Your addresses</h2>
+{% for address in addresses %}
+<article class="address-card">
+<strong>{{ address.label }}{% if address.is_default %} · Default
+{% endif %}
+</strong>
+<p>{{ address.line1 }}, {{ address.city }} — {{ address.pincode }}</p>
+<details>
+<summary>Edit address</summary>
+<form method="post" action="{{ url_for('auth.edit_address', address_id=address.id) }}" class="stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Label<input name="label" value="{{ address.label }}" required maxlength="40">
+</label>
+<label>Address<input name="line1" value="{{ address.line1 }}" required maxlength="250">
+</label>
+<label>City<input name="city" value="{{ address.city }}" required maxlength="80">
+</label>
+<label>6-digit pincode<input name="pincode" value="{{ address.pincode }}" pattern="[0-9]{6}" maxlength="6" required>
+</label>
+<label class="checkbox-label">
+<input type="checkbox" name="is_default" {% if address.is_default %}checked
+{% endif %}> Make default</label>
+<button>Save changes</button>
+</form>
+</details>
+<div class="card-actions">
+{% if not address.is_default %}
+<form method="post" action="{{ url_for('auth.default_address', address_id=address.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="secondary">Make default</button>
+</form>
+
+{% endif %}
+<form method="post" action="{{ url_for('auth.delete_address', address_id=address.id) }}" data-confirm="Delete this address?">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="danger">Delete</button>
+</form>
+</div>
+</article>
+{% else %}
+
+<p>No saved addresses yet.</p>
+
+{% endfor %}
+</section>
+</div>
+
+{% endblock %}

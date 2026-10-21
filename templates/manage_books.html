@@ -1,179 +1,84 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
+{% block title %}Manage books · PageTurner Books
+{% endblock %}
 {% block content %}
-
-<div class="admin-page">
-
-    <div class="admin-header">
-
-        <div>
-            <h1>Manage Books</h1>
-            <p>Add, update or remove books from the store.</p>
-        </div>
-
-        <a href="{{ url_for('admin') }}" class="admin-logout">
-            Back to Dashboard
-        </a>
-
-    </div>
-
-
-    <div class="admin-section">
-
-        <h2>Add New Book</h2>
-
-        <form action="{{ url_for('admin_add') }}" method="POST">
-
-            <input
-                type="text"
-                name="title"
-                placeholder="Title"
-                required
-            >
-
-            <input
-                type="text"
-                name="author"
-                placeholder="Author"
-                required
-            >
-
-            <input
-                type="text"
-                name="category"
-                placeholder="Category"
-                required
-            >
-
-            <input
-                type="number"
-                name="price"
-                placeholder="Price"
-                required
-            >
-
-            <input
-                type="text"
-                name="description"
-                placeholder="Description"
-                required
-            >
-
-            <input
-                type="number"
-                name="stock"
-                placeholder="Stock"
-                required
-            >
-
-            <input
-                type="text"
-                name="color"
-                placeholder="Color"
-                required
-            >
-
-            <input
-                type="text"
-                name="image"
-                placeholder="Image filename"
-                required
-            >
-
-            <button type="submit" class="add-button">
-                Add Book
-            </button>
-
-        </form>
-
-    </div>
-
-
-    <div class="admin-section">
-
-        <h2>Existing Books</h2>
-
-        {% for book in books %}
-
-            <div class="admin-book">
-
-                <div>
-
-                    <h3>{{ book["title"] }}</h3>
-
-                    <p>
-                        {{ book["author"] }}
-                    </p>
-
-                    <p>
-                        ₹{{ book["price"] }}
-                        · Stock: {{ book["stock"] }}
-                    </p>
-
-                </div>
-
-
-                <div class="admin-book-actions">
-
-                    <form
-                        action="{{ url_for('admin_edit', id=book['id']) }}"
-                        method="POST"
-                    >
-
-                        <input
-                            type="text"
-                            name="title"
-                            value="{{ book['title'] }}"
-                            required
-                        >
-
-                        <input
-                            type="text"
-                            name="author"
-                            value="{{ book['author'] }}"
-                            required
-                        >
-
-                        <input
-                            type="number"
-                            name="price"
-                            value="{{ book['price'] }}"
-                            required
-                        >
-
-                        <input
-                            type="number"
-                            name="stock"
-                            value="{{ book['stock'] }}"
-                            required
-                        >
-
-                        <button type="submit" class="add-button">
-                            Update
-                        </button>
-
-                    </form>
-
-
-                    <form
-                        action="{{ url_for('admin_delete', id=book['id']) }}"
-                        method="POST"
-                    >
-
-                        <button type="submit" class="delete-button">
-                            Delete
-                        </button>
-
-                    </form>
-
-                </div>
-
-            </div>
-
-        {% endfor %}
-
-    </div>
-
+<h1>Manage books</h1>
+<section class="panel">
+<h2>Add a book</h2>
+<form method="post" action="{{ url_for('admin.add_book') }}" enctype="multipart/form-data" class="form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Title<input name="title" required maxlength="200">
+</label>
+<label>Author<input name="author" required maxlength="150">
+</label>
+<label>Categories (comma-separated)<input name="category" required maxlength="80">
+</label>
+<label>Price in rupees<input type="number" name="price" min="0" step="0.01" required>
+</label>
+<label>Stock<input type="number" name="stock" min="0" max="100000" value="10" required>
+</label>
+<label>Cover colour<input type="color" name="color" value="#e8f1ef">
+</label>
+<label class="full-width">Tags, separated by commas<input name="tags" placeholder="fiction, classic, learning">
+</label>
+<label class="full-width">Description<textarea name="description" maxlength="5000">
+</textarea>
+</label>
+<label class="full-width">Cover image (JPG, PNG or WEBP; maximum 1 MB)<input type="file" name="image_file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+</label>
+<div class="full-width">
+<button>Add book</button>
 </div>
+</form>
+</section>
+<section class="panel">
+<h2>Import books from CSV</h2>
+<p class="muted">Required columns: title, author, category, price, stock. Optional: description.</p>
+<form method="post" action="{{ url_for('admin.import_books_csv') }}" enctype="multipart/form-data" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<input type="file" name="file" accept=".csv" required>
+<button>Import CSV</button>
+</form>
+</section>
+<section class="panel">
+<h2>Current books</h2>
+{% for book in books %}
+<details class="edit-book">
+<summary>{{ book.title }} — {{ book.author }} ({{ money(book.price_paise) }}, stock {{ book.stock }})</summary>
+<form method="post" action="{{ url_for('admin.edit_book', book_id=book.id) }}" enctype="multipart/form-data" class="form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Title<input name="title" value="{{ book.title }}" required>
+</label>
+<label>Author<input name="author" value="{{ book.author }}" required>
+</label>
+<label>Categories (comma-separated)<input name="category" value="{{ book.category }}" required>
+</label>
+<label>Price in rupees<input type="number" name="price" value="{{ '%d.%02d'|format(book.price_paise // 100, book.price_paise % 100) }}" min="0" step="0.01" required>
+</label>
+<label>Stock<input type="number" name="stock" value="{{ book.stock }}" min="0" required>
+</label>
+<label>Cover colour<input type="color" name="color" value="{{ book.color }}">
+</label>
+<label class="full-width">Tags<input name="tags" value="{{ book.tags_text or '' }}" placeholder="comma separated tags">
+</label>
+<label class="full-width">Description<textarea name="description">{{ book.description }}</textarea>
+</label>
+<label class="full-width">Replace cover image<input type="file" name="image_file" accept=".jpg,.jpeg,.png,.webp">
+</label>
+<div class="full-width">
+<button>Save changes</button>
+</div>
+</form>
+<form method="post" action="{{ url_for('admin.delete_book', book_id=book.id) }}" data-confirm="Delete {{ book.title }}?">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="danger">Delete book</button>
+</form>
+</details>
+{% else %}
+
+<p>No books available.</p>
+
+{% endfor %}
+</section>
 
 {% endblock %}

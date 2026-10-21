@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Contact us · PageTurner Books
+{% endblock %}
+{% block content %}
+<section class="auth-card">
+<h1>Contact PageTurner Books</h1>
+<p>Send a message to the store team.</p>
+<form method="post" class="stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Name<input name="name" maxlength="100" required>
+</label>
+<label>Email<input type="email" name="email" maxlength="200" required>
+</label>
+<label>Subject<input name="subject" maxlength="150" required>
+</label>
+<label>Message<textarea name="message" maxlength="5000" required>
+</textarea>
+</label>
+<button>Send message</button>
+</form>
+</section>
+
+{% endblock %}

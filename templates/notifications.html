@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Notifications · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Notifications</h1>
+{% for item in notifications %}
+<article class="panel notification {% if not item.is_read %}unread
+{% endif %}">
+<p>{{ item.message }}</p>
+<small class="muted">{{ item.created_at }}</small>
+<div class="card-actions">
+<a class="button secondary" href="{{ item.link }}">Open</a>
+{% if not item.is_read %}
+<form method="post" action="{{ url_for('mark_notification_read', notification_id=item.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button>Mark as read</button>
+</form>
+
+{% endif %}
+</div>
+</article>
+{% else %}
+
+<p>You have no notifications.</p>
+
+{% endfor %}
+{% endblock %}

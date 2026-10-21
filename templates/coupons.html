@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Coupons · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Coupon management</h1>
+<section class="panel">
+<h2>Create coupon</h2>
+<form method="post" action="{{ url_for('admin.add_coupon') }}" class="form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Code<input name="code" required maxlength="40">
+</label>
+<label>Discount percent<input type="number" name="percent" min="1" max="100" required>
+</label>
+<label>Expiry date<input type="date" name="expiry_date" required>
+</label>
+<label>Minimum order (₹)<input type="number" name="min_order" min="0" step="0.01" value="0">
+</label>
+<label>Maximum discount (₹)<input type="number" name="max_discount" min="0" step="0.01">
+</label>
+<label>Total uses limit (optional)<input type="number" name="usage_limit" min="1">
+</label>
+<label>Eligible category (optional)<select name="category_id">
+<option value="">All categories</option>
+{% for category in categories %}
+<option value="{{ category.id }}">{{ category.name }}</option>
+
+{% endfor %}
+</select>
+</label>
+<div>
+<button>Create coupon</button>
+</div>
+</form>
+</section>
+<section class="panel">
+<h2>Existing coupons</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Discount</th>
+<th>Expiry</th>
+<th>Category</th>
+<th>Active</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>
+{% for coupon in coupons %}
+<tr>
+<td>{{ coupon.code }}</td>
+<td>{{ coupon.percent }}%</td>
+<td>{{ coupon.expiry_date }}</td>
+<td>{{ coupon.category_name or 'All' }}</td>
+<td>{{ 'Yes' if coupon.active else 'No' }}</td>
+<td>
+<form method="post" action="{{ url_for('admin.toggle_coupon', coupon_id=coupon.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="secondary">{{ 'Deactivate' if coupon.active else 'Activate' }}</button>
+</form>
+<form method="post" action="{{ url_for('admin.delete_coupon', coupon_id=coupon.id) }}" data-confirm="Delete this coupon?">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="danger">Delete</button>
+</form>
+</td>
+</tr>
+{% else %}
+
+<tr>
+<td colspan="6">No coupons yet.</td>
+</tr>
+
+{% endfor %}
+</tbody>
+</table>
+</div>
+</section>
+
+{% endblock %}

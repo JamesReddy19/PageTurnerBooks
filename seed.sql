@@ -1,50 +1,15 @@
-INSERT INTO books
-(title, author, category, price, description, stock, color, image)
-VALUES
-('Steve Jobs', 'Walter Isaacson', 'Biography', 599,
- 'The story of Steve Jobs, his life, work and journey at Apple.',
- 10, '#4F6D7A', ''),
-
-('Wings of Fire', 'Dr. A.P.J. Abdul Kalam', 'Biography', 399,
- 'The inspiring life story and journey of Dr. A.P.J. Abdul Kalam.',
- 10, '#6B705C', ''),
-
-('The Pearl', 'John Steinbeck', 'Fiction', 299,
- 'A short story about a pearl, hope, ambition and the consequences of greed.',
- 10, '#9A6A4F', ''),
-
-('The Blue Umbrella', 'Ruskin Bond', 'Fiction', 199,
- 'A simple and charming story set in the hills of India.',
- 10, '#5C7AEA', ''),
-
-('Wild History', 'Mahesh Rangarajan', 'History', 549,
- 'A look at the relationship between wildlife, people and history in India.',
- 10, '#7A6855', ''),
-
-('Hitler', 'Ian Kershaw', 'History', 699,
- 'A historical study of Adolf Hitler and his role in twentieth-century history.',
- 10, '#555555', ''),
-
-('Cosmos', 'Carl Sagan', 'Science', 499,
- 'An exploration of the universe, science and humanity.',
- 10, '#536DFE', ''),
-
-('Chaos', 'James Gleick', 'Science', 599,
- 'An introduction to chaos theory and the science of complex systems.',
- 10, '#7B5EA7', ''),
-
-('Atomic Habits', 'James Clear', 'Self-Help', 499,
- 'A practical guide to building good habits and changing unwanted ones.',
- 10, '#4C8C74', ''),
-
-('Blink', 'Malcolm Gladwell', 'Self-Help', 449,
- 'An exploration of quick decisions, intuition and how people think.',
- 10, '#C07A4A', ''),
-
-('Zero to One', 'Peter Thiel', 'Technology', 399,
- 'Ideas about innovation, startups and creating something new.',
- 10, '#3F7C85', ''),
-
-('Life 3.0', 'Max Tegmark', 'Technology', 649,
- 'An exploration of artificial intelligence and its possible impact on the future.',
- 10, '#6A5ACD', '');
+-- Fresh installs receive these books from pageturner/__init__.py.
+-- This file is retained as the human-readable seed list for the project.
+INSERT OR IGNORE INTO books(title,author,category,price_paise,description,stock,color) VALUES
+('Steve Jobs','Walter Isaacson','Biography',59900,'The life and work of Apple co-founder Steve Jobs.',10,'#e7e9f7'),
+('Wings of Fire','A. P. J. Abdul Kalam','Biography',39900,'An inspiring autobiography about learning and perseverance.',10,'#f7e7cf'),
+('The Pearl','John Steinbeck','Fiction',29900,'A classic story about hope, wealth and human nature.',10,'#e3f1e7'),
+('The Blue Umbrella','Ruskin Bond','Fiction',19900,'A gentle story set in the hills of India.',10,'#dfeef9'),
+('Wild History','Mahesh Rangarajan','History',54900,'A look at people, landscapes and the past.',10,'#f4e6dd'),
+('Hitler','Ian Kershaw','History',69900,'A historical biography of Adolf Hitler.',10,'#e8e8e8'),
+('Cosmos','Carl Sagan','Science',49900,'A journey through the universe and scientific discovery.',10,'#e5e8fa'),
+('Chaos','James Gleick','Science',59900,'An introduction to chaos theory and complex systems.',10,'#e1f2f1'),
+('Atomic Habits','James Clear','Self-Help',49900,'Small habits that can lead to meaningful change.',10,'#f7ead7'),
+('Blink','Malcolm Gladwell','Self-Help',44900,'How rapid judgments shape our decisions.',10,'#f1e5f2'),
+('Zero to One','Peter Thiel','Technology',39900,'Notes on startups and creating something new.',10,'#e4eef0'),
+('Life 3.0','Max Tegmark','Technology',64900,'Exploring artificial intelligence and the future of life.',10,'#e9e7fa');

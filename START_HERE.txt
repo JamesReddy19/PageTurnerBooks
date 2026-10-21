@@ -1,0 +1,30 @@
+PAGETURNER BOOKS — UPDATE
+
+
+1. Stop the old Flask server (Ctrl+C).
+2. Keep database.db and database_backup.db. Do not delete them.
+3. C:\Users\Administrator\Desktop\PageTurnerBooks - Copy
+   Choose to replace matching CODE/TEMPLATE/CSS files. Do not replace or delete database files.
+4. Open PowerShell in that folder. See if the existing py launcher works on your machine.
+5. Install requirements if needed:
+   py -m pip install -r requirements.txt
+6. Set a private secret and admin credentials in the same PowerShell window:
+   $env:SECRET_KEY = (py -c "import secrets; print(secrets.token_hex(32))")
+   $env:ADMIN_EMAIL = "your-admin-email@example.com"
+   $env:ADMIN_PASSWORD = "use-a-strong-private-password"
+7. Copy the existing database into the new schema using the safe importer:
+   py migrate.py --source ".\database.db" --target "instance\database.db"
+   The source database is opened read-only. If migration reports an error, stop and
+   keep the original database and verified backup unchanged.
+8. Start the updated application:
+   py app.py
+9. Open http://127.0.0.1:5000
+10. Stop the server and run the automated tests:
+    py -m unittest discover -s tests -v
+11. Compare the old and new counts for books, users, orders, order_items, reviews,
+    wishlist, addresses and coupons before treating the migration as complete.
+
+The migration creates a separate database and does not overwrite the original root
+database.db. Never commit SECRET_KEY or ADMIN_PASSWORD to Git. For a real public
+production deployment, use a production WSGI server and HTTPS; do not expose Flask's
+development server to the internet.

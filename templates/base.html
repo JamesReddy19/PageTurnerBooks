@@ -1,90 +1,82 @@
-<!DOCTYPE html>
-<html>
 
+<!doctype html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PageTurner Books</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+
+  <title>{% block title %}PageTurner Books{% endblock %}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 
 <body>
+<header class="site-header">
+  <a class="brand" href="{{ url_for('shop.index') }}">
+    📚 PageTurner Books
+  </a>
 
-<nav class="navbar">
+  <nav class="nav-links" aria-label="Main navigation">
+    <a href="{{ url_for('shop.index') }}">Shop</a>
 
-    <div class="logo">
-        📚 PageTurner Books
-    </div>
+    <a href="{{ url_for('shop.cart') }}">
+      🛒 Cart <span class="cart-badge">{{ cart_count }}</span>
+    </a>
 
-    <div class="nav-links">
+    {% if current_user %}
+      <a href="{{ url_for('auth.addresses') }}">Addresses</a>
+      <a href="{{ url_for('shop.wishlist') }}">Wishlist</a>
+      <a href="{{ url_for('shop.order_history') }}">Orders</a>
+      <a href="{{ url_for('auth.profile') }}">Profile</a>
+      <a href="{{ url_for('auth.devices') }}">Devices</a>
 
-        <a href="/">
-            Shop
-        </a>
+      <a href="{{ url_for('notifications') }}">
+        Notifications{% if unread_notifications %} ({{ unread_notifications }}){% endif %}
+      </a>
 
-        <a href="/cart" class="cart-button">
-            🛒 Cart <span class="cart-count">{{ cart_count }}</span>
-        </a>
+      {% if current_user.role in ['admin', 'staff'] %}
+        <a href="{{ url_for('admin.orders') }}">Staff</a>
+      {% endif %}
 
-        <a href="{{ url_for('wishlist') }}">
-            ❤️ Wishlist
-        </a>
+      {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+      {% endif %}
 
-        <a href="{{ url_for('admin') }}">
-            Admin
-        </a>
+      <span class="nav-greeting">Hi, {{ current_user.name }}</span>
+      <a href="{{ url_for('auth.logout') }}">Logout</a>
 
-        <a href="{{ url_for('order_history') }}">
-            Order History
-        </a>
-
-        {% if session.get("user_id") %}
-
-            <span>
-                Hi, {{ session.get("user_name") }}
-            </span>
-
-            <a href="{{ url_for('logout') }}">
-                Logout
-            </a>
-
-        {% else %}
-
-            <a href="{{ url_for('login') }}">
-                Login
-            </a>
-
-        {% endif %}
-
-    </div>
-
-</nav>
-
-{% with messages = get_flashed_messages() %}
-
-    {% if messages %}
-
-        <div class="flash-message">
-
-            {% for message in messages %}
-                {{ message }}
-            {% endfor %}
-
-        </div>
-
+    {% else %}
+      <a href="{{ url_for('auth.login') }}">Login</a>
+      <a href="/admin/login">Admin Login</a>
     {% endif %}
 
-{% endwith %}
+    <a href="{{ url_for('contact') }}">Contact</a>
 
-<main>
-    {% block content %}
-    {% endblock %}
+    {% if session.get('admin_password_login') %}
+      <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+      <a href="{{ url_for('admin.logout') }}">Admin logout</a>
+    {% endif %}
+  </nav>
+</header>
+
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-list">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
 </main>
 
-<footer>
-    PageTurner Books · Built with Flask · SQLite · HTML · CSS · JavaScript
+<footer class="site-footer">
+  PageTurner Books · Flask · SQLite · HTML · CSS · JavaScript
 </footer>
-
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-
 </body>
 </html>

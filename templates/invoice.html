@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Invoice #{{ order.id }} · PageTurner Books
+{% endblock %}
+{% block content %}
+<section class="invoice panel">
+<div class="row-between">
+<div>
+<h1>PageTurner Books</h1>
+<p>Invoice for order #{{ order.id }}</p>
+</div>
+<button class="no-print" onclick="window.print()">Print invoice</button>
+</div>
+<p>
+<strong>Customer:</strong> {{ order.name }}</p>
+<p>
+<strong>Date:</strong> {{ order.date }}</p>
+<p>
+<strong>Delivery address:</strong> {{ order.address }}</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Book</th>
+<th>Quantity</th>
+<th>Price</th>
+<th>Subtotal</th>
+</tr>
+</thead>
+<tbody>
+{% for item in items %}
+<tr>
+<td>{{ item.title }}</td>
+<td>{{ item.quantity }}</td>
+<td>{{ money(item.price_paise) }}</td>
+<td>{{ money(item.price_paise * item.quantity) }}</td>
+</tr>
+
+{% endfor %}
+</tbody>
+</table>
+</div>
+<p>Subtotal: {{ money(order.subtotal_paise) }}</p>
+<p>Discount: −{{ money(order.discount_paise) }}</p>
+<p>Shipping: {{ money(order.shipping_paise) }}</p>
+<p>Tax: {{ money(order.tax_paise) }}</p>
+<h2>Total: {{ money(order.total_paise) }}</h2>
+</section>
+
+{% endblock %}

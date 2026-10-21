@@ -1,148 +1,57 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
+{% block title %}All orders · PageTurner Books
+{% endblock %}
 {% block content %}
+<h1>All orders</h1>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Customer</th>
+<th>Date</th>
+<th>Total</th>
+<th>Status</th>
+<th>Update</th>
+<th>
+</th>
+</tr>
+</thead>
+<tbody>
+{% for order in orders %}
+<tr>
+<td>#{{ order.id }}</td>
+<td>{{ order.name }}<small class="block muted">{{ order.phone }}</small>
+</td>
+<td>{{ order.date }}</td>
+<td>{{ money(order.total_paise) }}</td>
+<td>{{ order.status }}</td>
+<td>
+<form method="post" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<select name="status" required>
+<option value="">Choose next status</option>
+{% for status in transitions[order.status] %}
+<option value="{{ status }}">{{ status }}</option>
 
-<div class="admin-page">
+{% endfor %}
+</select>
+<button class="secondary">Update</button>
+</form>
+</td>
+<td>
+<a href="{{ url_for('shop.order_detail', order_id=order.id) }}">View</a>
+</td>
+</tr>
+{% else %}
 
-    <div class="admin-header">
+<tr>
+<td colspan="7">No orders yet.</td>
+</tr>
 
-        <div>
-
-            <h1>All Orders</h1>
-
-            <p>
-                View all customer orders placed in the store.
-            </p>
-
-        </div>
-
-        <a
-            href="{{ url_for('admin') }}"
-            class="admin-logout"
-        >
-            Back to Dashboard
-        </a>
-
-    </div>
-
-
-    {% if orders %}
-
-        <div class="orders-list">
-
-            {% for order in orders %}
-
-                <div class="order-card">
-
-                    <h2>
-                        Order #{{ order["id"] }}
-                    </h2>
-
-                    <p>
-                        <strong>Date:</strong>
-                        {{ order["date"] }}
-                    </p>
-
-                    <p>
-                        <strong>Customer:</strong>
-                        {{ order["name"] }}
-                    </p>
-
-                    <p>
-                        <strong>Phone:</strong>
-                        {{ order["phone"] }}
-                    </p>
-
-                    <p>
-                        <strong>Total:</strong>
-                        ₹{{ order["total"] }}
-                    </p>
-
-                    <p>
-                        <strong>Current Status:</strong>
-                        {{ order["status"] }}
-                    </p>
-
-
-                    <form
-                        action="{{ url_for('update_order_status', id=order['id']) }}"
-                        method="POST"
-                        class="status-form"
-                    >
-
-                        <label for="status-{{ order['id'] }}">
-                            Change Status
-                        </label>
-
-                        <select
-                            id="status-{{ order['id'] }}"
-                            name="status"
-                        >
-
-                            <option
-                                value="Placed"
-                                {% if order["status"] == "Placed" %}selected{% endif %}
-                            >
-                                Placed
-                            </option>
-
-                            <option
-                                value="Packed"
-                                {% if order["status"] == "Packed" %}selected{% endif %}
-                            >
-                                Packed
-                            </option>
-
-                            <option
-                                value="Delivered"
-                                {% if order["status"] == "Delivered" %}selected{% endif %}
-                            >
-                                Delivered
-                            </option>
-
-                        </select>
-
-                        <button
-                            type="submit"
-                            class="admin-action-button"
-                        >
-                            Update Status
-                        </button>
-
-                    </form>
-
-
-                    <div class="order-admin-actions">
-
-                        <a
-                            href="{{ url_for('order_confirmation', id=order['id']) }}"
-                            class="admin-action-button"
-                        >
-                            View Order
-                        </a>
-
-                    </div>
-
-                </div>
-
-            {% endfor %}
-
-        </div>
-
-    {% else %}
-
-        <div class="admin-section">
-
-            <h2>No Orders Yet</h2>
-
-            <p>
-                There are no customer orders in the database yet.
-            </p>
-
-        </div>
-
-    {% endif %}
-
+{% endfor %}
+</tbody>
+</table>
 </div>
 
 {% endblock %}

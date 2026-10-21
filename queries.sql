@@ -1,60 +1,35 @@
--- 1. Find all books cheaper than 500
-SELECT *
-FROM books
-WHERE price < 500;
+-- 1. Books priced below ₹500 (price is stored in paise).
+SELECT id, title, author, price_paise FROM books WHERE price_paise < 50000 ORDER BY price_paise;
 
+-- 2. Technology books, highest price first.
+SELECT b.title, b.author, b.price_paise FROM books b JOIN book_categories bc ON bc.book_id=b.id JOIN categories c ON c.id=bc.category_id WHERE c.name='Technology' ORDER BY b.price_paise DESC;
 
--- 2. Find Technology books from highest price to lowest price
-SELECT *
-FROM books
-WHERE category = 'Technology'
-ORDER BY price DESC;
+-- 3. Count books in each category.
+SELECT c.name, COUNT(DISTINCT bc.book_id) AS book_count FROM categories c LEFT JOIN book_categories bc ON bc.category_id=c.id GROUP BY c.id ORDER BY c.name;
 
+-- 4. Most expensive book.
+SELECT title, author, price_paise FROM books WHERE price_paise=(SELECT MAX(price_paise) FROM books);
 
--- 3. Count how many books are in each category
-SELECT category, COUNT(*) AS book_count
-FROM books
-GROUP BY category;
+-- 5. Every order with customer name and total, including orders without items.
+SELECT o.id, o.name, o.total_paise, o.status FROM orders o ORDER BY o.id DESC;
 
+-- 6. Number of orders and revenue, excluding cancelled orders.
+SELECT COUNT(*) AS order_count, COALESCE(SUM(total_paise),0) AS revenue_paise FROM orders WHERE status!='Cancelled';
 
--- 4. Find the most expensive book
-SELECT *
-FROM books
-ORDER BY price DESC
-LIMIT 1;
+-- 7. Best-selling books.
+SELECT b.title, SUM(oi.quantity) AS copies_sold FROM order_items oi JOIN books b ON b.id=oi.book_id JOIN orders o ON o.id=oi.order_id WHERE o.status!='Cancelled' GROUP BY b.id ORDER BY copies_sold DESC LIMIT 5;
 
+-- 8. Order count per category.
+SELECT c.name, COUNT(DISTINCT o.id) AS order_count FROM categories c JOIN book_categories bc ON bc.category_id=c.id JOIN order_items oi ON oi.book_id=bc.book_id JOIN orders o ON o.id=oi.order_id GROUP BY c.id ORDER BY order_count DESC;
 
--- 5. Show each order with customer name and total
-SELECT orders.id, orders.name, orders.total
-FROM orders
-JOIN order_items
-ON orders.id = order_items.order_id
-GROUP BY orders.id;
+-- 9. Customers who bought the same books in an order also bought these books.
+SELECT other.title, COUNT(*) AS together_count FROM order_items chosen JOIN order_items other_item ON other_item.order_id=chosen.order_id AND other_item.book_id<>chosen.book_id JOIN books other ON other.id=other_item.book_id WHERE chosen.book_id=? GROUP BY other.id ORDER BY together_count DESC LIMIT 5;
 
--- 6. Total orders and total revenue
-SELECT
-    COUNT(*) AS total_orders,
-    SUM(total) AS total_revenue
-FROM orders;
+-- 10. Average review rating per book.
+SELECT b.title, ROUND(AVG(r.rating),1) AS average_rating, COUNT(r.id) AS review_count FROM books b LEFT JOIN reviews r ON r.book_id=b.id GROUP BY b.id;
 
+-- 11. Daily revenue in a date range. Supply start and end dates.
+SELECT date(date) AS order_day, COUNT(*) AS order_count, SUM(total_paise) AS revenue_paise FROM orders WHERE date(date)>=? AND date(date)<=? AND status!='Cancelled' GROUP BY date(date) ORDER BY order_day;
 
--- 7. Best-selling books
-SELECT
-    books.title,
-    SUM(order_items.quantity) AS total_sold
-FROM order_items
-JOIN books
-    ON order_items.book_id = books.id
-GROUP BY books.id, books.title
-ORDER BY total_sold DESC;
-
-
--- 8. Number of orders per category
-SELECT
-    books.category,
-    COUNT(DISTINCT order_items.order_id) AS order_count
-FROM order_items
-JOIN books
-    ON order_items.book_id = books.id
-GROUP BY books.category
-ORDER BY order_count DESC;
+-- 12. Inspect whether the category index can help this lookup.
+EXPLAIN QUERY PLAN SELECT id,title,price_paise FROM books WHERE category=? ORDER BY price_paise;

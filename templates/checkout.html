@@ -1,79 +1,47 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
+{% block title %}Checkout · PageTurner Books
+{% endblock %}
 {% block content %}
+<h1>Checkout</h1>
+<p class="muted">Your stock reservation lasts 10 minutes. Submit your order before it expires.</p>
+<div class="checkout-layout">
+<form method="post" action="{{ url_for('shop.place_order') }}" class="panel stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Full name<input name="name" value="{{ current_user.name }}" required maxlength="100">
+</label>
+<label>10-digit phone number<input name="phone" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required>
+</label>
+{% if addresses %}
+<label>Saved address<select name="address_id">
+<option value="">Enter a new address instead</option>
+{% for address in addresses %}
+<option value="{{ address.id }}" {% if default_address and default_address.id == address.id %}selected
+{% endif %}>{{ address.label }} — {{ address.line1 }}, {{ address.city }} ({{ address.pincode }})</option>
 
-<div class="checkout-form">
+{% endfor %}
+</select>
+</label>
 
-    <h1>Checkout</h1>
+{% endif %}
+<label>Address<textarea name="new_address" maxlength="300" placeholder="House / street / area (required if no saved address is selected)">
+</textarea>
+</label>
+<label>6-digit pincode<input name="pincode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Required for a new address">
+</label>
+<button class="checkout-button">Place order</button>
+</form>
+<aside class="panel">
+<h2>Items</h2>
+{% for item in items %}
+<p>{{ item.book.title }} × {{ item.quantity }} <strong>{{ money(item.line_total) }}</strong>
+</p>
 
-    <p>
-        Cash on delivery. Tell us where to send your books.
-    </p>
-
-
-    <form
-        action="/checkout"
-        method="POST"
-        onsubmit="return validatePhone()"
-    >
-
-        <label for="name">
-            Full Name *
-        </label>
-
-        <input
-            type="text"
-            id="name"
-            name="name"
-            required
-        >
-
-
-        <label for="phone">
-            Phone Number *
-        </label>
-
-        <div class="phone-input">
-
-            <span>+91</span>
-
-            <input
-                type="text"
-                id="phone"
-                name="phone"
-                placeholder="Enter 10 digit number"
-                required
-            >
-
-        </div>
-
-
-        <label for="address">
-            Delivery Address *
-        </label>
-
-        <textarea
-            id="address"
-            name="address"
-            rows="5"
-            required
-        ></textarea>
-
-
-        <div>
-
-            <a href="/cart">
-                Back to cart
-            </a>
-
-            <button type="submit">
-                Place order
-            </button>
-
-        </div>
-
-    </form>
-
+{% endfor %}
+<hr>
+<p>Subtotal <strong>{{ money(subtotal) }}</strong>
+</p>
+<p class="muted">Shipping and 5% tax are calculated using the delivery pincode and shown on the final order.</p>
+</aside>
 </div>
 
 {% endblock %}

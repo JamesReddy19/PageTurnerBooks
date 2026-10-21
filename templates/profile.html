@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Your profile · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Your profile</h1>
+<section class="panel">
+<p>
+<strong>Name:</strong> {{ current_user.name }}</p>
+<p>
+<strong>Email:</strong> {{ current_user.email }}</p>
+<p>
+<strong>Role:</strong> {{ current_user.role }}</p>
+<p>
+<strong>Orders:</strong> {{ stats.order_count }}</p>
+<p>
+<strong>Total spent:</strong> {{ money(stats.spent) }}</p>
+</section>
+<section class="auth-card">
+<h2>Change password</h2>
+<form method="post" class="stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Current password<input type="password" name="current_password" required>
+</label>
+<label>New password<input type="password" name="new_password" minlength="8" required>
+</label>
+<button>Change password</button>
+</form>
+</section>
+
+{% endblock %}
