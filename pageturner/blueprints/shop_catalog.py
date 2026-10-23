@@ -1,7 +1,7 @@
 
 """Book listing and book detail pages."""
 
-from flask import abort, render_template, request, session
+from flask import abort, render_template, request
 from ..db import get_db
 from ..helpers import current_user
 from .shop import shop_bp, customers_also_bought
@@ -179,6 +179,7 @@ def book_detail(book_id):
 
     user = current_user()
     user_review = None
+    is_wishlisted = False
 
     if user:
         user_review = connection.execute(
@@ -186,11 +187,19 @@ def book_detail(book_id):
             (book_id, user["id"]),
         ).fetchone()
 
+        wishlist_entry = connection.execute(
+            "SELECT 1 FROM wishlist WHERE user_id=? AND book_id=?",
+            (user["id"], book_id),
+        ).fetchone()
+
+        is_wishlisted = wishlist_entry is not None
+
     return render_template(
         "book.html",
         book=book,
         reviews=reviews,
         tags=tags,
         user_review=user_review,
+        is_wishlisted=is_wishlisted,
         also_bought=customers_also_bought(book_id),
     )

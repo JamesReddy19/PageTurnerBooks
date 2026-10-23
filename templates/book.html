@@ -42,13 +42,32 @@
 <button {% if book.stock < 1 %}disabled
 {% endif %}>Add to cart</button>
 </form>
-    {% if current_user %}
-<form method="post" action="{{ url_for('shop.toggle_wishlist', book_id=book.id) }}">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-<button class="secondary">♡ Toggle wishlist</button>
-</form>
 
+{% if current_user %}
+<form
+    method="post"
+    action="{{ url_for('shop.toggle_wishlist', book_id=book.id) }}"
+    class="wishlist-form detail-wishlist-form"
+>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <button
+        type="submit"
+        class="wishlist-button detail-wishlist-button {% if is_wishlisted %}wishlist-active{% endif %}"
+        title="{% if is_wishlisted %}Remove from wishlist{% else %}Add to wishlist{% endif %}"
+        aria-label="{% if is_wishlisted %}Remove {{ book.title }} from wishlist{% else %}Add {{ book.title }} to wishlist{% endif %}"
+        aria-pressed="{{ 'true' if is_wishlisted else 'false' }}"
+    >
+        <span aria-hidden="true">
+            {% if is_wishlisted %}♥{% else %}♡{% endif %}
+        </span>
+        <span>
+            {% if is_wishlisted %}Wishlisted{% else %}Add to wishlist{% endif %}
+        </span>
+    </button>
+</form>
 {% endif %}
+
   </div>
 </section>
 <section class="panel">

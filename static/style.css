@@ -2706,3 +2706,279 @@ nav.category-filters a.active {
     }
 }
 
+
+/* ==========================================
+   HOMEPAGE LAYOUT FIXES
+   These styles only affect the homepage.
+========================================== */
+
+/* Keep the accessible search label hidden visually. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Keep the search bar clean and separate. */
+.shop-controls {
+    margin: 18px 0 28px;
+}
+
+/* Put the category heading and description in one panel. */
+.catalog-section .section-heading {
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: linear-gradient(135deg, #ffffff, #f0f5ef);
+    box-shadow: 0 6px 18px rgba(32, 49, 46, 0.05);
+}
+
+.catalog-section .section-heading .section-kicker {
+    margin: 0 0 6px;
+    color: var(--teal);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.catalog-section .section-heading h2 {
+    margin: 0 0 8px;
+}
+
+.catalog-section .section-heading p:last-child {
+    margin-bottom: 0;
+    color: var(--muted);
+}
+
+/* Group collection title, book count and sorting on the left. */
+.catalog-section .catalog-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 18px;
+    width: 100%;
+    margin: 22px 0;
+    padding: 18px 22px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(32, 49, 46, 0.05);
+}
+
+.catalog-section .results-label {
+    margin-right: 8px;
+}
+
+.catalog-section .results-label h2 {
+    margin: 0;
+}
+
+.catalog-section .results-label p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.catalog-section .sorting-form {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: auto;
+    margin: 0;
+}
+
+.catalog-section .sorting-form label {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.catalog-section .sorting-form select {
+    width: auto;
+    min-width: 150px;
+    max-width: 200px;
+}
+
+/* Keep these panels comfortable on small screens. */
+@media (max-width: 600px) {
+    .catalog-section .section-heading {
+        padding: 18px;
+    }
+
+    .catalog-section .catalog-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .catalog-section .sorting-form {
+        width: 100%;
+    }
+
+    .catalog-section .sorting-form select {
+        flex: 1;
+        min-width: 0;
+        max-width: 100%;
+    }
+}
+
+/* HOMEPAGE LAYOUT FIXES */
+
+/* Hide the visible search label but keep it accessible */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Category heading panel */
+.catalog-section .section-heading {
+    background: linear-gradient(135deg, #ffffff, #f0f5ef) !important;
+    padding: 22px 24px !important;
+    margin-bottom: 16px !important;
+    border: 1px solid #e1e3d9 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 6px 18px rgba(32, 49, 46, 0.08) !important;
+}
+
+/* Collection title, count and sorting panel */
+.catalog-section .catalog-toolbar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 18px !important;
+    width: 100% !important;
+    margin: 22px 0 !important;
+    padding: 18px 22px !important;
+    box-sizing: border-box !important;
+    border: 1px solid #e1e3d9 !important;
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(32, 49, 46, 0.08) !important;
+}
+
+.catalog-section .results-label {
+    margin-right: 8px !important;
+}
+
+.catalog-section .sorting-form {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: auto !important;
+    margin: 0 !important;
+}
+
+.catalog-section .sorting-form select {
+    width: auto !important;
+    min-width: 150px !important;
+    max-width: 200px !important;
+}
+
+/* Mobile layout */
+@media (max-width: 600px) {
+    .catalog-section .section-heading {
+        padding: 18px !important;
+    }
+
+    .catalog-section .catalog-toolbar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 16px !important;
+    }
+
+    .catalog-section .sorting-form {
+        width: 100% !important;
+    }
+
+    .catalog-section .sorting-form select {
+        flex: 1 !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+}
+
+/* Homepage: soft color for the category and collection panels */
+.catalog-section .section-heading {
+    background: #e6f2ee !important;
+    border-color: #c8ded6 !important;
+}
+
+/* Homepage: soft cream background for each book card */
+.catalog-section .book-card {
+    background: #fff3df !important;
+    border-color: #e8dcc8 !important;
+}
+
+/* Keep book details readable */
+.catalog-section .book-card h3,
+.catalog-section .book-card .book-title {
+    color: #20312e;
+}
+
+.catalog-section .book-card p {
+    color: #75695c;
+}
+
+/* Make sure the collection toolbar has a soft background too */
+.catalog-section .catalog-toolbar {
+    background: #f5f3ed !important;
+    border-color: #e1e3d9 !important;
+}
+
+/* Homepage pagination colors */
+.pagination {
+    background: #f5f3ed;
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+
+.pagination .page-info {
+    background: #e6f2ee;
+    color: #20312e;
+    border: 1px solid #c8ded6;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.pagination a {
+    background: #e6f2ee;
+    color: #176b62;
+    border: 1px solid #c8ded6;
+    border-radius: 8px;
+    padding: 8px 14px;
+    text-decoration: none;
+}
+
+.pagination a:hover {
+    background: #176b62;
+    color: #ffffff;
+}
+
+/* Page number background */
+.pagination .page-current {
+    background: #e6f2ee !important;
+    color: #20312e !important;
+    border: 1px solid #c8ded6;
+    border-radius: 8px;
+    padding: 8px 12px;
+}

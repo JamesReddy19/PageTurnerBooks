@@ -27,7 +27,12 @@
 
     {% if current_user %}
       <a href="{{ url_for('auth.addresses') }}">Addresses</a>
-      <a href="{{ url_for('shop.wishlist') }}">Wishlist</a>
+
+      <a href="{{ url_for('shop.wishlist') }}">
+        <span aria-hidden="true">♡</span>
+        Wishlist <span class="cart-badge">{{ wishlist_count }}</span>
+      </a>
+
       <a href="{{ url_for('shop.order_history') }}">Orders</a>
       <a href="{{ url_for('auth.profile') }}">Profile</a>
       <a href="{{ url_for('auth.devices') }}">Devices</a>
@@ -44,7 +49,7 @@
         <a href="{{ url_for('admin.dashboard') }}">Admin</a>
       {% endif %}
 
-      <span class="nav-greeting">Hi, {{ current_user.name }}</span>
+      <span class="nav-greeting">Hi {{ current_user.name }}</span>
       <a href="{{ url_for('auth.logout') }}">Logout</a>
 
     {% else %}

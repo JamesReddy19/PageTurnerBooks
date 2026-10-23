@@ -9,8 +9,10 @@ from .db import get_db
 
 ORDER_STATUS_TRANSITIONS = {
     "Placed": {"Packed", "Cancelled"},
-    "Packed": {"Shipped"},
-    "Shipped": {"Delivered"},
+    "Packed": {"Shipped", "Cancelled"},
+    "Shipped": {"In Transit"},
+    "In Transit": {"Out for Delivery"},
+    "Out for Delivery": {"Delivered"},
     "Delivered": set(),
     "Cancelled": set(),
 }

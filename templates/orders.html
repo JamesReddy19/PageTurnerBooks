@@ -30,10 +30,9 @@
 <form method="post" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 <select name="status" required>
-<option value="">Choose next status</option>
-{% for status in transitions[order.status] %}
-<option value="{{ status }}">{{ status }}</option>
-
+<option value="">Status Update</option>
+{% for status in ["Placed", "Packed", "Shipped", "In Transit", "Out for Delivery", "Delivered", "Cancelled"] %}
+<option value="{{ status }}" {% if status == order.status %}selected{% endif %}>{{ status }}</option>
 {% endfor %}
 </select>
 <button class="secondary">Update</button>

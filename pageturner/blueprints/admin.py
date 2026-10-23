@@ -69,9 +69,41 @@ def login():
             )
             return render_template("admin_login.html"), 429
 
-        expected_hash = current_app.config.get("ADMIN_PASSWORD_HASH", "")
+        # Verify the password against an existing admin account.
+        admin_email = str(
+            current_app.config.get("ADMIN_EMAIL", "")
+        ).strip().lower()
 
-        if expected_hash and check_password_hash(expected_hash, password):
+        if admin_email:
+            admin_users = connection.execute(
+                """
+                SELECT id, email, password_hash
+                FROM users
+                WHERE lower(email) = ? AND role = 'admin'
+                """,
+                (admin_email,),
+            ).fetchall()
+        else:
+            # If ADMIN_EMAIL is not configured, check existing admin accounts.
+            admin_users = connection.execute(
+                """
+                SELECT id, email, password_hash
+                FROM users
+                WHERE role = 'admin'
+                """
+            ).fetchall()
+
+        valid_admin = next(
+            (
+                user
+                for user in admin_users
+                if user["password_hash"]
+                and check_password_hash(user["password_hash"], password)
+            ),
+            None,
+        )
+
+        if valid_admin:
             connection.execute(
                 "DELETE FROM login_attempts WHERE email=? AND ip_address=?",
                 (email_key, ip_address),
@@ -84,6 +116,7 @@ def login():
 
             return redirect(url_for("admin.dashboard"))
 
+        # Keep tracking failed attempts.
         if (
             not attempt
             or (

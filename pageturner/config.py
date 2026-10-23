@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY")
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "pageturner-local-dev-key-change-before-deployment"
     DATABASE = os.environ.get("PAGETURNER_DATABASE", str(BASE_DIR / "instance" / "database.db"))
     UPLOAD_FOLDER = str(BASE_DIR / "static" / "uploads")
     MAX_CONTENT_LENGTH = 1 * 1024 * 1024
@@ -18,4 +18,4 @@ class Config:
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
     FREE_SHIPPING_PAISE = 100000
     TAX_PERCENT = 5
-    RESERVATION_MINUTES = 10
+    RESERVATION_MINUTES = 5
