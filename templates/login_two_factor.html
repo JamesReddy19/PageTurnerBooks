@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Two-factor authentication · PageTurner Books{% endblock %}
+
+{% block content %}
+<section class="card auth-card">
+  <h1>Two-step verification</h1>
+
+  <p class="muted">
+    Enter the 6-digit code from your authenticator app to finish signing in.
+  </p>
+
+  <form method="post" class="stack">
+    <label for="code">Authentication code</label>
+    <input
+      id="code"
+      name="code"
+      type="text"
+      inputmode="numeric"
+      autocomplete="one-time-code"
+      pattern="[0-9]{6}"
+      maxlength="6"
+      required
+      autofocus
+    />
+
+    <button type="submit" class="button">Verify and sign in</button>
+  </form>
+
+  <p class="muted small">
+    Lost your authenticator? Use
+    <a href="{{ url_for('auth.password_reset_request') }}">password reset</a>
+    and contact support.
+  </p>
+</section>
+{% endblock %}
