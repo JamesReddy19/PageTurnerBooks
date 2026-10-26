@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Users &amp; staff · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Users &amp; staff</h1>
+<p class="muted">
+  Promote a member of staff so they can process orders and returns, or return an
+  account to the customer role. Only administrators can change roles, and at
+  least one administrator must always remain.
+</p>
+<section class="panel">
+<h2>Accounts</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Role</th>
+<th>Orders</th>
+<th>Joined</th>
+<th>Set role</th>
+</tr>
+</thead>
+<tbody>
+{% for user in users %}
+<tr>
+<td>{{ user.name }}</td>
+<td>{{ user.email }}</td>
+<td><span class="role-badge role-{{ user.role }}">{{ user.role|capitalize }}</span></td>
+<td>{{ user.order_count }}</td>
+<td>{{ (user.created_at or '')[:10] }}</td>
+<td>
+{% if current_user and current_user.id == user.id %}
+<span class="muted">This is you</span>
+{% else %}
+<form method="post" action="{{ url_for('admin.set_user_role', user_id=user.id) }}" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<select name="role" aria-label="Role for {{ user.name }}">
+{% for role in roles %}
+<option value="{{ role }}" {% if user.role == role %}selected{% endif %}>{{ role|capitalize }}</option>
+{% endfor %}
+</select>
+<button class="secondary">Update</button>
+</form>
+{% endif %}
+</td>
+</tr>
+{% else %}
+<tr>
+<td colspan="6">No accounts yet.</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</section>
+{% endblock %}
