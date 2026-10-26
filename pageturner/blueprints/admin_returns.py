@@ -2,7 +2,7 @@
 from flask import abort, flash, redirect, request, session, url_for, render_template
 from ..db import get_db
 from ..helpers import role_required, log_admin_action, add_notification, audit_action, loyalty_claw_back_for_refund
-from .admin import admin_bp
+from .admin import admin_bp, staff_or_admin
 
 @admin_bp.get("/returns")
 @role_required("admin")
@@ -55,14 +55,14 @@ def review_return(return_id, decision):
 
 
 @admin_bp.get("/messages")
-@role_required("admin", "staff")
+@staff_or_admin
 def messages():
     rows = get_db().execute("SELECT * FROM contact_messages ORDER BY is_read,id DESC").fetchall()
     return render_template("messages.html", messages=rows)
 
 
 @admin_bp.post("/messages/<int:message_id>/read")
-@role_required("admin", "staff")
+@staff_or_admin
 @audit_action("contact_message_read")
 def mark_message_read(message_id):
     get_db().execute("UPDATE contact_messages SET is_read=1 WHERE id=?", (message_id,))

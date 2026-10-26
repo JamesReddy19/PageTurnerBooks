@@ -2,17 +2,17 @@
 from flask import abort, flash, redirect, request, session, url_for, render_template
 from ..db import get_db
 from ..helpers import role_required, log_admin_action, add_notification, audit_action
-from .admin import admin_bp, ALLOWED_STATUSES
+from .admin import admin_bp, ALLOWED_STATUSES, staff_or_admin
 
 @admin_bp.get("/orders")
-@role_required("admin", "staff")
+@staff_or_admin
 def orders():
     rows = get_db().execute("SELECT * FROM orders ORDER BY id DESC").fetchall()
     return render_template("orders.html", orders=rows, transitions=ALLOWED_STATUSES)
 
 
 @admin_bp.post("/orders/<int:order_id>/status")
-@role_required("admin", "staff")
+@staff_or_admin
 @audit_action("order_status_changed")
 def update_order_status(order_id):
     new_status = request.form.get("status", "")
@@ -52,6 +52,6 @@ def update_order_status(order_id):
 
 
 @admin_bp.post("/order-status/<int:order_id>")
-@role_required("admin", "staff")
+@staff_or_admin
 def old_order_status_url(order_id):
     return redirect(url_for("admin.update_order_status", order_id=order_id), code=307)
