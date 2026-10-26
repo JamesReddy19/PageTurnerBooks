@@ -110,6 +110,16 @@ def init_db():
     # databases here; schema.sql defines them for fresh installs.
     add_column_if_missing(connection, "admin_log", "prev_hash", "TEXT")
     add_column_if_missing(connection, "admin_log", "row_hash", "TEXT")
+
+    # Review moderation and account anonymization (requirements 50, 51, 59).
+    # Remember: hidden reviews must vanish from the average rating *and* the
+    # review count, so every rating query filters on this column.
+    add_column_if_missing(
+        connection, "reviews", "hidden", "INTEGER NOT NULL DEFAULT 0"
+    )
+    add_column_if_missing(connection, "reviews", "hidden_at", "TEXT")
+    add_column_if_missing(connection, "reviews", "hidden_by", "INTEGER")
+    add_column_if_missing(connection, "users", "anonymized_at", "TEXT")
     connection.executescript(
         """
         CREATE TABLE IF NOT EXISTS audit_chain_head (
