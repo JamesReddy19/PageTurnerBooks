@@ -190,12 +190,43 @@ def place_order():
         return redirect(url_for("shop.checkout"))
 
     cart_key = f"user:{user_id}"
+    checkout_token = request.form.get("checkout_token", "").strip()
 
     try:
         connection.execute("BEGIN IMMEDIATE")
 
+        # Requirement 61: claim the single-use token in the same transaction as
+        # the order. A replayed POST finds it spent and is answered with the
+        # order it already produced instead of placing a second one.
+        token_status, existing_order_id = idempotency.claim_checkout_token(
+            connection, checkout_token, user_id
+        )
+
+        if token_status == "replayed":
+            connection.rollback()
+            flash(
+                "That order has already been placed - it is open below.",
+                "success"
+            )
+
+            if existing_order_id:
+                return redirect(
+                    url_for("shop.order_detail", order_id=existing_order_id)
+                )
+
+            return redirect(url_for("shop.orders_hub"))
+
+        if token_status == "unknown":
+            connection.rollback()
+            flash(
+                "Your checkout form expired. Please confirm your order again.",
+                "error"
+            )
+            return redirect(url_for("shop.checkout"))
+
         subtotal = 0
         checked_items = []
+        ship_now_by_book = {}
 
         for item in items:
             book_id = item["book"]["id"]
@@ -243,10 +274,12 @@ def place_order():
                 connection, book_id, cart_key
             )
 
-            if book["stock"] - reserved_others < item["quantity"]:
-                raise ValueError(
-                    f"Not enough stock remains for {book['title']}."
-                )
+            # Requirement 65: too few copies is no longer an error. Sell what
+            # the warehouse holds and queue the remainder as a backorder; the
+            # customer pays the same total either way. `books.stock` is debited
+            # by `ship_now` only, so it can never go negative.
+            available_now = max(0, book["stock"] - reserved_others)
+            ship_now = min(item["quantity"], available_now)
 
             # Requirement 47: charge the price that is active right now, using
             # the same helper the catalog and cart use. The resulting per-copy
@@ -258,6 +291,7 @@ def place_order():
             checked_items.append(
                 (book, item["quantity"], line_total)
             )
+            ship_now_by_book[book_id] = ship_now
 
         coupon, discount, coupon_error = coupon_discount(
             connection,
@@ -273,6 +307,23 @@ def place_order():
         if coupon_error:
             raise ValueError(coupon_error)
 
+        # Requirement 63: automatic pricing rules are data, not code. They are
+        # evaluated here so the order total, the invoice and the ledger all use
+        # one number.
+        rules_discount, _per_book_rules = pricing_rules.evaluate(
+            connection,
+            [
+                {
+                    "book_id": book["id"],
+                    "quantity": quantity,
+                    "line_total": line,
+                }
+                for book, quantity, line in checked_items
+            ]
+        )
+        rules_discount = min(rules_discount, max(0, subtotal - discount))
+        total_discount = discount + rules_discount
+
         shipping_row = connection.execute(
             "SELECT fee_paise FROM shipping_zones WHERE prefix = ?",
             (pincode[:2],)
@@ -280,11 +331,11 @@ def place_order():
 
         shipping = (
             0
-            if subtotal - discount >= current_app.config["FREE_SHIPPING_PAISE"]
+            if subtotal - total_discount >= current_app.config["FREE_SHIPPING_PAISE"]
             else (shipping_row["fee_paise"] if shipping_row else 8000)
         )
 
-        taxable_subtotal = max(0, subtotal - discount)
+        taxable_subtotal = max(0, subtotal - total_discount)
         tax_percent = current_app.config["TAX_PERCENT"]
         # Allocate coupon discounts across eligible books.
         if coupon and coupon["category_id"]:
@@ -326,6 +377,11 @@ def place_order():
                 else:
                     line_discount = discount * line_total // eligible_total
                     allocated_discount += line_discount
+
+            # Pricing-rule discounts reduce the taxable value of their own line.
+            line_discount += min(
+                _per_book_rules.get(book["id"], 0), line_total - line_discount
+            )
 
             taxable_line = line_total - line_discount
             tax += (taxable_line * tax_percent + 50) // 100
