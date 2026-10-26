@@ -411,6 +411,19 @@ def place_order():
                 (order_id, book["id"], quantity, line_total // quantity)
             )
 
+            # One ledger row per purchased line, inside the same transaction as
+            # the stock debit above, so the ledger and `books.stock` can never
+            # disagree about a purchase.
+            connection.execute(
+                """
+                INSERT INTO stock_log(
+                    book_id, change_amount, reason, order_id, actor_user_id
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (book["id"], -quantity, "purchase", order_id, user_id)
+            )
+
         # Requirement 49: the ledger is the single source of truth for the
         # balance, so both movements are written in this same transaction as the
         # order. If anything below fails, the order and its points vanish
@@ -423,16 +436,6 @@ def place_order():
         if points_earned:
             loyalty_record(
                 connection, user_id, order_id, points_earned, "order earned"
-            )
-
-            connection.execute(
-                """
-                INSERT INTO stock_log(
-                    book_id, change_amount, reason, order_id, actor_user_id
-                )
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (book["id"], -quantity, "purchase", order_id, user_id)
             )
 
         connection.execute(
