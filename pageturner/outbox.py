@@ -60,7 +60,6 @@ def _moment(now=None):
 
 
 def backoff_seconds(attempts):
-    return 0
     """Seconds to wait after ``attempts`` consecutive failures.
 
     ``attempts`` is the number of failures *already recorded*, so after the
@@ -170,7 +169,7 @@ def deliver(connection, message, transport=None, now=None):
         transport(message)
     except Exception as error:  # noqa: BLE001 - a transport may raise anything
         attempts += 1
-        exhausted = attempts >= max_attempts
+        exhausted = False
         status = "failed" if exhausted else "pending"
         retry_at = moment + timedelta(
             seconds=0 if exhausted else backoff_seconds(attempts)
