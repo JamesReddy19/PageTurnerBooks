@@ -188,6 +188,29 @@ scratch /admin/users role change    → staff set, admin_log written;
                                       /admin/books and /admin/users
 ```
 
+### Batch 2b — checkout ledger hotfix (found while reviewing batch 2)
+
+The batch-2 `stock_log` insert had been placed **inside** the `if points_earned:`
+branch and **outside** the per-book loop, so a purchase logged only the last line
+item of a multi-book order, and logged nothing at all when the order was too
+small to earn loyalty points. The ledger then disagreed with `books.stock` — a
+problem for reqs 61, 65 and 66, which all treat the ledger as the audit trail.
+
+| Fix | File |
+|---|---|
+| The `stock_log` row now sits in the per-book loop, immediately after the `order_items` insert and the stock debit, inside the same transaction. | `pageturner/blueprints/shop_checkout.py` |
+| Three regression tests: every line logged, a zero-point order still logged, and purchase-then-cancel nets to zero with stock restored. | `tests/test_checkout_ledger.py` |
+
+Proof the tests pin the bug rather than the fix: with the buggy ordering
+temporarily restored, `test_every_purchased_line_is_logged` and
+`test_purchase_is_logged_even_when_no_points_are_earned` **fail**; with the fix
+in place all three pass.
+
+```
+python -m pytest -q        → 35 passed
+python3 -m compileall -q . → clean
+```
+
 ### Deployment configuration still manual
 
 The repository cannot create host resources, so these stay as operator steps in
