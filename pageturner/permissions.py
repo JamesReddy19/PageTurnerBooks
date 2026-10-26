@@ -93,6 +93,11 @@ def sync_default_permissions(connection):
         )
 
     for role, codes in DEFAULT_ROLE_PERMISSIONS.items():
+        # The superuser role is resolved from the catalogue at request time,
+        # so seeding rows for it would only risk disagreement.
+        if role == SUPERUSER_ROLE:
+            continue
+
         existing = connection.execute(
             "SELECT COUNT(*) AS count FROM role_permissions WHERE role = ?",
             (role,),
