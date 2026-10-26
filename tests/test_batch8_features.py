@@ -79,26 +79,46 @@ class GrowthTestBase(unittest.TestCase):
             )
             connection.commit()
 
+    def csrf(self, path="/"):
+        response = self.client.get(path)
+        self.assertEqual(response.status_code, 200, f"GET {path} failed")
+        match = re.search(rb'<meta name="csrf-token" content="([^"]+)"', response.data)
+        self.assertIsNotNone(match, f"CSRF token not found on {path}")
+        return match.group(1).decode()
+
+    def post(self, path, data=None, token_from="/", **kwargs):
+        payload = dict(data or {})
+        payload["csrf_token"] = self.csrf(token_from)
+        return self.client.post(path, data=payload, **kwargs)
+
     def register_and_login(self, admin=True):
-        response = self.client.post(
+        self.post(
             "/register",
-            data={
-                "name": "Ada Reader",
-                "email": "ada@example.com",
-                "password": "Reading123",
-                "confirm_password": "Reading123",
-            },
+            {"name": "Ada Reader", "email": "ada@example.com", "password": "Reading123"},
             follow_redirects=True,
         )
-        self.assertEqual(response.status_code, 200)
+        self.post(
+            "/login",
+            {"email": "ada@example.com", "password": "Reading123"},
+            follow_redirects=True,
+        )
 
         if admin:
-            with self.app.app_context():
-                connection = get_db()
-                connection.execute(
-                    "UPDATE users SET role='admin' WHERE email='ada@example.com'"
-                )
-                connection.commit()
+            self.set_role("admin")
+
+        return self.logged_in()
+
+    def set_role(self, role):
+        with self.app.app_context():
+            connection = get_db()
+            connection.execute(
+                "UPDATE users SET role = ? WHERE email = 'ada@example.com'", (role,)
+            )
+            connection.commit()
+
+    def logged_in(self):
+        with self.client.session_transaction() as session:
+            return session.get("user_id")
 
     def rows(self, months=4):
         with self.app.app_context():
