@@ -467,13 +467,13 @@ class BatchFiveTestCase(unittest.TestCase):
             ).fetchone()
             balance = giftcards.gift_card_balance(connection, card["id"])
 
-        self.assertEqual(debit["amount_paise"], -20000)
+        self.assertEqual(debit["amount_paise"], -charged)
         self.assertEqual(
             debit["order_id"],
             order["id"],
             "the ledger row must point at the real order, not a placeholder",
         )
-        self.assertEqual(balance, 30000)
+        self.assertEqual(balance, 50000 - charged)
 
     def test_spent_gift_card_balance_cannot_be_spent_twice(self):
         user_id = self.register_and_login()
