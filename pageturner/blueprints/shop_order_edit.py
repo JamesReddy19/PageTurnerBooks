@@ -261,6 +261,23 @@ def _reprice(connection, order, remaining):
     coupon_note = ""
 
     if coupon_code:
+        # This order's own redemption must not count against itself, or a
+        # single-use coupon would look "already used" and be dropped by an edit
+        # that changed nothing about the coupon.
+        own_use = connection.execute(
+            """
+            SELECT cu.id FROM coupon_uses cu
+            JOIN coupons c ON c.id = cu.coupon_id
+            WHERE c.code = ? COLLATE NOCASE AND cu.order_id = ?
+            """,
+            (coupon_code, order["id"]),
+        ).fetchone()
+
+        if own_use:
+            connection.execute(
+                "DELETE FROM coupon_uses WHERE id = ?", (own_use["id"],)
+            )
+
         coupon, discount, error = coupon_discount(
             connection, coupon_code, order["user_id"], subtotal, lines
         )
@@ -270,6 +287,14 @@ def _reprice(connection, order, remaining):
             discount = 0
             coupon_note = (
                 f" Coupon {order['coupon_code']} was removed: {error}"
+            )
+        elif own_use:
+            connection.execute(
+                """
+                INSERT INTO coupon_uses(coupon_id, user_id, order_id)
+                VALUES (?, ?, ?)
+                """,
+                (coupon["id"], order["user_id"], order["id"]),
             )
 
     rules_discount, _per_book = pricing_rules.evaluate(connection, lines)

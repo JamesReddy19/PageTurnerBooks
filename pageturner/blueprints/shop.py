@@ -292,6 +292,8 @@ from . import (  # noqa: E402,F401
     shop_cart,
     shop_checkout,
     shop_orders,
+    shop_order_edit,
+    shop_gift_cards,
     shop_reviews,
     shop_book_requests,
     shop_wishlist_share,
