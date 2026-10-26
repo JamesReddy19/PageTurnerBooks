@@ -613,10 +613,10 @@ def place_order():
                 f"Hello {name},\n\n"
                 f"Thank you for your order #{order_id}.\n"
                 f"Items: {sum(quantity for _b, quantity, _t in checked_items)}\n"
-                f"Total paid: {money(total)}\n\n"
+                f"Total: Rs {total / 100:.2f}\n\n"
                 "We will email you again when your parcel ships."
             ),
-            recipient=user["email"] if user else None,
+            recipient=email,
             dedupe_key=f"order:{order_id}:confirmed",
         )
 
