@@ -107,6 +107,42 @@ class BatchSixTestCase(unittest.TestCase):
                 "SELECT stock FROM books WHERE id = ?", (book_id,)
             ).fetchone()["stock"]
 
+    def add_to_cart(self, book_id, quantity=1):
+        response = self.post(f"/cart/add/{book_id}", {"quantity": str(quantity)})
+        self.assertIn(response.status_code, (302, 303))
+
+    def checkout_payload(self):
+        """GET /checkout and return the exact body a browser would send.
+
+        The GET is what creates the stock reservation and the single-use
+        checkout token, so posting without it is (correctly) refused.
+        """
+        response = self.client.get("/checkout")
+        self.assertEqual(response.status_code, 200)
+
+        csrf = re.search(
+            rb'<meta name="csrf-token" content="([^"]+)"', response.data
+        )
+        checkout_token = re.search(
+            rb'name="checkout_token" value="([^"]+)"', response.data
+        )
+        self.assertIsNotNone(csrf, "no CSRF token on the checkout page")
+        self.assertIsNotNone(checkout_token, "no checkout token on the checkout page")
+
+        return {
+            "csrf_token": csrf.group(1).decode(),
+            "checkout_token": checkout_token.group(1).decode(),
+            "name": "Reader One",
+            "phone": "9876543210",
+            "new_address": "1 Reading Lane",
+            "pincode": "560001",
+        }
+
+    def submit_order(self, payload, **overrides):
+        body = dict(payload)
+        body.update(overrides)
+        return self.client.post("/checkout", data=body)
+
     def subscribe(self, user_id, book_id, quantity=1):
         """Create a subscription directly, already due for this month."""
         with self.app.app_context():
