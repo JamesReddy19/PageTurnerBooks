@@ -334,23 +334,25 @@ class FormLabelTests(UiContractTestCase):
 
 class FlashAndFooterTests(UiContractTestCase):
     def test_flash_message_is_announced_and_can_be_dismissed(self):
-        client = self.app.test_client()
-        self.register(client, "Flash Reader", "flash@example.com")
-        self.login(client, "flash@example.com")
-
-        # A failed login sets a flash on the next page load.
-        other = self.app.test_client()
-        other.post("/login", data={"email": "flash@example.com", "password": "wrong"})
-        html = self.page(client, "/profile")
-
-        self.assertIn("flash", read(STYLE_CSS))
         self.assertIn(".flash-dismiss", read(STYLE_CSS))
         self.assertIn("flash-dismiss", read(SCRIPT_JS))
+
+        # A rejected login renders a flash on the page it redirects back to.
+        client = self.app.test_client()
+        response = self.post(
+            client,
+            "/login",
+            {"email": "nobody@example.com", "password": "wrong-password"},
+        )
+        html = response.data.decode()
+
         self.assertRegex(
             html,
             r'class="flash (?:error|success|info)[^"]*"\s+role="(?:alert|status)"',
             "flash messages need an ARIA role so they are announced",
         )
+        self.assertIn("flash-dismiss", html)
+        self.assertIn('aria-label="Dismiss message"', html)
 
     def test_footer_is_structured_rather_than_one_bare_line(self):
         html = self.page(self.reader, "/")
