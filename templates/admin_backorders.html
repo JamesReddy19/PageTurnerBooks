@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Backorder queue · Admin{% endblock %}
+{% block content %}
+<h1>Backorder queue</h1>
+<p class="muted">
+    {{ pending_total }} copy/copies waiting. Allocation is oldest-first, so an
+    earlier order can never be overtaken by a later one.
+</p>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Book</th>
+                <th>Customer</th>
+                <th>Order</th>
+                <th>Waiting</th>
+                <th>In stock</th>
+                <th>Queued</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in backorders %}
+            <tr>
+                <td>{{ row.title }}</td>
+                <td>{{ row.email }}</td>
+                <td>#{{ row.order_id }} ({{ row.order_status }})</td>
+                <td>{{ row.quantity - row.fulfilled_quantity }}</td>
+                <td>{{ row.stock }}</td>
+                <td>{{ row.created_at }}</td>
+                <td>
+                    {% if row.stock > 0 %}
+                    <form method="post"
+                          action="{{ url_for('admin.allocate_backorders', book_id=row.book_id) }}">
+                        <input type="hidden" name="csrf_token"
+                               value="{{ csrf_token }}">
+                        <button class="action-button">Allocate stock</button>
+                    </form>
+                    {% else %}
+                    <span class="muted">No stock</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7">Nothing is backordered.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
