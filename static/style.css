@@ -3261,3 +3261,256 @@ button.danger {
   padding-left: 0.75rem;
   color: inherit;
 }
+
+/* ------------------------------
+   20. Accessibility helpers and responsive navigation
+   Kept last on purpose: these rules must win over the earlier
+   narrow-screen block that turned the header into a tall column.
+------------------------------ */
+
+/* Text for screen readers only (not visible, still announced). */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* WCAG 2.4.1: keyboard users get past the ~15 nav links on every page. The
+   link sits off-screen and slides in as the first focusable element. */
+.skip-link {
+    position: absolute;
+    top: -4rem;
+    left: 0.75rem;
+    z-index: 200;
+    padding: 0.6rem 1rem;
+    border-radius: 0 0 10px 10px;
+    background: var(--teal-dark);
+    color: var(--on-accent);
+    font-weight: 700;
+    transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+    color: var(--on-accent);
+    text-decoration: none;
+}
+
+/* The skip link moves focus to <main>; a ring around the whole region is noise. */
+#main-content:focus {
+    outline: none;
+}
+
+/* A consistent, high-contrast keyboard focus ring everywhere. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--orange);
+    outline-offset: 2px;
+}
+
+.brand-mark {
+    margin-right: 0.35rem;
+}
+
+/* Theme toggle + menu button, kept outside the collapsing nav so both stay
+   reachable while the menu is closed. */
+.header-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.nav-links {
+    margin-left: auto;
+}
+
+/* Visual grouping only; hidden from assistive technology. */
+.nav-sep {
+    align-self: center;
+    width: 1px;
+    height: 1.1rem;
+    background: currentColor;
+    opacity: 0.35;
+}
+
+.nav-links a[aria-current="page"] {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--on-accent);
+    font-weight: 700;
+}
+
+/* Hamburger button: hidden on wide screens, shown by the rule below. */
+.nav-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--on-accent);
+    cursor: pointer;
+}
+
+.nav-toggle-bars,
+.nav-toggle-bars::before,
+.nav-toggle-bars::after {
+    display: block;
+    width: 1.15rem;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.nav-toggle-bars {
+    position: relative;
+}
+
+.nav-toggle-bars::before,
+.nav-toggle-bars::after {
+    position: absolute;
+    left: 0;
+    content: "";
+}
+
+.nav-toggle-bars::before {
+    top: -6px;
+}
+
+.nav-toggle-bars::after {
+    top: 6px;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars {
+    background: transparent;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars::before {
+    top: 0;
+    transform: rotate(45deg);
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars::after {
+    top: 0;
+    transform: rotate(-45deg);
+}
+
+.flash {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.flash-text {
+    flex: 1 1 auto;
+}
+
+.flash-dismiss {
+    flex: 0 0 auto;
+    padding: 0 0.35rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.75;
+}
+
+.flash-dismiss:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.site-footer .footer-brand {
+    margin: 0 0 0.15rem;
+    color: var(--ink);
+    font-weight: 700;
+}
+
+.site-footer .footer-meta {
+    margin: 0;
+}
+
+@media screen and (max-width: 900px) {
+    /* Brand plus theme/menu buttons on one row, links on their own row,
+       instead of a tall column of wrapped links pinned by the sticky header. */
+    .site-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0 0.75rem;
+    }
+
+    .nav-toggle {
+        display: inline-flex;
+    }
+
+    .nav-links {
+        grid-column: 1 / -1;
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-start;
+    }
+
+    /* Collapse only when script.js actually ran (it adds js-nav). A failed or
+       blocked script must never leave the menu permanently unreachable. */
+    html.js-nav .nav-links {
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.15rem;
+        margin-top: 0.4rem;
+        padding-top: 0.4rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    html.js-nav .nav-links.is-open {
+        display: flex;
+    }
+
+    html.js-nav .nav-links a {
+        display: flex;
+        align-items: center;
+        min-height: 2.75rem;
+        padding: 0.5rem 0.65rem;
+    }
+
+    html.js-nav .nav-sep {
+        width: 100%;
+        height: 1px;
+        margin: 0.25rem 0;
+    }
+
+    html.js-nav .nav-greeting {
+        display: block;
+        padding: 0.35rem 0.65rem;
+    }
+}
+
+@media print {
+    .skip-link,
+    .nav-toggle,
+    .header-actions,
+    .flash-dismiss {
+        display: none;
+    }
+}
