@@ -216,7 +216,11 @@ class TwoFactorTests(BatchSevenTestCase):
 
         # Starting enrolment stores a pending secret but must not enable it:
         # the user has not proven they can generate a code yet.
-        self.post("/security/2fa", {}, token_from="/security/2fa")
+        self.post(
+            "/security/2fa",
+            {"action": "start"},
+            token_from="/security/2fa",
+        )
 
         with self.app.app_context():
             row = get_db().execute(
