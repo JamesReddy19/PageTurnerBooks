@@ -19,7 +19,7 @@ STYLE_CSS = PROJECT_ROOT / "static" / "style.css"
 BASE_HTML = PROJECT_ROOT / "templates" / "base.html"
 
 # Tokens that intentionally stay identical in both themes.
-THEME_AGNOSTIC_TOKENS = {"--on-accent"}
+THEME_AGNOSTIC_TOKENS = {"--on-accent", "--radius"}
 
 
 def read(path):
