@@ -88,7 +88,12 @@ def login():
             (email,),
         ).fetchone()
 
-        if user and check_password_hash(user["password_hash"], password):
+        # Requirement 59: an anonymized row is a tombstone, never a login.
+        if (
+            user
+            and not is_anonymized(user)
+            and check_password_hash(user["password_hash"], password)
+        ):
             connection.execute(
                 """
                 DELETE FROM login_attempts
