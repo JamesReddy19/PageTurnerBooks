@@ -210,7 +210,48 @@ python -m pytest -q        → 35 passed
 python3 -m compileall -q . → clean
 ```
 
-### Deployment configuration still manual
+### Batches 3–7 — requirements 47–73 (interfaces at `/admin`, `/account`)
+
+Recorded in brief; each batch was verified against a clean database with
+`tests/test_batchN_features.py`, and every test file was confirmed to **fail** on
+the commit before its feature landed (so the tests pin new behaviour rather than
+passing vacuously).
+
+| Batch | Reqs | What shipped |
+|---|---|---|
+| 3 | 54, 55, 58, 60, 66, 68 | Price history behind one `set_book_price()` choke point · bulk price change in one statement · JSON data export · CSS-variable dark mode with a pre-paint script (no white flash) · `books.version` optimistic locking · hash-chained `admin_log` |
+| 4 | 50, 51, 52, 53, 59 | Helpful votes (idempotent toggle) · review moderation with hidden reviews excluded from the aggregate · book requests · wishlist sharing · account anonymisation |
+| 5 | 61, 62, 63, 64, 65 | Idempotent checkout via an idempotency key · pre-pack order editing · pricing rules · simulated gift-card capture · backorders with oldest-first queue and non-negative stock |
+| 6 | 69, 70 | Notification outbox with retry/backoff · book-of-the-month subscription |
+| 7 | 71, 72, 73 | TOTP 2FA with single-use replay guard · scoped API keys · `permissions`/`role_permissions` driving `permission_required` |
+
+### Batch 8 — requirement 74 (growth report)
+
+`pageturner/growth.py` (new), `pageturner/blueprints/admin_reports.py`
+(+2 routes), `templates/admin_growth.html` (new), `templates/admin.html` (nav
+link), `tests/test_batch8_features.py` (new, 19 tests).
+
+The single statement is the requirement: a recursive CTE materialises every month
+in the window *before* the window functions run, so a month with no orders still
+occupies its row and the next month's `LAG` compares against that zero instead
+of skipping to the last month that sold something. A `GROUP BY` over `orders`
+alone cannot do this — it silently manufactures growth across a quiet month.
+`AVG(... ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)` gives a rolling
+three-month mean, and `SUM(... ROWS UNBOUNDED PRECEDING)` a running total, both
+over the same generated series.
+
+Two edge cases are pinned by tests because asserting them is cheaper than
+debugging them later: growth from a zero-revenue predecessor is `NULL`
+(undefined) alongside an absolute `change_paise`, never an "infinite percent";
+and cancelled orders are excluded everywhere, including from `previous_revenue`.
+
+```
+python -m pytest -q                       → 170 passed
+python -m pytest tests/test_batch8_features.py -q → 19 passed
+   ... and 19 failed on the pre-batch baseline (verified in a throwaway worktree)
+python3 -m compileall -q .                → clean
+```
+
 
 The repository cannot create host resources, so these stay as operator steps in
 `DEPLOYMENT.md`: the persistent disk mount (`/data`), `SECRET_KEY`,
