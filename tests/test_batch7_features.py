@@ -272,7 +272,7 @@ class ApiKeyTests(BatchSevenTestCase):
             user_id = connection.execute(
                 "SELECT id FROM users WHERE email = 'owner@example.com'"
             ).fetchone()["id"]
-            token, row = apikeys.create_key(
+            row, token = apikeys.create_key(
                 connection, user_id, "test key", scopes
             )
             connection.commit()
