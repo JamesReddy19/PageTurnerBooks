@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Review moderation · PageTurner admin{% endblock %}
+{% block content %}
+<section class="panel">
+  <p class="eyebrow">MODERATION</p>
+  <h1>Review moderation</h1>
+  <p class="muted">Hiding a review removes it from the book page <strong>and</strong> from that book's average rating and review count.</p>
+
+  <nav class="admin-actions" aria-label="Moderation filters">
+    {% for value in ['open', 'hidden', 'kept', 'all'] %}
+    <a class="button {% if status != value %}secondary{% endif %}"
+       href="{{ url_for('admin.review_moderation', status=value) }}">
+      {{ value|capitalize }}
+    </a>
+    {% endfor %}
+  </nav>
+
+  {% if reviews %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Book</th><th>Review</th><th>Reports</th><th>Helpful</th><th>State</th><th>Decision</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for review in reviews %}
+      <tr>
+        <td><a href="{{ url_for('shop.book_detail', book_id=review.book_id) }}">{{ review.book_title }}</a></td>
+        <td>
+          <strong>{{ review.name }}</strong> · {{ review.rating }}/5
+          <p>{{ review.comment }}</p>
+          <small class="muted">{{ review.created_at }}</small>
+        </td>
+        <td>
+          {% for report in reports_by_review.get(review.id, []) %}
+          <div class="report-line">
+            <strong>{{ reason_labels.get(report.reason, report.reason) }}</strong>
+            <small class="muted">{{ report.status }} · {{ report.created_at }}</small>
+            {% if report.note %}<p>{{ report.note }}</p>{% endif %}
+          </div>
+          {% else %}
+          <span class="muted">—</span>
+          {% endfor %}
+        </td>
+        <td>{{ review.helpful_votes }}</td>
+        <td>{% if review.hidden %}<span class="badge">Hidden</span>{% else %}Public{% endif %}</td>
+        <td class="admin-decision">
+          {% if not review.hidden %}
+          <form method="post" action="{{ url_for('admin.hide_review_route', review_id=review.id, status=status) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="button secondary">Hide review</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('admin.keep_review_route', review_id=review.id, status=status) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="button secondary">{% if review.hidden %}Restore{% else %}Keep{% endif %}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nothing to moderate in this view.</p>
+  {% endif %}
+</section>
+{% endblock %}
