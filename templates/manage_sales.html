@@ -1,0 +1,49 @@
+
+{% extends "base.html" %}
+
+{% block title %}Flash Sales · PageTurner Books{% endblock %}
+
+{% block content %}
+<h1>Manage flash sales</h1>
+
+<p class="muted">
+    A sale price applies only from its start time up to, but not including,
+    its end time. Leave all three sale fields empty to remove a sale.
+</p>
+
+{% for book in books %}
+    <section class="panel">
+        <h2>{{ book.title }}</h2>
+        <p>Normal price: {{ money(book.price_paise) }}</p>
+
+        <form method="post"
+              action="{{ url_for('admin.manage_sales') }}"
+              class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="book_id" value="{{ book.id }}">
+
+            <label>
+                Sale price in rupees
+                <input type="number" name="sale_price" min="0" step="0.01"
+                       value="{% if book.sale_price_paise is not none %}{{ '%.2f'|format(book.sale_price_paise / 100) }}{% endif %}">
+            </label>
+
+            <label>
+                Sale starts
+                <input type="datetime-local" name="sale_start"
+                       value="{{ (book.sale_start or '')[:16] }}">
+            </label>
+
+            <label>
+                Sale ends
+                <input type="datetime-local" name="sale_end"
+                       value="{{ (book.sale_end or '')[:16] }}">
+            </label>
+
+            <button type="submit">Save sale</button>
+        </form>
+    </section>
+{% else %}
+    <p>No books found.</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,78 @@
+
+{% extends "base.html" %}
+
+{% block title %}Promise Checkout Demo - PageTurner Books{% endblock %}
+
+{% block content %}
+<section class="promise-demo">
+    <h1>Promise-Based Checkout Demo</h1>
+
+    <p>
+        Practise product validation, stock checking, payment simulation,
+        and order confirmation using JavaScript Promises.
+    </p>
+
+    <div class="promise-demo-notice">
+        This is a learning demo. It does not create real orders or change
+        the bookstore database.
+    </div>
+
+    <form id="promise-checkout-form">
+        <div>
+            <label for="promise-product">Select a product</label>
+            <select id="promise-product" required>
+                <option value="atomic-habits">Atomic Habits</option>
+                <option value="blue-umbrella">The Blue Umbrella</option>
+                <option value="cosmos">Cosmos</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="promise-quantity">Quantity</label>
+            <input
+                id="promise-quantity"
+                type="number"
+                min="1"
+                value="1"
+                required
+            >
+        </div>
+
+        <label>
+            <input id="promise-payment-fail" type="checkbox">
+            Simulate payment failure
+        </label>
+
+        <button type="submit">Place Demo Order</button>
+    </form>
+
+    <h2>Available Demo Stock</h2>
+    <div id="promise-stock-list" aria-live="polite">
+        Stock details will appear here when JavaScript is added.
+    </div>
+
+    <h2>Checkout Result</h2>
+    <div id="promise-result" role="status" aria-live="polite">
+        Choose a product and place a demo order.
+    </div>
+
+    <h2>Test Failure Scenarios</h2>
+    <div class="promise-demo-actions">
+        <button type="button" id="promise-test-unknown">
+            Test Unknown Product
+        </button>
+
+        <button type="button" id="promise-test-stock">
+            Test Insufficient Stock
+        </button>
+
+        <button type="button" id="promise-test-payment">
+            Test Payment Failure
+        </button>
+
+        <button type="button" id="promise-reset">
+            Reset Demo Stock
+        </button>
+    </div>
+</section>
+{% endblock %}

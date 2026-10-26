@@ -1,0 +1,1867 @@
+
+/* ------------------------------
+   1. Colours and shared settings
+------------------------------ */
+
+:root {
+    --ink: #20312e;
+    --muted: #687a74;
+    --teal: #176b62;
+    --teal-dark: #104e47;
+    --teal-light: #e6f2ee;
+    --orange: #dca85b;
+    --paper: #ffffff;
+    --background: #f5f3ed;
+    --line: #e1e3d9;
+    --danger: #b8323c;
+    --danger-dark: #922630;
+    --success: #17643d;
+    --card-background: #fffdf8;
+    --card-border: #e8dcc8;
+    --card-text: #34291f;
+    --card-muted: #75695c;
+    --card-accent: #765033;
+    --radius: 14px;
+    --shadow: 0 8px 24px rgba(32, 49, 46, 0.08);
+    --shadow-hover: 0 12px 28px rgba(32, 49, 46, 0.13);
+}
+
+/* ------------------------------
+   2. General page styling
+------------------------------ */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 100px;
+}
+
+body {
+    margin: 0;
+    color: var(--ink);
+    background: var(--background);
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: var(--teal);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--teal-dark);
+    text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+button,
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    padding: 0.65rem 1rem;
+    background: var(--teal);
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+button:hover,
+.button:hover {
+    background: var(--teal-dark);
+    color: #ffffff;
+    text-decoration: none;
+    box-shadow: 0 4px 10px rgba(16, 78, 71, 0.16);
+}
+
+button:active,
+.button:active {
+    transform: translateY(1px);
+}
+
+button:focus-visible,
+.button:focus-visible,
+a:focus-visible {
+    outline: 3px solid rgba(220, 168, 91, 0.75);
+    outline-offset: 3px;
+}
+
+button:disabled,
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+button.secondary,
+.button.secondary {
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    border-color: #cbded6;
+}
+
+button.secondary:hover,
+.button.secondary:hover {
+    background: #d2e7df;
+    color: var(--teal-dark);
+}
+
+button.danger,
+.button.danger {
+    background: #fff0ef;
+    color: var(--danger);
+    border-color: #efc9c7;
+}
+
+button.danger:hover,
+.button.danger:hover {
+    background: var(--danger);
+    color: #ffffff;
+    border-color: var(--danger);
+}
+
+button.text-button {
+    padding-left: 0;
+    border-color: transparent;
+    background: transparent;
+    color: var(--teal);
+    box-shadow: none;
+}
+
+button.text-button:hover {
+    background: transparent;
+    color: var(--teal-dark);
+    text-decoration: underline;
+    box-shadow: none;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid #cbd6d0;
+    border-radius: 9px;
+    background: #ffffff;
+    color: var(--ink);
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #89958f;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(23, 107, 98, 0.12);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    width: auto;
+    accent-color: var(--teal);
+}
+
+input[type="file"] {
+    padding: 0.5rem;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+label {
+    display: grid;
+    gap: 0.4rem;
+    color: #344b46;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+h1,
+h2,
+h3 {
+    color: var(--ink);
+    line-height: 1.3;
+}
+
+h1 {
+    margin: 0.5rem 0 1rem;
+    font-size: clamp(1.7rem, 3vw, 2.4rem);
+    letter-spacing: -0.035em;
+}
+
+h2 {
+    font-size: 1.2rem;
+    letter-spacing: -0.015em;
+}
+
+h3 {
+    font-size: 1.05rem;
+}
+
+p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.8rem;
+}
+
+hr {
+    height: 1px;
+    border: 0;
+    background: var(--line);
+    margin: 1rem 0;
+}
+
+.muted,
+small {
+    color: var(--muted);
+}
+
+.block {
+    display: block;
+}
+
+/* ------------------------------
+   3. Navigation bar
+------------------------------ */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem max(1rem, calc((100% - 1100px) / 2));
+    background: linear-gradient(120deg, #103f3a, #176b62);
+    border-bottom: 2px solid #dca85b;
+    box-shadow: 0 4px 16px rgba(16, 63, 58, 0.2);
+}
+
+.site-header .brand {
+    color: #ffffff;
+}
+
+.site-header .brand:hover {
+    color: #f1cf91;
+}
+
+.site-header .nav-links a {
+    color: #f7faf8;
+}
+
+.site-header .nav-links a:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #f1cf91;
+}
+
+.site-header .nav-greeting {
+    color: #d8e8e2;
+}
+
+.site-header .cart-badge {
+    background: #dca85b;
+    color: #26332d;
+}
+
+.brand {
+    flex-shrink: 0;
+    color: var(--ink);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+}
+
+.brand:hover {
+    color: var(--teal);
+    text-decoration: none;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.nav-links a {
+    padding: 0.4rem 0.55rem;
+    border-radius: 8px;
+    color: var(--ink);
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.nav-links a:hover {
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    text-decoration: none;
+}
+
+.nav-greeting {
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.cart-badge {
+    display: inline-flex;
+    min-width: 1.35rem;
+    min-height: 1.35rem;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.15rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    background: var(--orange);
+    color: #26332d;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+/* ------------------------------
+   4. Main content and footer
+------------------------------ */
+
+.container {
+    width: calc(100% - 2rem);
+    max-width: 1100px;
+    min-height: 70vh;
+    margin: 0 auto;
+    padding: 1.6rem 0 3rem;
+}
+
+.site-footer {
+    padding: 1.6rem 1rem;
+    background: #e9ece4;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.88rem;
+    text-align: center;
+}
+
+/* ------------------------------
+   5. Homepage hero section
+------------------------------ */
+
+.hero {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(1.5rem, 4vw, 2.8rem);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    background: linear-gradient(130deg, #104e47 0%, #176b62 60%, #338579 100%);
+    box-shadow: var(--shadow);
+    color: #ffffff;
+}
+
+.hero h1,
+.hero h2,
+.hero h3 {
+    color: #ffffff;
+}
+
+.hero h1 {
+    max-width: 620px;
+    margin: 0.5rem 0;
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    line-height: 1.15;
+}
+
+.hero p {
+    max-width: 650px;
+    color: #eef8f4;
+}
+
+.hero a:not(.button) {
+    color: #ffe0a3;
+}
+
+.hero .button {
+    background: var(--orange);
+    color: #26332d;
+}
+
+.hero .button:hover {
+    background: #edbd70;
+    color: #26332d;
+}
+
+.eyebrow {
+    color: var(--orange);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+/* ------------------------------
+   6. Search, filters and panels
+------------------------------ */
+
+.search-panel,
+.panel {
+    margin: 1.2rem 0;
+    padding: 1.5rem;
+    border: 1px solid #e4d8bd;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #fbf7ed, #f2f0e5);
+    box-shadow: 0 8px 24px rgba(53, 67, 49, 0.07);
+}
+
+.search-panel h2,
+.panel h2 {
+    color: #174f45;
+}
+
+.search-panel input,
+.search-panel select,
+.panel input,
+.panel select,
+.panel textarea {
+    border-color: #c7d7cd;
+    background: #ffffff;
+}
+
+.search-panel input:focus,
+.search-panel select:focus,
+.panel input:focus,
+.panel select:focus,
+.panel textarea:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(23, 107, 98, 0.12);
+}
+
+.search-form,
+.filter-form,
+.inline-form,
+.card-actions,
+.admin-actions {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.search-form label {
+    flex: 1 1 280px;
+}
+
+.search-form input {
+    min-width: 180px;
+}
+
+.search-form button,
+.filter-form button {
+    min-height: 42px;
+}
+
+.filter-form {
+    align-items: center;
+    gap: 12px;
+    margin-top: 1rem;
+}
+
+.filter-form label {
+    flex: 0 1 200px;
+}
+
+.filter-form select[multiple] {
+    min-height: 90px;
+}
+
+.filter-form small {
+    font-size: 0.76rem;
+    font-weight: 400;
+}
+
+.text-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem;
+}
+
+.suggestions {
+    position: relative;
+    z-index: 10;
+}
+
+.suggestions ul {
+    margin: 0.35rem 0;
+    padding: 0.25rem;
+    list-style: none;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #ffffff;
+    box-shadow: var(--shadow);
+}
+
+.suggestions li a {
+    display: block;
+    padding: 0.55rem 0.7rem;
+    border-radius: 7px;
+}
+
+.suggestions li a:hover {
+    background: var(--teal-light);
+    text-decoration: none;
+}
+
+/* ------------------------------
+   7. Category pills and links
+------------------------------ */
+
+.category-pills,
+.category-filters {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+}
+
+.category-filters {
+    margin: 12px 0 18px;
+}
+
+.category-pill {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.35rem;
+    width: auto;
+    margin: 0;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid #d5e1de;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #31534d;
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.category-pill:hover {
+    border-color: var(--teal);
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    box-shadow: none;
+}
+
+.category-pill.active,
+.category-pill[aria-pressed="true"] {
+    border-color: var(--teal);
+    background: var(--teal);
+    color: #ffffff;
+}
+
+.category-pill:focus-within {
+    outline: 2px solid var(--teal);
+    outline-offset: 3px;
+}
+
+.category-count {
+    font-size: 0.72rem;
+    opacity: 0.8;
+}
+
+.filter-heading {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--ink);
+    font-weight: 700;
+}
+
+.category-filter {
+    width: 100%;
+    margin: 12px 0 18px;
+}
+
+.filter-form .category-pill {
+    width: auto;
+    min-width: 0;
+}
+
+.filter-form .category-pill input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.filter-form .category-pill.active,
+.filter-form .category-pill:has(input:checked),
+.search-panel .category-pill.active,
+.search-panel .category-filters a.active {
+    border-color: var(--teal);
+    background: var(--teal);
+    color: #ffffff;
+}
+
+.category-filters a {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 5px;
+    width: auto;
+    padding: 7px 12px;
+    border: 1px solid #c8d9cf;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #28574c;
+    font-size: 13px;
+    line-height: 1.4;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.category-filters a:hover,
+.category-filters a.active {
+    border-color: var(--teal);
+    background: var(--teal);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.search-panel .category-pill,
+.search-panel .category-filters a {
+    border-color: #c8d9cf;
+    background: #ffffff;
+    color: #28574c;
+}
+
+.search-panel .category-pill:hover,
+.search-panel .category-filters a:hover,
+.search-panel .category-pill.active,
+.search-panel .category-filters a.active {
+    border-color: var(--teal);
+    background: var(--teal);
+    color: #ffffff;
+}
+
+.search-panel .filter-heading {
+    color: #174f45;
+}
+
+.search-panel .muted {
+    color: #64766c;
+}
+
+.sort-control {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 16px 8px 0;
+}
+
+.filter-form .sort-control {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    width: auto;
+}
+
+.filter-form select {
+    width: 150px;
+    min-width: 150px;
+}
+
+.filter-actions,
+.filter-form .filter-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 8px 0;
+}
+
+.filter-form .filter-actions button {
+    width: auto;
+    min-height: 38px;
+    padding: 8px 14px;
+}
+
+.filter-form .text-link {
+    white-space: nowrap;
+}
+
+.filter-form + .muted {
+    margin-top: 12px;
+}
+
+/* ------------------------------
+   8. Book grid and book cards
+------------------------------ */
+
+.book-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 24px;
+    margin-top: 1rem;
+}
+
+.book-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    background: var(--card-background);
+    box-shadow: 0 4px 12px rgba(75, 54, 33, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.book-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(75, 54, 33, 0.13);
+}
+
+.book-card .cover,
+.cover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    width: 100%;
+    height: 270px;
+    min-height: 270px;
+    margin: 0;
+    padding: 0.8rem;
+    background: var(--cover-color, #eee8dc);
+    color: var(--ink);
+    text-align: center;
+    text-decoration: none;
+}
+
+.book-card .cover:hover,
+.cover:hover {
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.book-card .cover img,
+.cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.cover strong {
+    max-width: 100%;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    overflow-wrap: anywhere;
+}
+
+.cover small {
+    max-width: 100%;
+}
+
+.cover-mark {
+    font-size: 2rem;
+}
+
+.book-card-body,
+.book-info {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 16px;
+}
+
+.book-info h2,
+.book-info p,
+.book-card h2 {
+    overflow-wrap: anywhere;
+}
+
+.book-card .book-category,
+.category-label {
+    display: inline-block;
+    align-self: flex-start;
+    margin: 0;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: #efe3d0;
+    color: #765033;
+    font-size: 0.74rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.book-card h2,
+.book-card .book-info h2 {
+    width: 100%;
+    margin: 0;
+    color: var(--card-text);
+    font-size: 1.05rem;
+    line-height: 1.4;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+}
+
+.book-card h2 a,
+.book-card .book-info h2 a {
+    color: var(--card-text);
+    text-decoration: none;
+}
+
+.book-card h2 a:hover,
+.book-card .book-info h2 a:hover {
+    color: #8a542d;
+    text-decoration: none;
+}
+
+.book-card .book-author,
+.book-card .muted {
+    margin: 0;
+    color: var(--card-muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.book-card .book-price,
+.book-card .price {
+    margin: 4px 0 0;
+    color: #684321;
+    font-size: 1.08rem;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.large-price {
+    font-size: 1.6rem;
+}
+
+.book-card .stock-status,
+.book-card .stock {
+    margin: 0;
+    color: var(--success);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.book-card .stock-status.out-of-stock,
+.book-card .out-of-stock {
+    color: var(--danger);
+}
+
+.book-card .low-stock {
+    color: #9b5a13;
+}
+
+/* Keep the action buttons at the bottom of each card. */
+
+.book-card .book-actions,
+.book-card .card-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+.book-card .book-actions form,
+.book-card .card-actions form {
+    display: inline-flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+}
+
+.book-card .book-actions button,
+.book-card .book-actions .button,
+.book-card .card-actions button,
+.book-card .card-actions .button,
+.book-card .details-button,
+.book-card .add-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 0;
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
+}
+
+.book-card .book-actions .add-button,
+.book-card .card-actions .add-button {
+    background: var(--card-accent);
+    color: #ffffff;
+    border: 1px solid var(--card-accent);
+    cursor: pointer;
+}
+
+.book-card .book-actions .add-button:hover,
+.book-card .card-actions .add-button:hover {
+    background: #5c3c25;
+    border-color: #5c3c25;
+}
+
+.book-card .details-button {
+    background: transparent;
+    color: #684321;
+    border: 1px solid #cdb89c;
+    text-decoration: none;
+}
+
+.book-card .details-button:hover {
+    background: #f1e5d3;
+    color: #5c3c25;
+    text-decoration: none;
+    box-shadow: none;
+}
+
+.book-card .heart-button,
+.book-card .wishlist-button {
+    display: inline-flex;
+    flex: 0 0 36px;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: 1px solid #d9cbbb;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #6b7771;
+    font-size: 1.2rem;
+    line-height: 1;
+    box-shadow: none;
+}
+
+.book-card .heart-button:hover,
+.book-card .wishlist-button:hover {
+    border-color: #dc7777;
+    background: #fff0f0;
+    color: #c62828;
+    box-shadow: none;
+}
+
+.book-card .heart-button.active,
+.book-card .heart-button[aria-pressed="true"] {
+    border-color: #f0cccc;
+    background: #fff0f0;
+    color: #c62828;
+}
+
+.small-form {
+    margin-top: 0.6rem;
+}
+
+/* Shared action layout for non-book-card pages. */
+
+.card-actions {
+    align-items: stretch;
+    gap: 0.4rem;
+    margin-top: auto;
+    padding-top: 0.65rem;
+}
+
+.card-actions form {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+}
+
+.card-actions button,
+.card-actions .button {
+    width: 100%;
+    min-height: 36px;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.82rem;
+}
+
+.heart-button,
+.wishlist-button {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    width: 38px;
+    height: 38px;
+    min-height: 34px;
+    padding: 0;
+    border: 1px solid #d1d9d4;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #6b7771;
+    font-size: 1.4rem;
+    line-height: 1;
+    box-shadow: none;
+}
+
+.heart-button:hover,
+.wishlist-button:hover {
+    border-color: #dc7777;
+    background: #fff0f0;
+    color: #c62828;
+    box-shadow: none;
+}
+
+.heart-button.active,
+.heart-button[aria-pressed="true"] {
+    border-color: #f0cccc;
+    background: #fff0f0;
+    color: #c62828;
+}
+
+/* ------------------------------
+   9. Pagination
+------------------------------ */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    padding: 1.5rem 0;
+}
+
+.pagination a {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #ffffff;
+    color: var(--teal-dark);
+}
+
+.pagination a:hover {
+    border-color: var(--teal);
+    background: var(--teal-light);
+    text-decoration: none;
+}
+
+.pagination .pagination-disabled {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #eeeee8;
+    color: #92978f;
+    cursor: not-allowed;
+}
+
+/* ------------------------------
+   10. Book details
+------------------------------ */
+
+.detail-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+    align-items: start;
+    gap: 2rem;
+    margin: 1.5rem 0;
+}
+
+.detail-cover {
+    display: flex;
+    min-height: 320px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--cover-color, #e7eeeb);
+    text-align: center;
+}
+
+.detail-cover img {
+    display: block;
+    width: 100%;
+    max-height: 360px;
+    object-fit: contain;
+}
+
+.detail-cover span {
+    font-size: 3rem;
+}
+
+.detail-copy {
+    min-width: 0;
+    padding: 0.5rem 0;
+}
+
+.tag-list span {
+    display: inline-block;
+    margin: 0.2rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    font-size: 0.84rem;
+}
+
+/* ------------------------------
+   11. Reviews and forms
+------------------------------ */
+
+.review {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.stack-form {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.inline-form label {
+    min-width: 120px;
+}
+
+.inline-form input[type="number"] {
+    width: 85px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.checkbox-label input {
+    width: auto;
+}
+
+.auth-card {
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: clamp(1.2rem, 4vw, 2rem);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: var(--shadow);
+}
+
+.auth-card h1,
+.auth-card h2 {
+    color: var(--teal-dark);
+}
+
+.two-column {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 1rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.address-card {
+    margin: 0.75rem 0;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #ffffff;
+    transition: box-shadow 0.2s ease;
+}
+
+.address-card:hover {
+    box-shadow: var(--shadow);
+}
+
+/* ------------------------------
+   12. Tables and cart
+------------------------------ */
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+}
+
+th,
+td {
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background: #eaf1eb;
+    color: var(--teal-dark);
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
+tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+tbody tr:hover {
+    background: #fafbf8;
+}
+
+td form + form {
+    margin-top: 0.35rem;
+}
+
+.cart-summary {
+    width: min(100%, 480px);
+    margin: 1.5rem 0 1.5rem auto;
+    padding: 1.3rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #ffffff;
+    box-shadow: var(--shadow);
+}
+
+.cart-summary p {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.cart-summary strong {
+    text-align: right;
+}
+
+.total-line {
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--line);
+    font-size: 1.1rem;
+}
+
+.checkout-button {
+    width: 100%;
+    margin-top: 0.6rem;
+}
+
+.checkout-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(250px, 0.8fr);
+    align-items: start;
+    gap: 1.2rem;
+}
+
+/* ------------------------------
+   13. Alerts and messages
+------------------------------ */
+
+.flash-list {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.flash {
+    padding: 0.85rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    animation: fade-away 3s ease 3s forwards;
+}
+
+.flash.success {
+    border-color: #b9dec7;
+    background: #e5f5e9;
+    color: #155a36;
+}
+
+.flash.error {
+    border-color: #edc4c1;
+    background: #fff0ee;
+    color: #842929;
+}
+
+@keyframes fade-away {
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+.empty-state {
+    padding: 3rem 1rem;
+    border: 1px dashed #cbd8d0;
+    border-radius: var(--radius);
+    background: #ffffff;
+    text-align: center;
+}
+
+.empty-state h2,
+.empty-state h3 {
+    color: var(--teal-dark);
+}
+
+/* ------------------------------
+   14. Admin dashboard
+------------------------------ */
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.stat-card {
+    display: grid;
+    gap: 0.5rem;
+    padding: 1.2rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #ffffff;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.stat-card span {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.stat-card strong {
+    color: var(--teal-dark);
+    font-size: 1.5rem;
+    overflow-wrap: anywhere;
+}
+
+.admin-actions {
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.edit-book {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.edit-book summary {
+    margin-bottom: 1rem;
+    color: var(--teal-dark);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.edit-book form {
+    margin: 0.8rem 0;
+}
+
+/* ------------------------------
+   15. Status and notifications
+------------------------------ */
+
+.status-pill {
+    display: inline-block;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid #cbded6;
+    border-radius: 999px;
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.timeline {
+    padding-left: 1.5rem;
+}
+
+.timeline li {
+    margin: 0.8rem 0;
+    padding-left: 0.3rem;
+}
+
+.timeline span {
+    margin-left: 0.5rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.notification {
+    margin: 0.6rem 0;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.notification.unread {
+    border-left: 4px solid var(--orange);
+    background: #fffdf7;
+}
+
+.token-box {
+    display: grid;
+    gap: 0.7rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #f0f5f0;
+    overflow-wrap: anywhere;
+}
+
+.token-box code {
+    user-select: all;
+}
+
+.row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+/* ------------------------------
+   16. Order page action buttons
+------------------------------ */
+
+.order-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 1rem;
+}
+
+.order-actions .action-button {
+    min-height: 38px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+    line-height: 1.3;
+    white-space: normal;
+}
+
+.order-actions a.button.secondary {
+    border-color: #0f5b50;
+    background: #0f5b50;
+    color: #ffffff;
+}
+
+.order-actions a.button.secondary:hover {
+    border-color: #0b453d;
+    background: #0b453d;
+    color: #ffffff;
+}
+
+.order-actions button.danger {
+    border-color: var(--danger);
+    background: var(--danger);
+    color: #ffffff;
+}
+
+.order-actions button.danger:hover {
+    border-color: var(--danger-dark);
+    background: var(--danger-dark);
+    color: #ffffff;
+}
+
+.cancel-order-form {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.cancel-order-form button {
+    margin: 0;
+}
+
+/* ------------------------------
+   17. Revenue chart
+------------------------------ */
+
+#revenue-chart {
+    display: block;
+    width: 100%;
+    height: 220px;
+    margin-top: 1rem;
+}
+
+/* ------------------------------
+   18. Medium screens
+------------------------------ */
+
+@media (max-width: 900px) {
+    .site-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .nav-links {
+        justify-content: flex-start;
+        gap: 0.35rem;
+    }
+
+    .book-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ------------------------------
+   19. Small screens
+------------------------------ */
+
+@media (max-width: 620px) {
+    .container {
+        width: calc(100% - 1rem);
+        padding-top: 0.8rem;
+    }
+
+    .site-header {
+        padding: 0.8rem;
+    }
+
+    .brand {
+        font-size: 1.05rem;
+    }
+
+    .nav-links {
+        font-size: 0.84rem;
+        gap: 0.25rem;
+    }
+
+    .nav-links a {
+        padding: 0.3rem;
+    }
+
+    .hero {
+        padding: 1.4rem;
+        border-radius: 12px;
+    }
+
+    .hero h1 {
+        font-size: 2rem;
+    }
+
+    .search-panel,
+    .panel {
+        padding: 0.85rem;
+    }
+
+    .search-form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .search-form label {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+
+    .search-form button {
+        width: 100%;
+    }
+
+    .filter-form {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .filter-form label {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+
+    .filter-form .sort-control {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .filter-form select {
+        flex: 1;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .filter-form .filter-actions {
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filter-form .filter-actions button {
+        width: auto;
+    }
+
+    .filter-form .category-pills {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .category-pills,
+    .category-filters {
+        gap: 7px;
+    }
+
+    .filter-form .category-pill {
+        width: auto;
+        padding: 7px 10px;
+        font-size: 12px;
+    }
+
+    .category-filters a {
+        padding: 7px 10px;
+        font-size: 12px;
+    }
+
+    .book-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .book-card .cover,
+    .cover {
+        height: 170px;
+        min-height: 170px;
+        padding: 0.55rem;
+    }
+
+    .book-card-body,
+    .book-info {
+        padding: 12px;
+        gap: 6px;
+    }
+
+    .book-card h2,
+    .book-card .book-info h2 {
+        font-size: 0.94rem;
+    }
+
+    .book-card .book-author,
+    .book-card .muted {
+        font-size: 0.8rem;
+    }
+
+    .book-card .book-price,
+    .book-card .price {
+        font-size: 0.96rem;
+    }
+
+    .book-card .book-actions,
+    .book-card .card-actions {
+        gap: 6px;
+        padding-top: 12px;
+    }
+
+    .book-card .book-actions button,
+    .book-card .book-actions .button,
+    .book-card .card-actions button,
+    .book-card .card-actions .button,
+    .book-card .details-button,
+    .book-card .add-button {
+        padding: 7px 9px;
+        font-size: 0.76rem;
+    }
+
+    .detail-layout,
+    .checkout-layout,
+    .two-column {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-cover {
+        min-height: 240px;
+    }
+
+    .detail-cover img {
+        max-height: 280px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full-width {
+        grid-column: auto;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.6rem;
+    }
+
+    .stat-card {
+        padding: 0.8rem;
+    }
+
+    th,
+    td {
+        padding: 0.55rem;
+    }
+
+    .cart-summary {
+        margin-left: 0;
+        padding: 1rem;
+    }
+
+    .pagination {
+        gap: 0.6rem;
+    }
+
+    .order-actions {
+        align-items: stretch;
+    }
+
+    .order-actions .action-button {
+        max-width: 100%;
+    }
+
+    .cancel-order-form {
+        max-width: 100%;
+    }
+
+    .row-between {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* ------------------------------
+   20. Very small screens
+------------------------------ */
+
+@media (max-width: 420px) {
+    .book-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .book-card .cover,
+    .cover {
+        height: 210px;
+        min-height: 210px;
+    }
+
+    .book-card-body,
+    .book-info {
+        padding: 14px;
+    }
+
+    .book-card .book-actions,
+    .book-card .card-actions {
+        gap: 8px;
+    }
+}
+
+/* ------------------------------
+   21. Printing
+------------------------------ */
+
+@media print {
+    body {
+        background: #ffffff;
+        color: #000000;
+    }
+
+    .site-header,
+    .site-footer,
+    .no-print,
+    .flash-list {
+        display: none !important;
+    }
+
+    .container {
+        width: 100%;
+        max-width: none;
+        min-height: 0;
+        padding: 0;
+    }
+
+    .panel,
+    .cart-summary {
+        border: 0;
+        box-shadow: none;
+    }
+
+    a {
+        color: #000000;
+        text-decoration: none;
+    }
+
+    button,
+    .button {
+        box-shadow: none;
+    }
+}

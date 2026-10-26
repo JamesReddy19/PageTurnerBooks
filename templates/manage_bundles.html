@@ -1,0 +1,94 @@
+
+{% extends "base.html" %}
+
+{% block title %}Manage Bundles · PageTurner Books{% endblock %}
+
+{% block content %}
+<h1>Manage combo bundles</h1>
+
+<section class="panel">
+    <h2>Create a bundle</h2>
+    <p class="muted">
+        Select at least two different books. Each selected book can have
+        its own quantity. The price applies to the complete bundle.
+    </p>
+
+    <form method="post"
+          action="{{ url_for('admin.manage_bundles') }}"
+          class="stack-form">
+
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <label>
+            Bundle name
+            <input type="text" name="name" maxlength="150" required>
+        </label>
+
+        <label>
+            Description
+            <textarea name="description" maxlength="1000"></textarea>
+        </label>
+
+        <label>
+            Bundle price in rupees
+            <input type="number" name="price" min="0" step="0.01" required>
+        </label>
+
+        <fieldset>
+            <legend>Choose books and quantities</legend>
+
+            {% for book in books %}
+                <div class="inline-form">
+                    <label>
+                        <input type="checkbox"
+                               name="book_ids"
+                               value="{{ book.id }}">
+                        {{ book.title }} — {{ book.author }}
+                        (Stock: {{ book.stock }})
+                    </label>
+
+                    <label>
+                        Quantity
+                        <input type="number"
+                               name="quantity_{{ book.id }}"
+                               value="1"
+                               min="1"
+                               max="99">
+                    </label>
+                </div>
+            {% else %}
+                <p>No books are available.</p>
+            {% endfor %}
+        </fieldset>
+
+        <button type="submit">Create bundle</button>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>Existing bundles</h2>
+
+    {% for bundle in bundles %}
+        <article class="panel">
+            <h3>{{ bundle.name }}</h3>
+            <p>{{ bundle.description or "No description provided." }}</p>
+            <p>Price: <strong>{{ money(bundle.price_paise) }}</strong></p>
+            <p>Books: {{ bundle.items_text or "No items" }}</p>
+            <p>Status: {{ "Active" if bundle.active else "Inactive" }}</p>
+
+            <form method="post"
+                  action="{{ url_for('admin.manage_bundles') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="action" value="toggle">
+                <input type="hidden" name="bundle_id" value="{{ bundle.id }}">
+
+                <button type="submit">
+                    {{ "Deactivate" if bundle.active else "Activate" }}
+                </button>
+            </form>
+        </article>
+    {% else %}
+        <p>No bundles have been created yet.</p>
+    {% endfor %}
+</section>
+{% endblock %}

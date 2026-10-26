@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Your cart · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Your cart</h1>
+{% if items %}
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Book</th>
+<th>Price</th>
+<th>Quantity</th>
+<th>Subtotal</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+{% for item in items %}
+<tr>
+<td>
+<a href="{{ url_for('shop.book_detail', book_id=item.book.id) }}">{{ item.book.title }}</a>
+<small class="muted block">{{ item.book.author }}</small>
+</td>
+<td>{{ money(item.book.price_paise) }}</td>
+<td>
+<form method="post" action="{{ url_for('shop.update_cart', book_id=item.book.id) }}" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99" aria-label="Quantity for {{ item.book.title }}">
+<button class="secondary">Update</button>
+</form>
+</td>
+<td>{{ money(item.line_total) }}</td>
+<td>
+<form method="post" action="{{ url_for('shop.remove_cart_item', book_id=item.book.id) }}" data-confirm="Remove this book from your cart?">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="danger">Remove</button>
+</form>
+</td>
+</tr>
+
+{% endfor %}
+</tbody>
+</table>
+</div>
+<div class="cart-summary">
+<h2>Order summary</h2>
+{% if coupon_message %}
+<p class="flash error">{{ coupon_message }}</p>
+
+{% endif %}
+<p>Subtotal <strong>{{ money(subtotal) }}</strong>
+</p>
+<p>Discount <strong>−{{ money(discount) }}</strong>
+</p>
+<p class="total-line">Estimated total before shipping and tax <strong>{{ money(total) }}</strong>
+</p>
+<form method="post" action="{{ url_for('shop.apply_coupon') }}" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label for="coupon-code">Coupon code</label>
+<input id="coupon-code" name="code" value="{{ coupon_code }}" maxlength="40" placeholder="Enter code">
+<button class="secondary">Apply</button>
+</form>
+{% if coupon_code %}
+<form method="post" action="{{ url_for('shop.remove_coupon') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="text-button">Remove coupon</button>
+</form>
+
+{% endif %}
+<a class="button checkout-button" href="{{ url_for('shop.checkout') }}">Continue to checkout</a>
+</div>
+{% else %}
+
+<div class="empty-state">
+<h2>Your cart is empty</h2>
+<p>Find something interesting to read.</p>
+<a class="button" href="{{ url_for('shop.index') }}">Browse books</a>
+</div>
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Order history · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Your orders</h1>
+{% if orders %}
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Date</th>
+<th>Status</th>
+<th>Total</th>
+<th>
+</th>
+</tr>
+</thead>
+<tbody>
+{% for order in orders %}
+<tr>
+<td>#{{ order.id }}</td>
+<td>{{ order.date }}</td>
+<td>{{ order.status }}</td>
+<td>{{ money(order.total_paise) }}</td>
+<td>
+<a href="{{ url_for('shop.order_detail', order_id=order.id) }}">View order</a>
+</td>
+</tr>
+
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+
+<div class="empty-state">
+<p>You haven't placed an order yet.</p>
+<a class="button" href="{{ url_for('shop.index') }}">Browse books</a>
+</div>
+
+{% endif %}
+{% endblock %}

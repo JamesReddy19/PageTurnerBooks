@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Admin login · PageTurner Books
+{% endblock %}
+{% block content %}
+<section class="auth-card">
+<h1>Administrator login</h1>
+<p>Sign in to Manage your Bookstore Books Orders and More.</p>
+<form method="post" class="stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Admin password<input type="password" name="password" required autocomplete="current-password">
+</label>
+<button>Log in</button>
+</form>
+</section>
+
+{% endblock %}

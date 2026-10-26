@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Wishlist · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Your wishlist</h1>
+<section class="book-grid">
+{% for book in books %}
+<article class="book-card">
+<a class="cover" style="--cover-color: {{ book.color }}" href="{{ url_for('shop.book_detail', book_id=book.id) }}">
+{% if book.image %}
+<img src="{{ url_for('static', filename=book.image) }}" alt="Cover of {{ book.title }}">
+{% else %}
+
+<span class="cover-mark">📖</span>
+<strong>{{ book.title }}</strong>
+<small>{{ book.author }}</small>
+
+{% endif %}
+</a>
+<div class="book-card-body">
+<h2>{{ book.title }}</h2>
+<p>{{ book.author }}</p>
+<p class="price">{{ money(book.price_paise) }}</p>
+<div class="card-actions">
+<form method="post" action="{{ url_for('shop.add_to_cart', book_id=book.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button>Add to cart</button>
+</form>
+<form method="post" action="{{ url_for('shop.remove_wishlist', book_id=book.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="danger">Remove</button>
+</form>
+</div>
+</div>
+</article>
+{% else %}
+
+<p>Your wishlist is empty.</p>
+
+{% endfor %}
+</section>
+
+{% endblock %}

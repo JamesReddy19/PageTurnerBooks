@@ -1,0 +1,372 @@
+
+{% extends "base.html" %}
+
+{% block title %}Discover Books | PageTurner Books{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <p class="hero-eyebrow">A BOOKSTORE FOR THE CURIOUS</p>
+    <h1>Find a story worth staying up for.</h1>
+    <p>
+        Discover your next favourite read, from timeless fiction
+        to ideas that change the way you see the world.
+    </p>
+    <a href="#bookGrid" class="hero-cta">
+        Explore the collection <span aria-hidden="true">→</span>
+    </a>
+</section>
+
+<section class="shop-controls" aria-label="Find books">
+    <form action="{{ url_for('shop.index') }}" method="GET" class="search-form">
+        <input
+            type="search"
+            id="searchBox"
+            name="q"
+            value="{{ query }}"
+            placeholder="Search titles, authors or ideas..."
+            autocomplete="off"
+            aria-label="Search books"
+        >
+
+        {% if category %}
+            <input type="hidden" name="category" value="{{ category }}">
+        {% endif %}
+
+        {% for category_id in category_ids %}
+            <input type="hidden" name="category" value="{{ category_id }}">
+        {% endfor %}
+
+        <input type="hidden" name="sort" value="{{ sort }}">
+
+        <button type="submit" class="add-button">Search</button>
+    </form>
+
+    <div id="search-suggestions" class="suggestions"></div>
+</section>
+
+<!-- Step 42: Recently viewed books -->
+{% if recently_viewed %}
+<section class="catalog-section">
+    <div class="section-heading">
+        <div>
+            <p class="section-kicker">PICK UP WHERE YOU LEFT OFF</p>
+            <h2>Recently viewed books</h2>
+            <p>Books you looked at most recently.</p>
+        </div>
+    </div>
+
+    <div class="book-grid">
+        {% for book in recently_viewed %}
+            <article class="book-card">
+                <a
+                    href="{{ url_for('shop.book_detail', book_id=book['id']) }}"
+                    class="cover"
+                    aria-label="View {{ book['title'] }}"
+                >
+                    {% if book['image'] %}
+                        <img
+                            src="{{ url_for('static', filename=book['image']) }}"
+                            alt="{{ book['title'] }} cover"
+                            loading="lazy"
+                        >
+                    {% else %}
+                        <div class="cover-placeholder">
+                            <span>PAGE TURNER BOOKS</span>
+                            <strong>{{ book['title'] }}</strong>
+                            <span class="placeholder-author">
+                                {{ book['author'] }}
+                            </span>
+                        </div>
+                    {% endif %}
+                </a>
+
+                <div class="book-card-body">
+                    <span class="category-label">
+                        {{ book['category'] or 'Books' }}
+                    </span>
+
+                    <h3 class="book-title">
+                        <a href="{{ url_for('shop.book_detail', book_id=book['id']) }}">
+                            {{ book['title'] }}
+                        </a>
+                    </h3>
+
+                    <p class="book-author">
+                        by
+                        <a href="{{ url_for('shop.author_page', author_name=book['author']) }}">
+                            {{ book['author'] }}
+                        </a>
+                    </p>
+
+                    {% if book['average_rating'] %}
+                        <p class="book-rating">
+                            <span aria-hidden="true">★</span>
+                            {{ '%.1f'|format(book['average_rating']) }}
+                        </p>
+                    {% endif %}
+
+                    <strong class="book-price">
+                        ₹{{ "%.2f"|format(book['price_paise'] / 100) }}
+                    </strong>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="catalog-section">
+    <div class="section-heading">
+        <div>
+            <p class="section-kicker">FIND YOUR NEXT READ</p>
+            <h2>Browse by category</h2>
+            <p>Follow your curiosity. There is a book for every mood.</p>
+        </div>
+    </div>
+
+    <nav class="category-filters" aria-label="Book categories">
+        <a
+            href="{{ url_for('shop.index', q=query, sort=sort) }}"
+            class="{% if not category and not category_ids %}active{% endif %}"
+        >
+            All books
+        </a>
+
+        {% for item in categories %}
+            <a
+                href="{{ url_for('shop.index', q=query, category=item['id'], sort=sort) }}"
+                class="{% if category|string == item['id']|string %}active{% endif %}"
+            >
+                {{ item['name'] }} <span>{{ item['book_count'] }}</span>
+            </a>
+        {% endfor %}
+    </nav>
+</section>
+
+<section class="catalog-section">
+    <div class="catalog-toolbar">
+        <div class="results-label">
+            <h2>Our collection</h2>
+            <p>
+                {% if count == 1 %}
+                    1 book to discover
+                {% else %}
+                    {{ count }} books to discover
+                {% endif %}
+            </p>
+        </div>
+
+        <form action="{{ url_for('shop.index') }}" method="GET" class="sorting-form">
+            <input type="hidden" name="q" value="{{ query }}">
+
+            {% if category and not category.isdigit() %}
+                <input type="hidden" name="category" value="{{ category }}">
+            {% endif %}
+
+            {% for category_id in category_ids %}
+                <input type="hidden" name="category" value="{{ category_id }}">
+            {% endfor %}
+
+            <label for="sort-filter">Sort by</label>
+
+            <select id="sort-filter" name="sort" onchange="this.form.submit()">
+                <option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>
+                    Relevance
+                </option>
+                <option value="title" {% if sort == 'title' %}selected{% endif %}>
+                    A–Z
+                </option>
+                <option value="price" {% if sort == 'price' %}selected{% endif %}>
+                    Price
+                </option>
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>
+                    Newest
+                </option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Step 45: Compare two selected books -->
+    <form
+        id="compareForm"
+        action="{{ url_for('shop.compare_books') }}"
+        method="GET"
+    >
+        <button type="submit" class="add-button">
+            Compare selected books
+        </button>
+    </form>
+
+    <div class="book-grid" id="bookGrid">
+        {% if books %}
+            {% for book in books %}
+                <article class="book-card">
+                    <a
+                        href="{{ url_for('shop.book_detail', book_id=book['id']) }}"
+                        class="cover"
+                        aria-label="View {{ book['title'] }}"
+                    >
+                        {% if book['image'] %}
+                            <img
+                                src="{{ url_for('static', filename=book['image']) }}"
+                                alt="{{ book['title'] }} cover"
+                                loading="lazy"
+                            >
+                        {% else %}
+                            <div class="cover-placeholder">
+                                <span>PAGE TURNER BOOKS</span>
+                                <strong>{{ book['title'] }}</strong>
+                                <span class="placeholder-author">
+                                    {{ book['author'] }}
+                                </span>
+                            </div>
+                        {% endif %}
+                    </a>
+
+                    <div class="book-card-body">
+                        <span class="category-label">
+                            {{ book['category'] or 'Books' }}
+                        </span>
+
+                        <h3 class="book-title">
+                            <a href="{{ url_for('shop.book_detail', book_id=book['id']) }}">
+                                {{ book['title'] }}
+                            </a>
+                        </h3>
+
+                        <p class="book-author">
+                            by
+                            <a href="{{ url_for('shop.author_page', author_name=book['author']) }}">
+                                {{ book['author'] }}
+                            </a>
+                        </p>
+
+                        {% if book['average_rating'] %}
+                            <p
+                                class="book-rating"
+                                aria-label="Average rating {{ '%.1f'|format(book['average_rating']) }} out of 5"
+                            >
+                                <span aria-hidden="true">★</span>
+                                {{ '%.1f'|format(book['average_rating']) }}
+                            </p>
+                        {% endif %}
+
+                        {% if book['release_date'] and book['release_date'] > today_date %}
+                            <span class="release-ribbon coming-soon">Coming Soon</span>
+                        {% elif book['release_date'] and new_arrivals_cutoff <= book['release_date'] <= today_date %}
+                            <span class="release-ribbon new-arrival">New</span>
+                        {% endif %}
+
+                        <div class="book-price-row">
+                            <strong class="book-price">
+                                ₹{{ "%.2f"|format(book['price_paise'] / 100) }}
+                            </strong>
+
+                            {% if book['release_date'] and book['release_date'] > today_date %}
+                                <span class="stock-status">Not released</span>
+                            {% elif book['stock'] > 0 %}
+                                <span class="stock-status in-stock">In stock</span>
+                            {% else %}
+                                <span class="stock-status out-of-stock">Out of stock</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-actions">
+                            <form
+                                action="{{ url_for('shop.toggle_wishlist', book_id=book['id']) }}"
+                                method="POST"
+                                class="small-form wishlist-form"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="wishlist-button {% if book['id'] in wishlist_ids %}wishlist-active{% endif %}"
+                                    title="{% if book['id'] in wishlist_ids %}Remove from wishlist{% else %}Add to wishlist{% endif %}"
+                                    aria-label="{% if book['id'] in wishlist_ids %}Remove {{ book['title'] }} from wishlist{% else %}Add {{ book['title'] }} to wishlist{% endif %}"
+                                    aria-pressed="{{ 'true' if book['id'] in wishlist_ids else 'false' }}"
+                                >
+                                    <span data-wishlist-heart aria-hidden="true">{% if book['id'] in wishlist_ids %}♥{% else %}♡{% endif %}</span>
+                                </button>
+                            </form>
+
+                            <a
+                                href="{{ url_for('shop.book_detail', book_id=book['id']) }}"
+                                class="details-button"
+                            >
+                                Details
+                            </a>
+
+                            {% if book['release_date'] and book['release_date'] > today_date %}
+                                <button type="button" class="add-button" disabled>
+                                    Coming Soon
+                                </button>
+                            {% elif book['stock'] > 0 %}
+                                <button
+                                    type="button"
+                                    class="add-button add-to-cart-button"
+                                    data-book-id="{{ book['id'] }}"
+                                >
+                                    Add to cart
+                                </button>
+                            {% else %}
+                                <button type="button" class="add-button" disabled>
+                                    Out of stock
+                                </button>
+                            {% endif %}
+
+                            <label class="compare-option">
+                                <input
+                                    type="checkbox"
+                                    name="book_ids"
+                                    value="{{ book['id'] }}"
+                                    form="compareForm"
+                                >
+                                Compare
+                            </label>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        {% else %}
+            <div class="no-books">
+                <h2>No books found</h2>
+                <p>Try another search term or choose a different category.</p>
+                <a href="{{ url_for('shop.index') }}" class="add-button">
+                    View all books
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if page_count > 1 %}
+        <nav class="pagination" aria-label="Book pages">
+            {% if page > 1 %}
+                <a
+                    href="{{ url_for('shop.index', q=query, category=category, sort=sort, page=page - 1) }}"
+                    class="page-link"
+                >
+                    ← Previous
+                </a>
+            {% endif %}
+
+            <span class="page-current">Page {{ page }} of {{ page_count }}</span>
+
+            {% if page < page_count %}
+                <a
+                    href="{{ url_for('shop.index', q=query, category=category, sort=sort, page=page + 1) }}"
+                    class="page-link"
+                >
+                    Next →
+                </a>
+            {% endif %}
+        </nav>
+    {% endif %}
+</section>
+
+{% endblock %}

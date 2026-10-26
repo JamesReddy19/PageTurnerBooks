@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Contact messages · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Contact messages</h1>
+{% for item in messages %}
+<article class="panel">
+<div class="row-between">
+<h2>{{ item.subject }}</h2>
+<span class="status-pill">{{ 'Read' if item.is_read else 'Unread' }}</span>
+</div>
+<p>From {{ item.name }} ({{ item.email }}) · {{ item.created_at }}</p>
+<p>{{ item.message }}</p>
+{% if not item.is_read %}
+<form method="post" action="{{ url_for('admin.mark_message_read', message_id=item.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button>Mark as read</button>
+</form>
+
+{% endif %}
+</article>
+{% else %}
+
+<p>No contact messages.</p>
+
+{% endfor %}
+{% endblock %}

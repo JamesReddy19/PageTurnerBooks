@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}{{ book.title }} · PageTurner Books
+{% endblock %}
+{% block content %}
+<a class="text-link" href="{{ url_for('shop.index') }}">← Back to shop</a>
+<section class="detail-layout">
+  <div class="detail-cover" style="--cover-color: {{ book.color }}">
+{% if book.image %}
+<img src="{{ url_for('static', filename=book.image) }}" alt="Cover of {{ book.title }}">
+{% else %}
+
+<span>📖</span>
+<h2>{{ book.title }}</h2>
+<p>
+    <a href="{{ url_for('shop.author_page', author_name=book.author) }}">
+        {{ book.author }}
+    </a>
+</p>
+
+{% endif %}
+</div>
+  <div class="detail-copy">
+<span class="category-label">{{ book.category }}</span>
+<h1>{{ book.title }}</h1>
+<p class="muted">
+    by <a href="{{ url_for('shop.author_page', author_name=book.author) }}">{{ book.author }}</a>
+</p>
+{% if book.release_date and book.release_date > today_date %}
+<p class="release-ribbon coming-soon">Coming Soon</p>
+{% elif book.release_date and new_arrivals_cutoff <= book.release_date <= today_date %}
+<p class="release-ribbon new-arrival">New</p>
+{% endif %}
+<p class="price large-price">{{ money(book.price_paise) }}</p>
+<p>{{ book.description }}</p>
+<p class="stock {% if book.stock == 0 %}out-of-stock{% elif book.stock <= 3 %}low-stock
+{% endif %}">
+{% if book.stock == 0 %}Out of stock{% elif book.stock <= 3 %}Only {{ book.stock }} left{% else %}
+{{ book.stock }} copies available
+{% endif %}
+</p>
+    {% if tags %}
+<p class="tag-list">Tags: {% for tag in tags %}
+<span>{{ tag.name }}</span>
+
+{% endfor %}
+</p>
+
+{% endif %}
+    {% if book.release_date and book.release_date > today_date %}
+        <p>This book is not available to order yet.</p>
+    {% else %}
+        <form method="post" action="{{ url_for('shop.add_to_cart', book_id=book.id) }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label>Quantity <input type="number" name="quantity" value="1" min="1" max="99" required></label>
+            <button {% if book.stock < 1 %}disabled{% endif %}>Add to cart</button>
+        </form>
+    {% endif %}
+
+{% if current_user %}
+<form
+    method="post"
+    action="{{ url_for('shop.toggle_wishlist', book_id=book.id) }}"
+    class="wishlist-form detail-wishlist-form"
+>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <button
+        type="submit"
+        class="wishlist-button detail-wishlist-button {% if is_wishlisted %}wishlist-active{% endif %}"
+        title="{% if is_wishlisted %}Remove from wishlist{% else %}Add to wishlist{% endif %}"
+        aria-label="{% if is_wishlisted %}Remove {{ book.title }} from wishlist{% else %}Add {{ book.title }} to wishlist{% endif %}"
+        aria-pressed="{{ 'true' if is_wishlisted else 'false' }}"
+    >
+        <span aria-hidden="true">
+            {% if is_wishlisted %}♥{% else %}♡{% endif %}
+        </span>
+        <span>
+            {% if is_wishlisted %}Wishlisted{% else %}Add to wishlist{% endif %}
+        </span>
+    </button>
+</form>
+{% endif %}
+
+  </div>
+</section>
+<section class="panel">
+<h2>Customer reviews</h2>
+<p>Average rating: {% if book.average_rating %}{{ '%.1f'|format(book.average_rating) }} / 5{% else %}
+No ratings yet
+{% endif %}
+</p>
+{% for review in reviews %}
+<article class="review">
+<strong>{{ review.name }}</strong> · {{ review.rating }}/5 <p>{{ review.comment }}</p>
+<small class="muted">{{ review.created_at or '' }}</small>
+</article>
+{% else %}
+
+<p class="muted">No reviews yet.</p>
+
+{% endfor %}
+{% if current_user and not user_review %}
+<h3>Review this book</h3>
+<p class="muted">You can review it after a delivered purchase.</p>
+<form method="post" action="{{ url_for('shop.add_review', book_id=book.id) }}" class="stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Rating <select name="rating" required>
+<option value="">Choose</option>
+{% for rating in range(5,0,-1) %}
+<option value="{{ rating }}">{{ rating }} / 5</option>
+
+{% endfor %}
+</select>
+</label>
+<label>Comment <textarea name="comment" required maxlength="2000">
+</textarea>
+</label>
+<button>Submit review</button>
+</form>
+{% elif not current_user %}
+<p>
+<a href="{{ url_for('auth.login') }}">Log in</a> to review a delivered purchase.</p>
+
+{% endif %}
+</section>
+{% if also_bought %}
+<section class="panel">
+<h2>Customers also bought</h2>
+<div class="book-grid">
+{% for related in also_bought %}
+<article class="book-card">
+<div class="book-card-body">
+<h3>
+<a href="{{ url_for('shop.book_detail', book_id=related.id) }}">{{ related.title }}</a>
+</h3>
+<p class="muted">Bought together {{ related.together_count }} time(s)</p>
+</div>
+</article>
+
+{% endfor %}
+</div>
+</section>
+
+{% endif %}
+
+{% endblock %}

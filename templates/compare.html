@@ -1,0 +1,127 @@
+
+{% extends "base.html" %}
+
+{% block title %}Compare Books | PageTurner Books{% endblock %}
+
+{% block content %}
+<section class="catalog-section">
+    <div class="section-heading">
+        <div>
+            <p class="section-kicker">MAKE YOUR CHOICE</p>
+            <h2>Compare Books</h2>
+            <p>Compare two books before deciding what to read.</p>
+        </div>
+    </div>
+
+    {% if error %}
+        <div class="no-books">
+            <h3>Unable to compare books</h3>
+            <p>{{ error }}</p>
+            <a href="{{ url_for('shop.index') }}" class="add-button">
+                Return to books
+            </a>
+        </div>
+    {% elif books|length == 2 %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        {% for book in books %}
+                            <th>{{ book['title'] }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Cover</th>
+                        {% for book in books %}
+                            <td>
+                                {% if book['image'] %}
+                                    <img
+                                        src="{{ url_for('static', filename=book['image']) }}"
+                                        alt="{{ book['title'] }} cover"
+                                        loading="lazy"
+                                        style="max-width: 120px; max-height: 160px;"
+                                    >
+                                {% else %}
+                                    No cover available
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Author</th>
+                        {% for book in books %}
+                            <td>{{ book['author'] }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Category</th>
+                        {% for book in books %}
+                            <td>{{ book['category'] or 'Books' }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Price</th>
+                        {% for book in books %}
+                            <td>₹{{ "%.2f"|format(book['price_paise'] / 100) }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Availability</th>
+                        {% for book in books %}
+                            <td>
+                                {% if book['release_date'] and book['release_date'] > today_date %}
+                                    Coming Soon
+                                {% elif book['stock'] > 0 %}
+                                    In stock ({{ book['stock'] }})
+                                {% else %}
+                                    Out of stock
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Average Rating</th>
+                        {% for book in books %}
+                            <td>
+                                {% if book['average_rating'] %}
+                                    {{ '%.1f'|format(book['average_rating']) }} / 5
+                                {% else %}
+                                    No ratings yet
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Description</th>
+                        {% for book in books %}
+                            <td>{{ book['description'] or 'No description available.' }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th>Details</th>
+                        {% for book in books %}
+                            <td>
+                                <a
+                                    href="{{ url_for('shop.book_detail', book_id=book['id']) }}"
+                                    class="details-button"
+                                >
+                                    View book
+                                </a>
+                            </td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>
+            <a href="{{ url_for('shop.index') }}" class="add-button">
+                Compare other books
+            </a>
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

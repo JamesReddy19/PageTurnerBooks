@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Order #{{ order.id }} · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Order #{{ order.id }}</h1>
+<p class="status-pill">{{ order.status }}</p>
+<p>Placed on {{ order.date }}</p>
+<p>
+<strong>Delivery address:</strong> {{ order.address }}</p>
+<section class="panel">
+<h2>Order items</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Book</th>
+<th>Price each</th>
+<th>Quantity</th>
+<th>Subtotal</th>
+<th>Return</th>
+</tr>
+</thead>
+<tbody>
+{% for item in items %}
+<tr>
+<td>{{ item.title }}</td>
+<td>{{ money(item.price_paise) }}</td>
+<td>{{ item.quantity }}</td>
+<td>{{ money(item.price_paise * item.quantity) }}</td>
+<td>
+{% if order.status == 'Delivered' and item.quantity > item.returned_quantity %}
+<form method="post" action="{{ url_for('shop.request_return', item_id=item.id) }}" class="stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<input type="number" name="quantity" min="1" max="{{ item.quantity - item.returned_quantity }}" value="1" required>
+<input name="reason" placeholder="Reason" maxlength="500" required>
+<button class="secondary">Request return</button>
+</form>
+{% else %}
+—
+{% endif %}
+</td>
+</tr>
+
+{% endfor %}
+</tbody>
+</table>
+</div>
+<div class="cart-summary">
+<p>Subtotal <strong>{{ money(order.subtotal_paise) }}</strong>
+</p>
+<p>Discount <strong>−{{ money(order.discount_paise) }}</strong>
+</p>
+<p>Shipping <strong>{{ money(order.shipping_paise) }}</strong>
+</p>
+<p>Tax <strong>{{ money(order.tax_paise) }}</strong>
+</p>
+<p class="total-line">Total <strong>{{ money(order.total_paise) }}</strong>
+</p>
+
+<div class="order-actions">
+    <a class="button secondary action-button"
+       href="{{ url_for('shop.invoice', order_id=order.id) }}">
+        View printable invoice
+    </a>
+
+    {% if order.status == 'Placed' and order.user_id == session.get('user_id') %}
+    <form method="post"
+          action="{{ url_for('shop.cancel_order', order_id=order.id) }}"
+          data-confirm="Cancel this order? Stock will be restored."
+          class="cancel-order-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="danger action-button">Cancel order</button>
+    </form>
+    {% endif %}
+</div>
+
+</div>
+</section>
+<section class="panel">
+<h2>Tracking timeline</h2>
+<ol class="timeline">
+{% for step in history %}
+<li>
+<strong>{{ step.new_status }}</strong>
+<span>{{ step.created_at }}</span>
+{% if step.note %}
+<p>{{ step.note }}</p>
+
+{% endif %}
+</li>
+{% else %}
+
+<li>{{ order.status }}</li>
+
+{% endfor %}
+</ol>
+</section>
+<a class="button secondary" href="{{ url_for('shop.order_history') }}">Back to order history</a>
+
+{% endblock %}

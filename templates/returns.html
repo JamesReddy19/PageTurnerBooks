@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Return requests · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Return requests</h1>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Request</th>
+<th>Customer</th>
+<th>Order</th>
+<th>Book</th>
+<th>Quantity</th>
+<th>Reason</th>
+<th>Status</th>
+<th>Review</th>
+</tr>
+</thead>
+<tbody>
+{% for item in returns %}
+<tr>
+<td>#{{ item.id }}</td>
+<td>{{ item.customer_name }}</td>
+<td>#{{ item.order_id }}</td>
+<td>{{ item.title }}</td>
+<td>{{ item.quantity }}</td>
+<td>{{ item.reason }}</td>
+<td>{{ item.status }}</td>
+<td>
+{% if item.status == 'Pending' %}
+<form method="post" action="{{ url_for('admin.review_return', return_id=item.id, decision='approve') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button>Approve</button>
+</form>
+<form method="post" action="{{ url_for('admin.review_return', return_id=item.id, decision='reject') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="danger">Reject</button>
+</form>
+{% else %}
+Reviewed
+{% endif %}
+</td>
+</tr>
+{% else %}
+
+<tr>
+<td colspan="8">No return requests.</td>
+</tr>
+
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+{% endblock %}

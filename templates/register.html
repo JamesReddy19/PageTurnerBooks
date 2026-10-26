@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Create account · PageTurner Books
+{% endblock %}
+{% block content %}
+<section class="auth-card">
+<h1>Create an account</h1>
+<form method="post" class="stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Your name<input name="name" required minlength="2" maxlength="100">
+</label>
+<label>Email<input type="email" name="email" autocomplete="email" required>
+</label>
+<label>Password<input type="password" name="password" autocomplete="new-password" minlength="8" required>
+<small>Use at least 8 characters.</small>
+</label>
+<button>Create account</button>
+</form>
+<p>Already registered? <a href="{{ url_for('auth.login') }}">Log in</a>.</p>
+</section>
+
+{% endblock %}
