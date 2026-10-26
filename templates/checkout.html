@@ -58,7 +58,7 @@
 <hr>
 <p>Subtotal <strong>{{ money(subtotal) }}</strong>
 </p>
-<p class="muted">Shipping and 5% tax are calculated using the delivery pincode and shown on the final order.</p>
+<p class="muted">Delivery is free when the discounted subtotal is {{ money(free_shipping_paise) }} or more; otherwise the fee depends on the delivery pincode. 5% tax is added either way and shown on the final order.</p>
 </aside>
 </div>
 

@@ -62,6 +62,7 @@
 </p>
 <p class="total-line">Estimated total before shipping and tax <strong>{{ money(total) }}</strong>
 </p>
+<p class="muted">Delivery is free when this total is {{ money(free_shipping_paise) }} or more{% if total < free_shipping_paise %}; add {{ money(free_shipping_paise - total) }} to qualify{% endif %}.</p>
 <form method="post" action="{{ url_for('shop.apply_coupon') }}" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 <label for="coupon-code">Coupon code</label>
