@@ -299,3 +299,74 @@ def revoke_all_devices():
     session.clear()
     flash("All device sessions have been revoked. Please log in again.", "success")
     return redirect(url_for("auth.login"))
+
+
+# ---------------------------------------------------------------------------
+# Requirement 72: API keys with scopes
+# ---------------------------------------------------------------------------
+
+def _api_keys_for(user_id):
+    return get_db().execute(
+        "SELECT * FROM api_keys WHERE user_id = ? ORDER BY id DESC", (user_id,)
+    ).fetchall()
+
+
+@auth_bp.get("/api-keys")
+@login_required
+def api_keys_page():
+    return render_template(
+        "api_keys.html",
+        keys=_api_keys_for(session["user_id"]),
+        available_scopes=apikeys.SCOPES,
+    )
+
+
+@auth_bp.post("/api-keys/create")
+@login_required
+def create_api_key():
+    """Issue a key and show the secret exactly once.
+
+    The plaintext token is never stored: only a hash and a short prefix are
+    kept, so a database leak cannot be replayed against the API.  That means
+    this response is the customer's only chance to copy it.
+    """
+    user_id = session["user_id"]
+    name = (request.form.get("name") or "").strip() or "Unnamed key"
+    requested = request.form.getlist("scopes")
+
+    granted, error = apikeys.validate_scopes(requested)
+
+    if error:
+        flash(error, "error")
+        return redirect(url_for("auth.api_keys_page"))
+
+    token, prefix = apikeys.issue(get_db(), user_id, name, granted)
+    get_db().commit()
+
+    return render_template(
+        "api_key_issued.html",
+        token=token,
+        prefix=prefix,
+        name=name,
+        scopes=granted,
+    )
+
+
+@auth_bp.post("/api-keys/<int:key_id>/revoke")
+@login_required
+def revoke_api_key(key_id):
+    connection = get_db()
+    row = connection.execute(
+        "SELECT id FROM api_keys WHERE id = ? AND user_id = ?",
+        (key_id, session["user_id"]),
+    ).fetchone()
+
+    # Scoped to the owner, so one customer can never revoke another's key.
+    if row is None:
+        flash("That API key does not exist.", "error")
+    else:
+        apikeys.revoke(connection, key_id, session["user_id"])
+        connection.commit()
+        flash("API key revoked.", "success")
+
+    return redirect(url_for("auth.api_keys_page"))
