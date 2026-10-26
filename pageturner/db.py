@@ -424,6 +424,60 @@ def init_db():
         """
     )
 
+    # Requirements 71-73 tables.  Same reasoning one more time: schema.sql
+    # declares them for a fresh install, this repeats them so a database created
+    # before batch 7 gains them on the next boot instead of erroring at runtime.
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS totp_used_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL
+                REFERENCES users(id) ON DELETE CASCADE,
+            time_step INTEGER NOT NULL,
+            used_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, time_step)
+        );
+
+        CREATE TABLE IF NOT EXISTS api_keys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL
+                REFERENCES users(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            prefix TEXT NOT NULL UNIQUE,
+            key_hash TEXT NOT NULL UNIQUE,
+            scopes TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            last_used_at TEXT,
+            revoked_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS permissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL UNIQUE,
+            description TEXT NOT NULL DEFAULT ''
+        );
+
+        CREATE TABLE IF NOT EXISTS role_permissions (
+            role TEXT NOT NULL,
+            permission_code TEXT NOT NULL
+                REFERENCES permissions(code) ON DELETE CASCADE,
+            PRIMARY KEY(role, permission_code)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_api_keys_user
+            ON api_keys(user_id, revoked_at);
+        CREATE INDEX IF NOT EXISTS idx_totp_used_user
+            ON totp_used_codes(user_id, used_at);
+        """
+    )
+
+    # Requirement 73: populate the catalogue and each role's defaults.  Idempotent
+    # and deliberately non-destructive - a role that already has grants keeps
+    # them, so operator edits are not undone by a restart.
+    from .permissions import sync_default_permissions
+
+    sync_default_permissions(connection)
+
     version_row = connection.execute(
         "SELECT COUNT(*) AS count FROM schema_version"
     ).fetchone()
