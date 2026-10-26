@@ -120,6 +120,69 @@ def init_db():
     add_column_if_missing(connection, "reviews", "hidden_at", "TEXT")
     add_column_if_missing(connection, "reviews", "hidden_by", "INTEGER")
     add_column_if_missing(connection, "users", "anonymized_at", "TEXT")
+
+    # Requirement 50/51/52/53 tables.  schema.sql declares these for fresh
+    # installs; repeating them here migrates databases created before batch 4,
+    # which otherwise would fail at runtime with "no such table".
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS review_votes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            review_id INTEGER NOT NULL
+                REFERENCES reviews(id) ON DELETE CASCADE,
+            user_id INTEGER NOT NULL
+                REFERENCES users(id) ON DELETE CASCADE,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(review_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS review_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            review_id INTEGER NOT NULL
+                REFERENCES reviews(id) ON DELETE CASCADE,
+            reporter_user_id INTEGER NOT NULL
+                REFERENCES users(id) ON DELETE CASCADE,
+            reason TEXT NOT NULL,
+            note TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'open'
+                CHECK (status IN ('open', 'hidden', 'kept')),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resolved_at TEXT,
+            resolved_by INTEGER REFERENCES users(id),
+            UNIQUE(review_id, reporter_user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS book_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            normalized_title TEXT NOT NULL UNIQUE,
+            title TEXT NOT NULL,
+            author TEXT NOT NULL DEFAULT '',
+            request_count INTEGER NOT NULL DEFAULT 1
+                CHECK (request_count > 0),
+            first_user_id INTEGER
+                REFERENCES users(id) ON DELETE SET NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS wishlist_shares (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE
+                REFERENCES users(id) ON DELETE CASCADE,
+            token_hash TEXT NOT NULL UNIQUE,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            revoked_at TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_review_votes_review
+            ON review_votes(review_id);
+        CREATE INDEX IF NOT EXISTS idx_review_reports_status
+            ON review_reports(status, review_id);
+        CREATE INDEX IF NOT EXISTS idx_book_requests_count
+            ON book_requests(request_count DESC);
+        """
+    )
+
     connection.executescript(
         """
         CREATE TABLE IF NOT EXISTS audit_chain_head (
