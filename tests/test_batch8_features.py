@@ -217,13 +217,16 @@ class GrowthPercentTests(GrowthTestBase):
     def test_growth_from_zero_is_undefined_rather_than_enormous(self):
         """0 -> 30,000 paise is not "infinity percent" and not 100%."""
         rows = self.by_month()
-        m2 = month_key(-2)
+        m3 = month_key(-3)
 
-        self.assertIn(m2, rows)
-        self.assertEqual(rows[m2]["previous_revenue"], 0)
-        self.assertIsNone(rows[m2]["growth_percent"])
+        # The month after a zero-revenue predecessor.
+        self.assertEqual(rows[self.m1]["previous_revenue"], 0)
+        self.assertIsNone(rows[self.m1]["growth_percent"])
         # The absolute change is still meaningful and must be reported.
-        self.assertEqual(rows[m2]["change_paise"], 30_000)
+        self.assertEqual(rows[self.m1]["change_paise"], 30_000)
+        # And a zero-to-zero month has nothing to say either way.
+        self.assertEqual(rows[m3]["revenue"], 0)
+        self.assertIsNone(rows[m3]["growth_percent"])
 
 
 class ExclusionTests(GrowthTestBase):
