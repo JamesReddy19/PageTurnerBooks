@@ -173,8 +173,7 @@ def login():
 
 
 @auth_bp.get("/logout")
-def logout():
-    token = session.get("session_token")
+def logout():token = session.get("session_token")
     user_id = session.get("user_id")
 
     if token and user_id:
