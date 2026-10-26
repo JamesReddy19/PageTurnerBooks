@@ -80,22 +80,29 @@ class BatchFourTestCase(unittest.TestCase):
         self.assertIsNotNone(row, f"{email} was not created")
         return row["id"]
 
-    def login_as_admin(self):
+    def login_as_admin(self, user_id=None):
+        """Give an existing account the admin role and sign the client in as it.
+
+        ``user_id`` defaults to the lowest account id in this database, so the
+        test never guesses an id that may not exist.
+        """
         with self.app.app_context():
             connection = get_db()
+            if user_id is None:
+                user_id = connection.execute(
+                    "SELECT MIN(id) AS id FROM users"
+                ).fetchone()["id"]
             connection.execute(
-                "UPDATE users SET role = 'admin' WHERE id = 1"
+                "UPDATE users SET role = 'admin' WHERE id = ?", (user_id,)
             )
             connection.commit()
-            email = connection.execute(
-                "SELECT email FROM users WHERE id = 1"
-            ).fetchone()["email"]
 
         with self.client.session_transaction() as session_data:
-            session_data["user_id"] = 1
+            session_data["user_id"] = user_id
             session_data["role"] = "admin"
 
-        return email
+        self.admin_id = user_id
+        return user_id
 
     def add_book(self, title="Test Title", stock=5, price=49900):
         with self.app.app_context():
@@ -341,7 +348,8 @@ class ReviewReportTests(BatchFourTestCase):
 
         self.assertEqual(review["hidden"], 1)
         self.assertEqual(report["status"], "hidden")
-        self.assertEqual(report["resolved_by"], 2)
+        # The decision is attributed to the moderator who made it.
+        self.assertEqual(report["resolved_by"], self.admin_id)
 
     def test_keeping_a_review_dismisses_the_reports(self):
         from pageturner.reviews import report_review
@@ -618,8 +626,7 @@ class AccountDeletionTests(BatchFourTestCase):
         with self.app.app_context():
             connection = get_db()
             user = connection.execute(
-                "SELECT name, email, phone, anonymized_at FROM users "
-                "WHERE id = ?",
+                "SELECT name, email, anonymized_at FROM users WHERE id = ?",
                 (self.user_id_value,),
             ).fetchone()
             after = connection.execute(
