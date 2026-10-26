@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Request a book · PageTurner{% endblock %}
+{% block content %}
+<section class="panel narrow">
+  <p class="eyebrow">REQUEST A TITLE</p>
+  <h1>Ask us to stock a book</h1>
+  <p class="muted">Every request is counted, so the most-wanted titles rise to the top of our buying list.</p>
+
+  <form method="post" action="{{ url_for('shop.request_book') }}" class="stack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Title
+      <input name="title" required minlength="2" maxlength="200" autocomplete="off">
+    </label>
+    <label>Author (optional)
+      <input name="author" maxlength="120" autocomplete="off">
+    </label>
+    <button>Send request</button>
+  </form>
+</section>
+{% endblock %}

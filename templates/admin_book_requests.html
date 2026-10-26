@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Book requests · PageTurner admin{% endblock %}
+{% block content %}
+<section class="panel">
+  <p class="eyebrow">DEMAND</p>
+  <h1>Requested titles</h1>
+  <p class="muted">{{ total_requests }} total request{{ '' if total_requests == 1 else 's' }} across {{ requests|length }} distinct title{{ '' if requests|length == 1 else 's' }}.</p>
+
+  {% if requests %}
+  <table class="data-table">
+    <thead>
+      <tr><th>Requests</th><th>Title</th><th>Author</th><th>First asked</th><th>Last asked</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for row in requests %}
+      <tr>
+        <td><strong>{{ row.request_count }}</strong></td>
+        <td>{{ row.title }}</td>
+        <td>{{ row.author or '—' }}</td>
+        <td>{{ row.created_at }}</td>
+        <td>{{ row.updated_at }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin.fulfil_book_request', request_id=row.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="button secondary">Stocked</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No requests yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -3185,3 +3185,35 @@ nav.category-filters a.active {
   margin-top: 0.5rem;
   max-width: 22rem;
 }
+
+/* ------------------------------
+   Admin tables and moderation
+------------------------------ */
+.report-line {
+  border-left: 2px solid var(--border, #d7d2c8);
+  padding-left: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.admin-decision {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.admin-decision form {
+  margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+  background: var(--border, #d7d2c8);
+}
+
+.panel.narrow {
+  max-width: 34rem;
+  margin-inline: auto;
+}
