@@ -346,8 +346,6 @@ def manage_books():
     ).fetchall()
 
     # Recent price changes per book, newest first (req 54/55 audit trail).
-    from ..pricing import price_history_for_books
-
     price_history = price_history_for_books(
         get_db(), [book["id"] for book in books], per_book=3
     )
