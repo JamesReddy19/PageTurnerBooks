@@ -141,6 +141,17 @@ def _migrate_columns(connection):
     )
     add_column_if_missing(connection, "orders", "gift_card_id", "INTEGER")
 
+    # Requirement 71: the second factor's secret lives on the user row; the
+    # replay guard is the separate totp_used_codes table (schema.sql).
+    add_column_if_missing(connection, "users", "totp_secret", "TEXT")
+    add_column_if_missing(
+        connection, "users", "totp_enabled", "INTEGER NOT NULL DEFAULT 0"
+    )
+
+    # Requirement 72: api_requests is now bucketed per key when a key is used,
+    # so the free IP allowance and each key's allowance are counted separately.
+    add_column_if_missing(connection, "api_requests", "api_key_id", "INTEGER")
+
 
 def init_db():
     connection = get_db()
