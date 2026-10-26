@@ -38,6 +38,65 @@ def profile():
     return render_template("profile.html", stats=stats)
 
 
+@auth_bp.get("/account/delete")
+@login_required
+def delete_account_page():
+    """Confirmation screen for requirement 59."""
+    user = current_user()
+
+    order_count = get_db().execute(
+        "SELECT COUNT(*) AS c FROM orders WHERE user_id = ?", (user["id"],)
+    ).fetchone()["c"]
+
+    return render_template("delete_account.html", order_count=order_count)
+
+
+@auth_bp.post("/account/delete")
+@login_required
+def delete_account():
+    """Anonymize the account (requirement 59).
+
+    Password-confirmed and irreversible.  Orders and invoices survive for
+    accounting; every personal identifier is replaced and all sessions and
+    other personal state are purged.
+    """
+    connection = get_db()
+    user = current_user()
+
+    password = request.form.get("password", "")
+    confirmation = (request.form.get("confirm") or "").strip().upper()
+
+    if confirmation != "DELETE":
+        flash("Type DELETE to confirm you want to close your account.", "error")
+        return redirect(url_for("auth.delete_account_page"))
+
+    if not password or not check_password_hash(user["password_hash"], password):
+        flash("Your password is incorrect. Your account was not changed.", "error")
+        return redirect(url_for("auth.delete_account_page"))
+
+    connection.execute(
+        "DELETE FROM user_sessions WHERE user_id = ?", (user["id"],)
+    )
+
+    placeholder = anonymize_user(connection, user["id"])
+
+    if placeholder is None:
+        connection.rollback()
+        flash("That account has already been closed.", "error")
+        return redirect(url_for("auth.login"))
+
+    connection.commit()
+
+    session.clear()
+    flash(
+        "Your account has been closed and your personal details removed. "
+        "Past orders are kept for accounting only.",
+        "success",
+    )
+
+    return redirect(url_for("shop.index"))
+
+
 def _export_rows(connection, sql, params):
     """Run a query and return plain dicts (JSON-serialisable, no sqlite3.Row)."""
     return [dict(row) for row in connection.execute(sql, params).fetchall()]
