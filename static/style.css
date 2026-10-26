@@ -2769,7 +2769,7 @@ nav.category-filters a.active {
 
 .wishlist-button:hover,
 .wishlist-button.wishlist-active {
-    border-color: #d94b59;
+    border-color: var(--heart-border);
     color: var(--heart);
 }
 
