@@ -1917,6 +1917,34 @@ td form + form {
 ------------------------------ */
 
 @media print {
+    /* Never print a dark page: reset the palette to paper even when the
+       viewer has dark mode on (req 60 must not regress printing). */
+    :root[data-theme="dark"] {
+        color-scheme: light;
+        --ink: #000000;
+        --ink-strong: #000000;
+        --muted: #333333;
+        --background: #ffffff;
+        --surface: #ffffff;
+        --surface-warm: #ffffff;
+        --surface-subtle: #ffffff;
+        --surface-tint: #ffffff;
+        --surface-disabled: #ffffff;
+        --accent-soft: #ffffff;
+        --paper: #ffffff;
+        --card-background: #ffffff;
+        --card-text: #000000;
+        --card-muted: #333333;
+        --card-accent: #000000;
+        --card-border: #cccccc;
+        --line: #cccccc;
+        --line-strong: #cccccc;
+        --line-warm: #cccccc;
+        --panel-gradient: none;
+        --shadow: none;
+        --shadow-hover: none;
+    }
+
     body {
         background: #ffffff;
         color: #000000;
@@ -1925,7 +1953,8 @@ td form + form {
     .site-header,
     .site-footer,
     .no-print,
-    .flash-list {
+    .flash-list,
+    .theme-toggle {
         display: none !important;
     }
 
