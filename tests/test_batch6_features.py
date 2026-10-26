@@ -273,13 +273,14 @@ class OutboxTests(BatchSixTestCase):
 
     def test_a_delivered_message_is_not_sent_twice(self):
         """The dedupe key plus the sent status means exactly one send."""
+        user_id = self.register_and_login()
         with self.app.app_context():
             connection = get_db()
             first = outbox.enqueue(
-                connection, 1, "Subject C", "Body C", dedupe_key="once-only"
+                connection, user_id, "Subject C", "Body C", dedupe_key="once-only"
             )
             second = outbox.enqueue(
-                connection, 1, "Subject C", "Body C", dedupe_key="once-only"
+                connection, user_id, "Subject C", "Body C", dedupe_key="once-only"
             )
             connection.commit()
 
