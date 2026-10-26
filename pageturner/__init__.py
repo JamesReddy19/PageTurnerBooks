@@ -95,12 +95,14 @@ def create_app(test_config=None):
     from .blueprints.auth import auth_bp
     from .blueprints.shop import shop_bp
     from .blueprints.admin import admin_bp
+    from .blueprints.api import api_bp
     from .site import register_site_routes
     from .blueprints.promise_checkout import promise_checkout_bp
-  
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(shop_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(api_bp)
     app.register_blueprint(promise_checkout_bp)
 
     # Register public pages, notifications, and error handlers.
