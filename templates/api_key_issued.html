@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}API key created · PageTurner Books{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h1>Your new API key</h1>
+
+  <p class="notice notice-warning">
+    Copy this key now. It is not stored anywhere in readable form, so this is
+    the only time it can be shown.
+  </p>
+
+  <dl class="facts">
+    <dt>Name</dt>
+    <dd>{{ key.name }}</dd>
+    <dt>Key</dt>
+    <dd><code class="secret" id="api-token">{{ token }}</code></dd>
+    <dt>Scopes</dt>
+    <dd>
+      {% for scope in scopes %}
+        <span class="badge">{{ scope }}</span>
+      {% endfor %}
+    </dd>
+  </dl>
+
+  <h2>Using it</h2>
+  <pre class="code-block">curl -H "Authorization: Bearer {{ token }}" {{ url_for('api.me', _external=True) }}</pre>
+  <p class="muted small">
+    <code>X-API-Key: &lt;token&gt;</code> is accepted as an alternative header.
+  </p>
+
+  <p><a class="button" href="{{ url_for('auth.api_keys_page') }}">Back to API keys</a></p>
+</section>
+{% endblock %}
