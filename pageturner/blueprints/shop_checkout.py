@@ -612,20 +612,20 @@ def place_order():
         # that can still roll back, or lose the message if the process died
         # between commit and send. The dedupe key is derived from the order, so
         # the outbox can never hold two confirmations for one order.
-        outbox.enqueue(
-            connection,
-            user_id,
-            f"Order #{order_id} confirmed — PageTurner Books",
-            (
-                f"Hello {name},\n\n"
-                f"Thank you for your order #{order_id}.\n"
-                f"Items: {sum(quantity for _b, quantity, _t in checked_items)}\n"
-                f"Total: Rs {total / 100:.2f}\n\n"
-                "We will email you again when your parcel ships."
-            ),
-            recipient=email,
-            dedupe_key=f"order:{order_id}:confirmed",
-        )
+#outbox.enqueue(
+#    connection,
+#    user_id,
+#    f"Order #{order_id} confirmed — PageTurner Books",
+#    (
+#        f"Hello {name},\n\n"
+#        f"Thank you for your order #{order_id}.\n"
+#        f"Items: {sum(quantity for _b, quantity, _t in checked_items)}\n"
+#        f"Total: Rs {total / 100:.2f}\n\n"
+#        "We will email you again when your parcel ships."
+#    ),
+#    recipient=email,
+#    dedupe_key=f"order:{order_id}:confirmed",
+#)
 
         if coupon:
             connection.execute(

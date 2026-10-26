@@ -95,7 +95,7 @@ def enqueue(
 
     cursor = connection.execute(
         """
-        INSERT INTO notification_outbox(
+        INSERT OR IGNORE INTO notification_outbox(
             user_id, channel, recipient, subject, body, dedupe_key,
             max_attempts, next_attempt_at, created_at
         )
