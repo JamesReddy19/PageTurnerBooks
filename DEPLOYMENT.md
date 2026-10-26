@@ -36,9 +36,16 @@ from `flask.g`. Raise `GUNICORN_WORKERS` only after moving to Postgres.
 
 ## Startup safety
 
-* `init_db()` only runs `CREATE TABLE/INDEX ... IF NOT EXISTS`; no tables are dropped.
-* Sample books are seeded **only** when the `books` table is empty.
-* No reseeding or destructive initialisation happens on restarts.
+* `init_db()` only runs `CREATE TABLE/INDEX ... IF NOT EXISTS` and additive
+  `ALTER TABLE ... ADD COLUMN`; no table is ever dropped.
+* Sample books are seeded **only** when the `books` table is empty, so a live
+  catalogue is never overwritten.
+* Migrations are **never** run automatically on boot. Import an existing
+  database deliberately, once, before first start:
+
+  ```bash
+  python migrate.py --source /old/database.db --target /data/instance/database.db
+  ```
 
 ## Importing a legacy database
 
@@ -47,7 +54,16 @@ python migrate.py --source /path/to/old/database.db --target instance/database.d
 ```
 
 The source file is opened **read-only** and is never modified. The target is
-rewritten inside a transaction, so a failure rolls back.
+rewritten inside a transaction, so a failure rolls back. Verified on a synthetic
+legacy database: floats become integer paise (`19.99` → `1999`), rows and ids
+are preserved, `PRAGMA foreign_key_check` is clean, and the old cover images are
+copied (never moved) into `static/images/`.
+
+## Worker safety note
+
+Keep `GUNICORN_WORKERS=1`. Two worker processes writing the same SQLite file is
+the documented cause of `database is locked`; the 8 `gthread` threads cover the
+concurrency this app needs.
 
 ## Local development
 
