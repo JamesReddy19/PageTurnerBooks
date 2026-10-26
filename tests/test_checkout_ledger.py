@@ -102,13 +102,14 @@ class CheckoutLedgerTests(unittest.TestCase):
         self.assertEqual(stock[2], 9)
 
     def test_purchase_is_logged_even_when_no_points_are_earned(self):
-        # Below the 10,000-paise earning threshold, so loyalty_points_earned is 0.
-        # This is the exact case that used to skip the stock_log row entirely.
+        # A 2,000-paise order stays under the 10,000-paise earning threshold, so
+        # loyalty_points_earned is 0. That is the exact case that used to skip
+        # the stock_log row entirely.
         with self.app.app_context():
-            get_db().execute("UPDATE books SET price_paise=5000, sale_price_paise=NULL WHERE id=1")
+            get_db().execute("UPDATE books SET price_paise=2000, sale_price_paise=NULL WHERE id=1")
             get_db().commit()
 
-        self.post("/cart/add/1", {"quantity": "2"})
+        self.post("/cart/add/1", {"quantity": "1"})
         self.place_order()
 
         with self.app.app_context():
@@ -120,8 +121,8 @@ class CheckoutLedgerTests(unittest.TestCase):
             stock = connection.execute("SELECT stock FROM books WHERE id=1").fetchone()["stock"]
 
         self.assertEqual(order["loyalty_points_earned"], 0)
-        self.assertEqual([row["change_amount"] for row in logged], [-2])
-        self.assertEqual(stock, 8)
+        self.assertEqual([row["change_amount"] for row in logged], [-1])
+        self.assertEqual(stock, 9)
 
     def test_ledger_matches_stock_after_cancellation(self):
         self.post("/cart/add/1", {"quantity": "2"})
