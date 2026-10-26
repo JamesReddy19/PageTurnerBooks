@@ -246,10 +246,24 @@ class TwoFactorTests(BatchSevenTestCase):
             ).fetchone()["totp_enabled"]
         self.assertEqual(enabled, 1)
 
-        # Disabling returns the account to password-only login.
+        # Disabling requires the password: a borrowed session alone must not be
+        # able to weaken the account's protection.
         self.post(
             "/security/2fa",
-            {"action": "disable"},
+            {"action": "disable", "password": "wrong-password"},
+            token_from="/security/2fa",
+        )
+
+        with self.app.app_context():
+            still_on = get_db().execute(
+                "SELECT totp_enabled FROM users WHERE id = ?", (user_id,)
+            ).fetchone()["totp_enabled"]
+        self.assertEqual(still_on, 1, "a wrong password turned 2FA off")
+
+        # With the right password it turns off and wipes the secret.
+        self.post(
+            "/security/2fa",
+            {"action": "disable", "password": "Reading123"},
             token_from="/security/2fa",
         )
 
