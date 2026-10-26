@@ -7,6 +7,7 @@
 <div class="checkout-layout">
 <form method="post" action="{{ url_for('shop.place_order') }}" class="panel stack-form">
 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<input type="hidden" name="checkout_token" value="{{ checkout_token }}">
 <label>Full name<input name="name" value="{{ current_user.name }}" required maxlength="100">
 </label>
 <label>10-digit phone number<input name="phone" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required>
