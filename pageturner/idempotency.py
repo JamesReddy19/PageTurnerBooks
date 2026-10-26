@@ -87,6 +87,27 @@ def attach_order(connection, token, order_id):
     )
 
 
+def replayed_order_id(connection, token, user_id):
+    """The order a already-spent token produced, or ``None``.
+
+    Read-only, so it is safe to call before the order transaction opens.  The
+    checkout view uses it to answer a replay that arrives with an empty cart
+    (the first submission emptied it) with the order it already placed.
+    """
+    if not token:
+        return None
+
+    row = connection.execute(
+        """
+        SELECT order_id FROM checkout_tokens
+        WHERE token_hash = ? AND user_id = ? AND used_at IS NOT NULL
+        """,
+        (hash_token(token), user_id),
+    ).fetchone()
+
+    return row["order_id"] if row else None
+
+
 def tokens_for_user(connection, user_id, limit=10):
     """Recent checkout attempts, for the account page and for tests."""
     return connection.execute(
