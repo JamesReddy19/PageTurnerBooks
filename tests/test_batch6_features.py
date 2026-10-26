@@ -242,9 +242,12 @@ class OutboxTests(BatchSixTestCase):
 
     def test_retries_are_bounded_then_the_message_is_parked(self):
         """After its attempt budget the row is parked, not retried forever."""
+        user_id = self.register_and_login()
         with self.app.app_context():
             connection = get_db()
-            outbox.enqueue(connection, 1, "Subject B", "Body B", max_attempts=2)
+            outbox.enqueue(
+                connection, user_id, "Subject B", "Body B", max_attempts=2
+            )
             connection.commit()
 
             def broken_transport(_message):
