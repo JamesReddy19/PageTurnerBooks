@@ -156,6 +156,47 @@ the one place that risks importing a float.
 
 ---
 
+## Batch log
+
+### Batch 1 — deployment readiness (no UI change)
+
+| Fix | File |
+|---|---|
+| `IndentationError` at `migrate.py:26` healed; `migrate()` body no longer truncated. Migration behaviour unchanged (`PRAGMA foreign_keys = OFF`, guards in place). | `migrate.py` |
+| `api_bp` registered in the app factory (was missing, so `/api/*` did not exist). | `pageturner/__init__.py` |
+| Legacy routes registered through `pageturner/legacy.py` with the original URL rules, no duplicate endpoints. | `pageturner/__init__.py`, `pageturner/legacy.py` |
+| Port comes from the platform (`PORT`), 5000 only as the local fallback; `0.0.0.0` bind. | `app.py`, `wsgi.py`, `gunicorn.conf.py` |
+| WSGI entry point `wsgi:app` + `gunicorn` dependency. | `wsgi.py`, `requirements.txt` |
+| `SECRET_KEY` has **no** predictable fallback: `create_app()` refuses to start outside `APP_ENV=development`/`TESTING`. | `pageturner/config.py`, `pageturner/__init__.py` |
+| SQLite persistence, uploads and admin bootstrap documented as environment-driven; no reseeding on boot. | `pageturner/config.py`, `DEPLOYMENT.md` |
+| Single gunicorn worker (`gthread`) — SQLite allows one writer; multi-process workers would hit `database is locked`. | `gunicorn.conf.py` |
+
+### Batch 2 — requirements 47, 48, 49, 56, 57, 67, 75
+
+Checks actually executed (not asserted):
+
+```
+python -m pytest tests/ -q          → 32 passed  (original 29 + 3 staff tests)
+python3 -m compileall -q .          → clean
+scratch walk of /api/books          → 12/12 books, 4 pages, no dupes/gaps,
+                                      invalid cursor → 400
+scratch cart→checkout→invoice       → sale price snapshot, gift wrap ₹50 +
+                                      message, points earned & reversed
+scratch admin dashboard             → exactly 7 bars
+scratch /admin/users role change    → staff set, admin_log written;
+                                      staff 200 on /admin/orders, 403 on
+                                      /admin/books and /admin/users
+```
+
+### Deployment configuration still manual
+
+The repository cannot create host resources, so these stay as operator steps in
+`DEPLOYMENT.md`: the persistent disk mount (`/data`), `SECRET_KEY`,
+`ADMIN_EMAIL`/`ADMIN_PASSWORD`, and running `python migrate.py` **once** during
+release — never on boot, so a restart can never reseed or wipe a live database.
+
+---
+
 ## Open decisions (needed before coding these)
 
 1. **Req 51 — does a hidden review's rating still count in the average?**
