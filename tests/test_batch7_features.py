@@ -109,9 +109,14 @@ class TwoFactorTests(BatchSevenTestCase):
         """The code generator must agree with a published RFC test vector.
 
         This is the assertion that a hand-rolled HOTP would most easily break.
-        RFC 4226 Appendix D: secret '12345678901234567890', counter 0 -> 755224.
+        RFC 4226 Appendix D uses the ASCII secret "12345678901234567890"; this
+        implementation takes base32 secrets, so the vector is passed in its
+        base32 form (which is what an authenticator app would be given).
+        counter 0 -> 755224, 1 -> 287082, 9 -> 520489.
         """
-        secret = "12345678901234567890"
+        secret = base64.b32encode(b"12345678901234567890").decode().rstrip("=")
+        self.assertEqual(secret, "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ")
+
         self.assertEqual(totp.hotp(secret, 0), "755224")
         self.assertEqual(totp.hotp(secret, 1), "287082")
         self.assertEqual(totp.hotp(secret, 9), "520489")
