@@ -109,10 +109,35 @@ def page_size():
     return max(1, min(requested, MAX_PAGE_SIZE))
 
 
-def book_json(book):
+def can_read_inventory():
+    return "inventory:read" in apikeys.scopes_of(getattr(g, "api_key", None))
+
+
+def book_json(book, include_stock=True):
+    """Serialise a book row.
+
+    ``stock`` is exact inventory information, so it is only exposed to a key
+    holding ``inventory:read``.  Anonymous readers still get a coarse
+    ``in_stock`` flag, which is what a storefront needs to show a buy button.
+    """
     if not book:
         return None
-    return {"id": book["id"], "title": book["title"], "author": book["author"], "category": book["category"], "price_paise": book["price_paise"], "price": f"{book['price_paise'] // 100}.{book['price_paise'] % 100:02d}", "stock": book["stock"], "image": book["image"]}
+
+    payload = {
+        "id": book["id"],
+        "title": book["title"],
+        "author": book["author"],
+        "category": book["category"],
+        "price_paise": book["price_paise"],
+        "price": f"{book['price_paise'] // 100}.{book['price_paise'] % 100:02d}",
+        "in_stock": book["stock"] > 0,
+        "image": book["image"],
+    }
+
+    if include_stock:
+        payload["stock"] = book["stock"]
+
+    return payload
 
 
 @api_bp.get("/books")
@@ -171,7 +196,8 @@ def books():
         last = rows[-1]
         next_cursor = encode_cursor({"r": last["relevance"], "t": last["title"], "i": last["id"], "q": query})
 
-    payload = {"books": [book_json(row) for row in rows], "count": len(rows), "limit": limit, "next_cursor": next_cursor}
+    include_stock = can_read_inventory()
+    payload = {"books": [book_json(row, include_stock) for row in rows], "count": len(rows), "limit": limit, "next_cursor": next_cursor}
     if next_cursor:
         payload["next"] = f"{request.path}?limit={limit}&after={next_cursor}"
         if query:
@@ -184,7 +210,66 @@ def book(book_id):
     row = get_db().execute("SELECT * FROM books WHERE id=?", (book_id,)).fetchone()
     if not row:
         return jsonify({"error": "Book not found"}), 404
-    return jsonify(book_json(row))
+    return jsonify(book_json(row, can_read_inventory()))
+
+
+@api_bp.get("/me")
+def me():
+    """Describe the key making the request.
+
+    This is how a client checks its scopes before using them; it requires a key
+    because there is nothing to describe without one.
+    """
+    if g.api_key is None:
+        return jsonify({
+            "error": "An API key is required",
+            "hint": "Send Authorization: Bearer <token> or X-API-Key: <token>",
+        }), 401
+
+    owner = get_db().execute(
+        "SELECT id, name, email, role FROM users WHERE id = ?",
+        (g.api_key["user_id"],),
+    ).fetchone()
+
+    return jsonify({
+        "key": {
+            "id": g.api_key["id"],
+            "name": g.api_key["name"],
+            "prefix": g.api_key["prefix"],
+            "scopes": sorted(apikeys.scopes_of(g.api_key)),
+            "created_at": g.api_key["created_at"],
+            "last_used_at": g.api_key["last_used_at"],
+        },
+        "account": (
+            {
+                "id": owner["id"],
+                "name": owner["name"],
+                "email": owner["email"],
+                "role": owner["role"],
+            }
+            if owner
+            else None
+        ),
+        "available_scopes": apikeys.SCOPES,
+        "quota_per_minute": apikeys.KEY_QUOTA,
+    })
+
+
+@api_bp.get("/inventory")
+def inventory():
+    """Exact stock levels for the catalogue.  Requires ``inventory:read``."""
+    denied = require_scope("inventory:read")
+    if denied:
+        return denied
+
+    rows = get_db().execute(
+        "SELECT * FROM books ORDER BY id"
+    ).fetchall()
+
+    return jsonify({
+        "books": [book_json(row, include_stock=True) for row in rows],
+        "count": len(rows),
+    })
 
 
 @api_bp.errorhandler(404)
