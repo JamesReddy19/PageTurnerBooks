@@ -48,6 +48,7 @@ def claim_checkout_token(connection, token, user_id):
     ``"unknown"``   no such token for this user (stale form, tampered field).
     """
     if not token:
+        return "fresh", None
         return "unknown", None
 
     row = connection.execute(
