@@ -1,12 +1,18 @@
 # Requirements 47–75 — verified gap analysis
 
-Status: audit complete. **No implementation started for 47–75 yet.**
+Status: **audit complete; batch 1 (deployment) and batch 2 (wiring) implemented.**
 Baseline at time of audit: branch `master`, HEAD `19ac350`, worktree clean,
 `python3 -m pytest tests/ -q` → **29 passed**, `compileall` clean.
+
+Implemented and proven since then (each row below carries its own evidence):
+**47, 48, 49, 56, 57, 67, 75**. Test suite is now **32 passed**
+(the original 29 plus 3 staff-role tests — no existing test was weakened).
 
 Status vocabulary:
 
 - **Verified** — behaves as the requirement asks, proven by reading the code path.
+- **Done** — implemented *and* exercised through the real HTTP surface by a
+  check whose result is recorded in this file.
 - **Partial** — the storage, helper or single module already exists, but the
   feature is not reachable / not wired to its consumers.
 - **Missing** — no code does this today.
