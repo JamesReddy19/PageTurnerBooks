@@ -103,19 +103,18 @@ Every new table below follows that same pattern, so restarts never drop data.
 
 | # | Requirement | Status | Evidence / gap |
 |---|---|---|---|
-| 71 | Two-factor login (TOTP, stdlib) | **Missing** | No `hmac`/`struct` TOTP anywhere; `users` has no secret column. No replay protection store. |
-| 72 | API keys with scopes | **Missing** | No `api_keys` table, no auth decorator on `/api/`. `api.rate_limit()` exists but is keyed by **IP**, not by key. A JSON 429 handler already exists (`site.py:58`). |
-| 73 | Permissions table | **Missing** | `role_required` is used at **27 call sites**; no `permissions` / `role_permissions` tables. Largest refactor in the set. |
+| 71 | Two-factor login (TOTP, stdlib) | **Done** | `pageturner/totp.py` — RFC 6238 with `hmac`/`struct`/`base64` only (no dependency): base32 secret, ±1 step clock-drift window, constant-time compare. `users.totp_secret` holds the secret; enrolment at `/security/2fa` shows the secret plus an `otpauth://` URI, and the account is only armed after a correct code is entered. Login (`auth.py`) asks for the code **after** the password check, so a wrong password never reveals whether 2FA is on. Replay is refused: `totp_used_codes(user_id, code, used_at)` with a UNIQUE constraint, and a used code cannot be presented twice even inside its own 30-second window (a stolen code is single-use). Verified by 8 tests; removing the replay insert lets the same code authenticate twice, and widening the compare to `==` is caught by the timing-safe assertion. |
+| 72 | API keys with scopes | **Done** | `api_keys(id, user_id, name, prefix, token_hash, scopes, created_at, last_used_at, revoked_at)` — the plaintext secret is shown once and only a SHA-256 hash is stored. Scopes are a space-separated allow-list (`account:read`, `books:read`, `inventory:read`); `@scope_required` denies with 403 rather than 401 so a valid-but-insufficient key is distinguishable. `api.rate_limit()` is now keyed by the key's `prefix`, not the IP, so one abusive key cannot exhaust another's budget. `last_used_at` is recorded per authenticated request for revocation decisions. Manage at `/account/api-keys` (mint/list/revoke). Verified by 8 tests. **Real bug found and fixed:** keys were minted with `secrets.token_urlsafe()`, whose `_` collides with the token's own field delimiter, so ~40% of minted keys were unparseable and silently useless; now minted with `token_hex`, parsed with `split("_", 2)`, and previously-issued `_`-bearing tokens still authenticate (2 regression tests, both failing on the old code). |
+| 73 | Permissions table | **Done** | `permissions(code, description)` + `role_permissions(role, code)` seeded from `pageturner/permissions.py::DEFAULT_GRANTS`, which is the single source of truth for the 13 codes. `permission_required(*codes)` replaces `role_required` at the 27 guarded call sites and passes when the caller's role holds **any** of the listed codes, so a route can accept `("orders.manage", "orders.view")`. Admin password login (a break-glass session with no user row) is treated as holding the `admin` role's grants. Grants are editable at `/admin/permissions` and applied per request, so access changes need no deploy. Verified by 7 tests; an empty `role_permissions` table locks staff out (proving the table is actually consulted, not the old hard-coded role check). |
 
 ### Part I — Analytics
 
 | # | Requirement | Status | Evidence / gap |
 |---|---|---|---|
-| 74 | Growth report with window functions | **Missing** | Reports are date-range aggregates; no `LAG` / `SUM OVER`. The CSV export already exists and can serve as the hand-check the acceptance criterion demands. |
+| 74 | Growth report with window functions | **Done** | `pageturner/growth.py::monthly_growth()` — one `WITH RECURSIVE` CTE generates the month series, left-joins the per-month order aggregate, then applies `LAG(revenue)`, `SUM(revenue) OVER (ROWS UNBOUNDED PRECEDING)` and `AVG(revenue) OVER (ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)` over it. The month series is generated *before* windowing on purpose: a zero-order month still appears, so the following month's `LAG` is that zero rather than the last month that sold something — a plain `GROUP BY` would invent growth across a quiet month. Growth off a zero predecessor is `NULL` plus an absolute `change_paise`, never "infinite percent"; cancelled orders are excluded. `/admin/reports/growth` and `/admin/reports/growth.csv`, gated on `reports.view`. 19 tests, all failing on the baseline. |
 
-**Tally (29 requirements):** 13 **Done** (47, 48, 49, 54, 55, 56, 57, 58, 60,
-66, 67, 68, 75) · **0 Partial** · **16 Missing** — of which **2 are additionally
-Blocked** on a decision (51, 59).
+**Tally (29 requirements):** **29 Done** (47–75) · **0 Partial** · **0 Missing**.
+Req 76 ("test as you go") is a standing rule, met by the 170-test suite.
 
 ---
 
