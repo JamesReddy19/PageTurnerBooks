@@ -165,30 +165,22 @@ class OutboxTests(BatchSixTestCase):
 
     def test_checkout_writes_a_confirmation_into_the_outbox(self):
         """The order and its notification must be created together."""
-        self.prepare_book(price_paise=20000, stock=5)
+        book_id = self.prepare_book(price_paise=20000, stock=5)
         user_id = self.register_and_login()
 
-        self.post("/add-to-cart", {"book_id": self.book_stub()}, follow_redirects=True)
-        self.post("/cart/update", {}, follow_redirects=True)
+        self.add_to_cart(book_id)
 
         with self.app.app_context():
             connection = get_db()
             basket = connection.execute(
-                "SELECT book_id FROM cart WHERE user_id = ?", (user_id,)
+                "SELECT book_id FROM cart_items WHERE user_id = ?", (user_id,)
             ).fetchall()
 
         self.assertTrue(basket, "cart is empty; the add-to-cart call failed")
 
-        self.post(
-            "/checkout",
-            {
-                "name": "Reader One",
-                "phone": "9876543210",
-                "address": "1 Reading Lane",
-                "pincode": "560001",
-            },
-            follow_redirects=True,
-        )
+        payload = self.checkout_payload()
+        response = self.submit_order(payload)
+        self.assertIn(response.status_code, (302, 303))
 
         with self.app.app_context():
             connection = get_db()
