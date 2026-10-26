@@ -278,14 +278,11 @@ def place_order():
                 (cart_key, book_id)
             ).fetchone()
 
-            if (
-                not reservation
-                or reservation["expires_at"]
-                <= datetime.now().isoformat(timespec="seconds")
-            ):
-                raise ValueError(
-                    "Your checkout reservation expired. Please open checkout again."
-                )
+            reservation_live = bool(
+                reservation
+                and reservation["expires_at"]
+                > datetime.now().isoformat(timespec="seconds")
+            )
 
             reserved_others = active_reservations(
                 connection, book_id, cart_key
@@ -298,8 +295,20 @@ def place_order():
             # also capped by the reserved quantity, so a reservation made when
             # fewer copies existed is never oversold by a later restock race.
             available_now = max(0, book["stock"] - reserved_others)
+
+            # A live reservation is still required to buy stock, so checkout
+            # cannot be replayed to skip the reservation queue. Once nothing is
+            # in the warehouse there is nothing to reserve, and the whole line
+            # simply becomes a backorder.
+            if available_now and not reservation_live:
+                raise ValueError(
+                    "Your checkout reservation expired. Please open checkout again."
+                )
+
             ship_now = min(
-                item["quantity"], available_now, reservation["quantity"]
+                item["quantity"],
+                available_now,
+                reservation["quantity"] if reservation_live else 0,
             )
 
             # Requirement 47: charge the price that is active right now, using
