@@ -250,10 +250,23 @@ All four open decisions are answered and implemented.
 | ~~5~~ | ~~65~~ | **Shipped.** Backorders: stock never negative, remainder queued and allocated oldest-first on restock — decision 4 | `backorders` |
 | ~~6~~ | ~~69~~ | **Shipped.** Outbox: separate `notification_outbox` with attempts/backoff/park, written in the same transaction as the event it announces | `notification_outbox` |
 | ~~6~~ | ~~70~~ | **Shipped.** Book of the month: `subscriptions` + `subscription_runs`, admin "run due", rides the normal order pipeline (decision 3) | `subscriptions`, `subscription_runs` |
-| 7 | 71 | TOTP 2FA: no `hmac`/`struct` TOTP, no secret column, no replay store | `users.totp_secret`, replay table |
-| 7 | 72 | API keys + scopes: no `api_keys`, `/api/` is unauthenticated, and `rate_limit()` is keyed by IP not key | `api_keys` |
-| 7 | 73 | Permissions table: `role_required` at **27 call sites**, no `permissions`/`role_permissions` — largest refactor, do last | `permissions`, `role_permissions` |
-| 8 | 74 | Growth report: no `LAG`/`SUM OVER`; CSV export already exists to hand-check the result | — |
+| ~~7~~ | ~~71~~ | **Shipped.** TOTP 2FA: RFC 6238 `hmac`/`struct` implementation, secret column, single-use replay store | `users.totp_secret`, `totp_used_codes` |
+| ~~7~~ | ~~72~~ | **Shipped.** API keys + scopes: `api_keys` with hashed secrets, `/api/` authenticated, per-key rate limit, `last_used_at` | `api_keys` |
+| ~~7~~ | ~~73~~ | **Shipped.** Permissions table: `permission_required` replaces `role_required` at the guarded call sites; grants editable from `/admin/permissions` | `permissions`, `role_permissions` |
+| ~~8~~ | ~~74~~ | **Shipped.** Growth report: one `WITH RECURSIVE` month series + `LAG`/`SUM OVER`/`AVG OVER`; CSV export hand-checks against the order-level export | — |
+
+**Req 74 detail.** `pageturner/growth.py::monthly_growth()` is a single statement:
+a recursive CTE generates every month in the window, left-joins the order
+aggregate onto it, then applies `LAG(revenue)`, `SUM(... ROWS UNBOUNDED
+PRECEDING)` and `AVG(... ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)` over that
+series. Generating the months *before* windowing is what makes the comparison
+correct: a month with no orders still appears, so the next month's `LAG` is that
+zero rather than the last month that happened to sell something. Growth from a
+zero-revenue predecessor reports `NULL` (undefined) plus the absolute
+`change_paise`, never "infinite percent". Cancelled orders are excluded. Served
+at `/admin/reports/growth` and `/admin/reports/growth.csv`, gated on the
+`reports.view` permission. 19 tests in `tests/test_batch8_features.py`, all
+failing on the pre-batch baseline.
 
 **Req 76 (tests continuously)** is at 128 tests over the 90-odd routes. Each
 batch above must add the tests for what it implements, and the batch is not
