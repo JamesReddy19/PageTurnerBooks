@@ -6,9 +6,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY") or "pageturner-local-dev-key-change-before-deployment"
+    # No predictable fallback: production must supply SECRET_KEY through the
+    # environment (create_app refuses to start without it outside development).
+    SECRET_KEY = os.environ.get("SECRET_KEY") or None
+    ENVIRONMENT = (os.environ.get("APP_ENV") or "production").lower()
     DATABASE = os.environ.get("PAGETURNER_DATABASE", str(BASE_DIR / "instance" / "database.db"))
-    UPLOAD_FOLDER = str(BASE_DIR / "static" / "uploads")
+    # Point this at a mounted persistent disk if the host provides one.
+    UPLOAD_FOLDER = os.environ.get("PAGETURNER_UPLOADS") or str(BASE_DIR / "static" / "uploads")
     MAX_CONTENT_LENGTH = 1 * 1024 * 1024
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
