@@ -42,10 +42,9 @@ def get_cart_rows():
             continue
 
         # Requirement 47: the cart must charge the same price the catalog shows,
-        # so the flash-sale window is evaluated here rather than reading the
-        # list price directly. estimated_price is what the line is worth; the
-        # reservation check below uses book[quantity] by regular price, because
-        # a reservation is about stock, not money.
+        # so the flash-sale window is evaluated here instead of reading the list
+        # price directly. unit_price is kept alongside line_total so the cart and
+        # checkout templates can show the price actually charged per copy.
         unit_price = effective_book_price(book)
         line_total = unit_price * quantity
         subtotal += line_total
