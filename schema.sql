@@ -273,3 +273,48 @@ CREATE INDEX IF NOT EXISTS idx_backorders_book
  ON backorders(book_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_backorders_open
  ON backorders(fulfilled_at, book_id);
+
+-- ---------------------------------------------------------------------------
+-- Batch 7 (requirements 71, 72, 73): second factor, API keys, permissions
+-- ---------------------------------------------------------------------------
+
+-- Requirement 71: a one-time-password time step may be redeemed exactly once
+-- per user.  The UNIQUE constraint is what makes replay impossible, not
+-- application bookkeeping.
+CREATE TABLE IF NOT EXISTS totp_used_codes (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ time_step INTEGER NOT NULL,
+ used_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE(user_id, time_step)
+);
+
+-- Requirement 72: `prefix` is the indexed lookup handle, `key_hash` is what is
+-- actually compared, so a stolen database does not yield usable tokens.
+CREATE TABLE IF NOT EXISTS api_keys (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ name TEXT NOT NULL,
+ prefix TEXT NOT NULL UNIQUE,
+ key_hash TEXT NOT NULL UNIQUE,
+ scopes TEXT NOT NULL DEFAULT '',
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ last_used_at TEXT,
+ revoked_at TEXT
+);
+
+-- Requirement 73: roles are granted permissions by data, not by code.
+CREATE TABLE IF NOT EXISTS permissions (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ code TEXT NOT NULL UNIQUE,
+ description TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS role_permissions (
+ role TEXT NOT NULL,
+ permission_code TEXT NOT NULL REFERENCES permissions(code) ON DELETE CASCADE,
+ PRIMARY KEY(role, permission_code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id, revoked_at);
+CREATE INDEX IF NOT EXISTS idx_api_requests_key_time ON api_requests(api_key_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_totp_used_user ON totp_used_codes(user_id, used_at);
