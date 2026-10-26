@@ -241,6 +241,45 @@ def effective_book_price(book, now=None):
     return normal_price
 
 
+def sale_ends_in_seconds(book, now=None):
+    """
+    Return the seconds left in the active flash sale, or 0 if none is running.
+
+    Requirement 47 shows a countdown, so the remaining time has to come from the
+    same window comparison ``effective_book_price`` uses. Returning 0 for every
+    "no sale" case keeps the templates simple: `if remaining` means "show timer".
+    """
+    try:
+        sale_price = book["sale_price_paise"]
+        sale_start = book["sale_start"]
+        sale_end = book["sale_end"]
+        normal_price = int(book["price_paise"])
+    except (KeyError, IndexError, TypeError):
+        return 0
+
+    if sale_price is None or not sale_start or not sale_end:
+        return 0
+
+    # A "sale" that is not actually cheaper is not a running sale.
+    try:
+        if not 0 <= int(sale_price) < normal_price:
+            return 0
+    except (TypeError, ValueError):
+        return 0
+
+    current = now or datetime.now()
+
+    if not (sale_start <= current.isoformat(timespec="seconds") < sale_end):
+        return 0
+
+    try:
+        end = datetime.fromisoformat(sale_end)
+    except (TypeError, ValueError):
+        return 0
+
+    return max(0, int((end - current).total_seconds()))
+
+
 def loyalty_points_balance(connection, user_id):
     """Calculate a user's current points from the ledger."""
     row = connection.execute(

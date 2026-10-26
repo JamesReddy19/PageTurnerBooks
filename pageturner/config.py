@@ -23,3 +23,7 @@ class Config:
     FREE_SHIPPING_PAISE = 100000
     TAX_PERCENT = 5
     RESERVATION_MINUTES = 5
+
+    # Requirement 48: optional gift wrapping at checkout.
+    GIFT_WRAP_PAISE = 3000
+    GIFT_MESSAGE_MAX_LENGTH = 150
