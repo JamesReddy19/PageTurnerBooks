@@ -7,7 +7,7 @@ def seed_books_if_empty():
     connection = get_db()
     count = connection.execute("SELECT COUNT(*) AS count FROM books").fetchone()["count"]
     if count:
-        return
+        return False
     books = [
         ("Steve Jobs", "Walter Isaacson", "Biography", 59900, "The life and work of Apple co-founder Steve Jobs.", 10, "#e7e9f7"),
         ("Wings of Fire", "A. P. J. Abdul Kalam", "Biography", 39900, "An inspiring autobiography about learning and perseverance.", 10, "#f7e7cf"),
