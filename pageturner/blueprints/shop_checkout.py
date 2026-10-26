@@ -15,7 +15,7 @@ from ..helpers import (
     loyalty_discount_paise,
     loyalty_record,
 )
-from .. import backorders, giftcards, idempotency, pricing_rules
+from .. import backorders, giftcards, idempotency, outbox, pricing_rules
 from ..helpers import add_notification
 from .shop import (
     shop_bp, get_cart_rows, coupon_discount,
