@@ -114,3 +114,7 @@ CREATE INDEX IF NOT EXISTS idx_reservations_expiry ON reservations(expires_at);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_api_requests_ip_time ON api_requests(ip_address, created_at);
 CREATE INDEX IF NOT EXISTS idx_price_history_book ON book_price_history(book_id, changed_at);
+CREATE INDEX IF NOT EXISTS idx_reviews_book_visible ON reviews(book_id, hidden);
+CREATE INDEX IF NOT EXISTS idx_review_votes_review ON review_votes(review_id);
+CREATE INDEX IF NOT EXISTS idx_review_reports_status ON review_reports(status, review_id);
+CREATE INDEX IF NOT EXISTS idx_book_requests_count ON book_requests(request_count DESC);
