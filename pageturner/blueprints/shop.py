@@ -309,4 +309,5 @@ from . import (  # noqa: E402,F401
     shop_reviews,
     shop_book_requests,
     shop_wishlist_share,
+    shop_subscriptions,
 )
