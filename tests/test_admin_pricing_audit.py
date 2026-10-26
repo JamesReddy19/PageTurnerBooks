@@ -140,7 +140,7 @@ class PriceHistoryTests(AdminPricingTestBase):
             "title": "History Probe",
             "author": "A. Writer",
             "category": "Fiction",
-            "price": "12345",
+            "price": "123.45",
             "description": "Probe.",
             "stock": "3",
             "color": "#e8f1ef",
