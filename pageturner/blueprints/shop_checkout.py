@@ -214,7 +214,7 @@ def place_order():
                     url_for("shop.order_detail", order_id=existing_order_id)
                 )
 
-            return redirect(url_for("shop.orders_hub"))
+            return redirect(url_for("shop.order_history"))
 
         if token_status == "unknown":
             connection.rollback()
