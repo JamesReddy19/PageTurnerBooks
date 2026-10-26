@@ -83,5 +83,28 @@
 <footer class="site-footer">
   PageTurner Books · Flask · SQLite · HTML · CSS · JavaScript
 </footer>
+<script>
+// Requirement 47: tick down the flash-sale countdowns rendered by the server.
+// The server owns the remaining seconds; this only formats them, so the timer
+// shows the same value even if the visitor's clock is wrong.
+document.querySelectorAll('.sale-timer[data-remaining]').forEach(function (node) {
+  var remaining = parseInt(node.dataset.remaining, 10);
+  if (!(remaining > 0)) { return; }
+  function render() {
+    var seconds = Math.max(0, remaining);
+    var hours = Math.floor(seconds / 3600);
+    var minutes = Math.floor((seconds % 3600) / 60);
+    var secs = seconds % 60;
+    node.textContent = 'Sale ends in ' +
+      String(hours).padStart(2, '0') + ':' +
+      String(minutes).padStart(2, '0') + ':' +
+      String(secs).padStart(2, '0');
+    if (remaining <= 1) { node.textContent = 'Sale ended'; clearInterval(timer); return; }
+    remaining -= 1;
+  }
+  render();
+  var timer = setInterval(render, 1000);
+});
+</script>
 </body>
 </html>

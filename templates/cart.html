@@ -22,7 +22,14 @@
 <a href="{{ url_for('shop.book_detail', book_id=item.book.id) }}">{{ item.book.title }}</a>
 <small class="muted block">{{ item.book.author }}</small>
 </td>
-<td>{{ money(item.book.price_paise) }}</td>
+<td>
+{{ money(item.unit_price) }}
+{% if item.unit_price < item.book.price_paise %}
+<br><s class="muted">{{ money(item.book.price_paise) }}</s>
+{% set remaining = sale_ends_in_seconds(item.book) %}
+{% if remaining %}<br><small class="sale-timer" data-remaining="{{ remaining }}"></small>{% endif %}
+{% endif %}
+</td>
 <td>
 <form method="post" action="{{ url_for('shop.update_cart', book_id=item.book.id) }}" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
