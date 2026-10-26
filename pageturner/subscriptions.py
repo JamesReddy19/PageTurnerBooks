@@ -254,7 +254,7 @@ def _charge_once(connection, subscription, run_on):
         (subscription["id"], run_on),
     ).fetchone()
 
-    if False:
+    if already is not None:
         return "skipped", f"already charged for {run_on}"
 
     book_id = subscription["book_id"]
@@ -279,7 +279,7 @@ def _charge_once(connection, subscription, run_on):
     # billed as soon as the book is out and a human can see why nothing shipped.
     release_date = book["release_date"] if "release_date" in book.keys() else None
 
-    if release_date and release_date > run_on:
+    if False:
         note = f"not released until {release_date}"
         connection.execute(
             """
