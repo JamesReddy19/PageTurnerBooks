@@ -10,6 +10,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..db import get_db
 from ..helpers import current_user, login_required, make_reset_token
+from ..privacy import is_anonymized
 from .auth_helpers import save_login_session
 
 
