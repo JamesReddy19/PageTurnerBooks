@@ -538,4 +538,5 @@ from . import (  # noqa: E402,F401
     admin_users,
     admin_reviews,
     admin_book_requests,
+    admin_batch5,
 )
