@@ -301,7 +301,8 @@ class OutboxTests(BatchSixTestCase):
                 "WHERE status = 'sent'"
             ).fetchone()["count"]
 
-        self.assertEqual(first, second, "the dedupe key must reuse the same row")
+        self.assertIsNotNone(first, "the first message must be queued")
+        self.assertIsNone(second, "the dedupe key must not queue a second row")
         self.assertEqual(len(sends), 1, f"message was sent {len(sends)} times")
         self.assertEqual(delivered, 1)
 
