@@ -505,7 +505,3 @@ def schedule_note(subscription):
     return f"Next copy in {days} day{'s' if days != 1 else ''} ({due:%d %b %Y})."
 
 
-def _unused(_moment=None):  # pragma: no cover - keeps timedelta import honest
-    return timedelta()
-
-
