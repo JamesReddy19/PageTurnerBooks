@@ -11,7 +11,7 @@
 
 <section class="panel">
 <h2>Chain verification</h2>
-<p class="{% if verification.ok %}success-text{% else %}error-text{% endif %}">
+<p class="flash {% if verification.ok %}success{% else %}error{% endif %}">
   {% if verification.ok %}✔{% else %}✖{% endif %}
   {{ verification.reason }}
 </p>
