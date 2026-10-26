@@ -8,15 +8,15 @@ so a single decision updates every rating number on the site.
 from flask import flash, redirect, render_template, request, url_for
 
 from ..db import get_db
-from ..helpers import current_user, log_admin_action, role_required
+from ..helpers import current_user, log_admin_action
 from ..reviews import REPORT_REASONS, hide_review, keep_review
-from .admin import admin_bp
+from .admin import admin_bp, staff_or_admin
 
 STATUS_FILTERS = ("open", "hidden", "kept", "all")
 
 
 @admin_bp.get("/reviews")
-@role_required("staff")
+@staff_or_admin
 def review_moderation():
     connection = get_db()
     status = (request.args.get("status") or "open").strip()
@@ -85,7 +85,7 @@ def review_moderation():
 
 
 @admin_bp.post("/reviews/<int:review_id>/hide")
-@role_required("staff")
+@staff_or_admin
 def hide_review_route(review_id):
     connection = get_db()
 
@@ -111,7 +111,7 @@ def hide_review_route(review_id):
 
 
 @admin_bp.post("/reviews/<int:review_id>/keep")
-@role_required("staff")
+@staff_or_admin
 def keep_review_route(review_id):
     connection = get_db()
 

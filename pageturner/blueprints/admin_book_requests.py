@@ -6,12 +6,12 @@ Sorted by request count, so the most-wanted books are literally the top rows.
 from flask import flash, redirect, render_template, url_for
 
 from ..db import get_db
-from ..helpers import log_admin_action, role_required
-from .admin import admin_bp
+from ..helpers import log_admin_action
+from .admin import admin_bp, staff_or_admin
 
 
 @admin_bp.get("/book-requests")
-@role_required("staff")
+@staff_or_admin
 def book_requests():
     connection = get_db()
 
@@ -35,7 +35,7 @@ def book_requests():
 
 
 @admin_bp.post("/book-requests/<int:request_id>/fulfil")
-@role_required("staff")
+@staff_or_admin
 def fulfil_book_request(request_id):
     """Drop a request row once the title has actually been stocked."""
     connection = get_db()
