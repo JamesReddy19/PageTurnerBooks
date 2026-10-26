@@ -84,8 +84,18 @@ but `shop.py` / `site.py` / `api.py` never reference them.
 
 **Dead files:** `pageturner/blueprints/admin.py.backup`, `static/style.css.backup`.
 
-**Open question:** both `schema.sql` (top level) and the inline schema in `db.py`
-exist — which is authoritative must be confirmed before touching the schema.
+**RESOLVED — schema ownership:** `schema.sql` (top level) is authoritative for the
+27 base tables (`users`, `books`, `orders`, `coupons`, `returns`, …). `db.py::init_db()`
+executes it on every startup, then applies additive migrations: `ALTER TABLE ... ADD
+COLUMN` via `add_column_if_missing` (books: release_date, sale_price_paise, sale_start,
+sale_end; orders: gift_wrap_paise, gift_message, loyalty_points_earned,
+loyalty_points_redeemed) plus the 6 bundle/points tables created inline.
+
+**Rule for new work:** start from `schema.sql` when reading table definitions, and
+follow the `db.py` additive pattern for new tables/columns (`CREATE TABLE IF NOT
+EXISTS` / `add_column_if_missing`). Both are idempotent and non-destructive, so
+restarts never drop data. `migrations/001_initial_schema.sql` is documentation —
+no code reads it.
 
 ---
 
