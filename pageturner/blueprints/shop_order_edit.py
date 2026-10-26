@@ -308,8 +308,9 @@ def _reprice(connection, order, remaining):
     if subtotal - total_discount >= current_app.config["FREE_SHIPPING_PAISE"]:
         shipping = 0
     elif shipping == 0:
-        # The order stopped qualifying for free shipping.
-        shipping = current_app.config["SHIPPING_PAISE"]
+        # The order stopped qualifying for free shipping. Charge the same flat
+        # fee checkout would have charged, from the same config constant.
+        shipping = current_app.config["DEFAULT_SHIPPING_PAISE"]
 
     tax_percent = current_app.config["TAX_PERCENT"]
     tax = (taxable_subtotal * tax_percent + 50) // 100

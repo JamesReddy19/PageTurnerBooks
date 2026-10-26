@@ -362,7 +362,11 @@ def place_order():
         shipping = (
             0
             if subtotal - total_discount >= current_app.config["FREE_SHIPPING_PAISE"]
-            else (shipping_row["fee_paise"] if shipping_row else 8000)
+            else (
+                shipping_row["fee_paise"]
+                if shipping_row
+                else current_app.config["DEFAULT_SHIPPING_PAISE"]
+            )
         )
 
         taxable_subtotal = max(0, subtotal - total_discount)
