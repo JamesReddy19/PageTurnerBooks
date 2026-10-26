@@ -596,6 +596,29 @@ class BatchFiveTestCase(unittest.TestCase):
                 giftcards.gift_card_balance(get_db(), card_id), 20000
             )
 
+    def test_ledger_refuses_to_let_a_card_go_negative(self):
+        """The ledger SUM is the balance, so it must never be allowed to dip.
+
+        `redeem_gift_card` caps a spend at the live balance, but checkout prices
+        the card *before* the order row exists and writes the debit afterwards.
+        This proves the write itself re-checks the SUM, so that window can never
+        be used to overdraw a card.
+        """
+        user_id = self.register_and_login()
+
+        with self.app.app_context():
+            connection = get_db()
+            card_id, _code = giftcards.issue_gift_card(
+                connection, 5000, issued_to_user_id=user_id
+            )
+            connection.commit()
+
+            with self.assertRaises(ValueError):
+                giftcards.record_redemption(connection, card_id, 1, 9000)
+            connection.rollback()
+
+            self.assertEqual(giftcards.gift_card_balance(connection, card_id), 5000)
+
     def test_one_customer_cannot_cancel_another_customers_card(self):
         self.register_and_login()
 
