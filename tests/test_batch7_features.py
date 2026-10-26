@@ -136,7 +136,7 @@ class TwoFactorTests(BatchSevenTestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/login/two-factor", response.headers["Location"])
+        self.assertIn("/login/2fa", response.headers["Location"])
 
         # The critical assertion: the full session was NOT established.
         self.assertIsNone(self.logged_in())
@@ -154,18 +154,18 @@ class TwoFactorTests(BatchSevenTestCase):
         )
 
         bad = self.post(
-            "/login/two-factor",
+            "/login/2fa",
             {"code": "000000"},
-            token_from="/login/two-factor",
+            token_from="/login/2fa",
         )
         self.assertEqual(bad.status_code, 200)
         self.assertIsNone(self.logged_in())
 
         good_code = totp.code_for(secret)
         response = self.post(
-            "/login/two-factor",
+            "/login/2fa",
             {"code": good_code},
-            token_from="/login/two-factor",
+            token_from="/login/2fa",
         )
 
         self.assertEqual(response.status_code, 302)
@@ -190,7 +190,7 @@ class TwoFactorTests(BatchSevenTestCase):
             token_from="/login",
         )
         first = self.post(
-            "/login/two-factor", {"code": code}, token_from="/login/two-factor"
+            "/login/2fa", {"code": code}, token_from="/login/2fa"
         )
         self.assertEqual(first.status_code, 302)
 
@@ -202,7 +202,7 @@ class TwoFactorTests(BatchSevenTestCase):
             token_from="/login",
         )
         second = self.post(
-            "/login/two-factor", {"code": code}, token_from="/login/two-factor"
+            "/login/2fa", {"code": code}, token_from="/login/2fa"
         )
 
         self.assertEqual(second.status_code, 200)
@@ -211,12 +211,12 @@ class TwoFactorTests(BatchSevenTestCase):
     def test_enrolling_then_disabling_restores_single_factor_login(self):
         user_id = self.register_and_login()
 
-        response = self.client.get("/account/two-factor")
+        response = self.client.get("/security/2fa")
         self.assertEqual(response.status_code, 200)
 
         # Starting enrolment stores a pending secret but must not enable it:
         # the user has not proven they can generate a code yet.
-        self.post("/account/two-factor", {}, token_from="/account/two-factor")
+        self.post("/security/2fa", {}, token_from="/security/2fa")
 
         with self.app.app_context():
             row = get_db().execute(
@@ -230,9 +230,9 @@ class TwoFactorTests(BatchSevenTestCase):
         secret = row["totp_secret"]
 
         response = self.post(
-            "/account/two-factor",
+            "/security/2fa",
             {"action": "confirm", "code": totp.code_for(secret)},
-            token_from="/account/two-factor",
+            token_from="/security/2fa",
         )
         self.assertEqual(response.status_code, 302)
 
@@ -244,9 +244,9 @@ class TwoFactorTests(BatchSevenTestCase):
 
         # Disabling returns the account to password-only login.
         self.post(
-            "/account/two-factor",
+            "/security/2fa",
             {"action": "disable"},
-            token_from="/account/two-factor",
+            token_from="/security/2fa",
         )
 
         with self.app.app_context():
