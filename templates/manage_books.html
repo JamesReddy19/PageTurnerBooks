@@ -96,6 +96,47 @@
 <section class="panel">
     <h2>Current books</h2>
 
+    {% if books %}
+        <details class="edit-book">
+            <summary>Bulk price change</summary>
+
+            <form method="post"
+                  action="{{ url_for('admin.bulk_update_prices') }}"
+                  class="form-grid">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <label class="full-width">
+                    Books to reprice
+                    <select name="book_id" multiple size="6" required>
+                        {% for book in books %}
+                            <option value="{{ book.id }}">
+                                {{ book.title }} — {{ money(book.price_paise) }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small>Hold Ctrl (or Cmd) to select more than one book.</small>
+                </label>
+
+                <label>
+                    Percentage change
+                    <input type="number"
+                           name="percent"
+                           value="-10"
+                           min="-90"
+                           max="500"
+                           step="1"
+                           required>
+                    <small>Negative discounts, positive increases.</small>
+                </label>
+
+                <div class="full-width">
+                    <button type="submit">Apply to selected books</button>
+                </div>
+            </form>
+        </details>
+    {% endif %}
+
     {% for book in books %}
         <details class="edit-book">
             <summary>
