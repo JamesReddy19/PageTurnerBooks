@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Book of the month · Admin{% endblock %}
+{% block content %}
+<h1>Book of the month</h1>
+
+<p class="muted">
+    Subscribers receive the featured title automatically each month.
+    {{ live }} live subscription(s), {{ due|length }} due now.
+</p>
+
+<h2>Feature a title</h2>
+<form method="post" action="{{ url_for('admin.book_of_the_month') }}" class="stacked-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>
+        Month
+        <input type="month" name="month" value="{{ featured.month if featured else today }}" required>
+    </label>
+    <label>
+        Book
+        <select name="book_id" required>
+            {% for book in books %}
+            <option value="{{ book.id }}"
+                    {% if featured and featured.book_id == book.id %}selected{% endif %}>
+                {{ book.title }}
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+    <button class="action-button">Publish</button>
+</form>
+
+{% if featured %}
+<p class="muted">
+    Currently featured: <strong>{{ featured.title }}</strong>
+    ({{ featured.month }}) at {{ '₹%.2f'|format(featured.price_paise / 100) }}.
+</p>
+{% else %}
+<p class="muted">No title featured yet, so customers cannot subscribe.</p>
+{% endif %}
+
+<h2>Monthly run</h2>
+<p class="muted">
+    Pressing this creates one real order per due subscription through the normal
+    order pipeline — stock, backorders, loyalty and the confirmation outbox all
+    behave exactly as they do at checkout. The database refuses a second charge
+    for the same subscription in the same month.
+</p>
+<form method="post" action="{{ url_for('admin.run_subscriptions') }}" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="action-button">Run due subscriptions</button>
+</form>
+
+{% if due %}
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Subscriber</th><th>Book</th><th>Copies</th><th>Due</th></tr>
+        </thead>
+        <tbody>
+            {% for row in due %}
+            <tr>
+                <td>{{ row.user_name }} ({{ row.user_email }})</td>
+                <td>{{ row.title }}</td>
+                <td>{{ row.quantity }}</td>
+                <td>{{ row.next_run_on }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<h2>Subscribers</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Customer</th><th>Book</th><th>Copies</th><th>Status</th><th>Next run</th></tr>
+        </thead>
+        <tbody>
+            {% for row in subscribers %}
+            <tr>
+                <td>{{ row.user_name }}<br><span class="muted">{{ row.email }}</span></td>
+                <td>{{ row.title }}</td>
+                <td>{{ row.quantity }}</td>
+                <td><span class="pill">{{ row.status }}</span></td>
+                <td>{{ row.next_run_on }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5">No subscriptions yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2>Recent runs</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Date</th><th>Customer</th><th>Book</th><th>Outcome</th><th>Order</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+            {% for row in runs %}
+            <tr>
+                <td>{{ row.run_on }}</td>
+                <td>{{ row.user_name }}</td>
+                <td>{{ row.title }}</td>
+                <td><span class="pill">{{ row.outcome }}</span></td>
+                <td>{{ ('#' ~ row.order_id) if row.order_id else '—' }}</td>
+                <td class="muted">{{ row.note }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">No runs recorded.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2>Featured history</h2>
+<ul>
+    {% for pick in picks %}
+    <li>{{ pick.month }} — {{ pick.title }}</li>
+    {% else %}
+    <li>Nothing featured yet.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
