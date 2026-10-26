@@ -13,6 +13,7 @@ from flask import (
     url_for,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
+from .. import apikeys
 from ..db import get_db
 from ..helpers import current_user, login_required
 from ..privacy import anonymize_user
