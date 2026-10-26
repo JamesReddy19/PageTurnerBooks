@@ -77,7 +77,7 @@ button,
     border-radius: 9px;
     padding: 0.65rem 1rem;
     background: var(--teal);
-    color: #ffffff;
+    color: var(--on-accent);
     font-weight: 700;
     cursor: pointer;
     text-decoration: none;
@@ -91,7 +91,7 @@ button,
 button:hover,
 .button:hover {
     background: var(--teal-dark);
-    color: #ffffff;
+    color: var(--on-accent);
     text-decoration: none;
     box-shadow: 0 4px 10px rgba(16, 78, 71, 0.16);
 }
@@ -124,13 +124,13 @@ button.secondary,
 
 button.secondary:hover,
 .button.secondary:hover {
-    background: #d2e7df;
+    background: var(--teal-light-strong);
     color: var(--teal-dark);
 }
 
 button.danger,
 .button.danger {
-    background: #fff0ef;
+    background: var(--error-surface);
     color: var(--danger);
     border-color: var(--error-border);
 }
@@ -138,7 +138,7 @@ button.danger,
 button.danger:hover,
 .button.danger:hover {
     background: var(--danger);
-    color: #ffffff;
+    color: var(--on-accent);
     border-color: var(--danger);
 }
 
@@ -264,13 +264,13 @@ small {
     justify-content: space-between;
     gap: 1rem;
     padding: 0.85rem max(1rem, calc((100% - 1100px) / 2));
-    background: linear-gradient(120deg, #103f3a, #176b62);
+    background: var(--header-gradient);
     border-bottom: 2px solid #dca85b;
     box-shadow: 0 4px 16px rgba(16, 63, 58, 0.2);
 }
 
 .site-header .brand {
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .site-header .brand:hover {
@@ -278,7 +278,7 @@ small {
 }
 
 .site-header .nav-links a {
-    color: #f7faf8;
+    color: var(--on-accent-muted);
 }
 
 .site-header .nav-links a:hover {
@@ -287,7 +287,7 @@ small {
 }
 
 .site-header .nav-greeting {
-    color: #d8e8e2;
+    color: var(--on-accent-muted);
 }
 
 .site-header .cart-badge {
@@ -382,15 +382,15 @@ small {
     padding: clamp(1.5rem, 4vw, 2.8rem);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 18px;
-    background: linear-gradient(130deg, #104e47 0%, #176b62 60%, #338579 100%);
+    background: var(--hero-gradient);
     box-shadow: var(--shadow);
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .hero h1,
 .hero h2,
 .hero h3 {
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .hero h1 {
@@ -402,7 +402,7 @@ small {
 
 .hero p {
     max-width: 650px;
-    color: #eef8f4;
+    color: var(--on-accent-muted);
 }
 
 .hero a:not(.button) {
@@ -437,7 +437,7 @@ small {
     padding: 1.5rem;
     border: 1px solid var(--line-warm);
     border-radius: 16px;
-    background: linear-gradient(135deg, #fbf7ed, #f2f0e5);
+    background: var(--panel-gradient);
     box-shadow: 0 8px 24px rgba(53, 67, 49, 0.07);
 }
 
@@ -588,7 +588,7 @@ small {
 .category-pill[aria-pressed="true"] {
     border-color: var(--teal);
     background: var(--teal);
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .category-pill:focus-within {
@@ -633,7 +633,7 @@ small {
 .search-panel .category-filters a.active {
     border-color: var(--teal);
     background: var(--teal);
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .category-filters a {
@@ -657,7 +657,7 @@ small {
 .category-filters a.active {
     border-color: var(--teal);
     background: var(--teal);
-    color: #ffffff;
+    color: var(--on-accent);
     text-decoration: none;
 }
 
@@ -674,7 +674,7 @@ small {
 .search-panel .category-filters a.active {
     border-color: var(--teal);
     background: var(--teal);
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .search-panel .filter-heading {
@@ -832,7 +832,7 @@ small {
     padding: 0.2rem 0.55rem;
     border-radius: 999px;
     background: var(--accent-soft);
-    color: #765033;
+    color: var(--card-accent);
     font-size: 0.74rem;
     font-weight: 700;
     line-height: 1.5;
@@ -857,7 +857,7 @@ small {
 
 .book-card h2 a:hover,
 .book-card .book-info h2 a:hover {
-    color: #8a542d;
+    color: var(--card-accent);
     text-decoration: none;
 }
 
@@ -872,7 +872,7 @@ small {
 .book-card .book-price,
 .book-card .price {
     margin: 4px 0 0;
-    color: #684321;
+    color: var(--card-text);
     font-size: 1.08rem;
     font-weight: 800;
     line-height: 1.4;
@@ -896,7 +896,7 @@ small {
 }
 
 .book-card .low-stock {
-    color: #9b5a13;
+    color: var(--card-accent);
 }
 
 /* Keep the action buttons at the bottom of each card. */
@@ -944,27 +944,27 @@ small {
 .book-card .book-actions .add-button,
 .book-card .card-actions .add-button {
     background: var(--card-accent);
-    color: #ffffff;
+    color: var(--on-accent);
     border: 1px solid var(--card-accent);
     cursor: pointer;
 }
 
 .book-card .book-actions .add-button:hover,
 .book-card .card-actions .add-button:hover {
-    background: #5c3c25;
-    border-color: #5c3c25;
+    background: var(--card-accent);
+    border-color: var(--card-accent);
 }
 
 .book-card .details-button {
     background: transparent;
-    color: #684321;
+    color: var(--card-text);
     border: 1px solid var(--line-warm);
     text-decoration: none;
 }
 
 .book-card .details-button:hover {
     background: var(--accent-soft);
-    color: #5c3c25;
+    color: var(--card-accent);
     text-decoration: none;
     box-shadow: none;
 }
@@ -1507,27 +1507,27 @@ td form + form {
 }
 
 .order-actions a.button.secondary {
-    border-color: #0f5b50;
-    background: #0f5b50;
-    color: #ffffff;
+    border-color: var(--teal);
+    background: var(--teal);
+    color: var(--on-accent);
 }
 
 .order-actions a.button.secondary:hover {
-    border-color: #0b453d;
-    background: #0b453d;
-    color: #ffffff;
+    border-color: var(--teal-dark);
+    background: var(--teal-dark);
+    color: var(--on-accent);
 }
 
 .order-actions button.danger {
     border-color: var(--danger);
     background: var(--danger);
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .order-actions button.danger:hover {
     border-color: var(--danger-dark);
     background: var(--danger-dark);
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .cancel-order-form {
@@ -1900,7 +1900,7 @@ td form + form {
 .category-filters a.active {
     background: var(--teal, #285b50);
     border-color: var(--teal, #285b50);
-    color: #fffaf1;
+    color: var(--on-accent);
     text-decoration: none;
 }
 
@@ -2150,7 +2150,7 @@ nav.category-filters a:hover,
 nav.category-filters a.active {
     border-color: var(--teal);
     background: var(--teal);
-    color: #fffdf8;
+    color: var(--on-accent);
 }
 
 /* Sorting: compact dropdown on the right */
@@ -2909,7 +2909,7 @@ nav.category-filters a.active {
 /* Homepage: soft color for the category and collection panels */
 .catalog-section .section-heading {
     background: var(--teal-light) !important;
-    border-color: #c8ded6 !important;
+    border-color: var(--line-strong) !important;
 }
 
 /* Homepage: soft cream background for each book card */
@@ -2921,11 +2921,11 @@ nav.category-filters a.active {
 /* Keep book details readable */
 .catalog-section .book-card h3,
 .catalog-section .book-card .book-title {
-    color: #20312e;
+    color: var(--ink-strong);
 }
 
 .catalog-section .book-card p {
-    color: #75695c;
+    color: var(--card-muted);
 }
 
 /* Make sure the collection toolbar has a soft background too */
@@ -2943,31 +2943,31 @@ nav.category-filters a.active {
 
 .pagination .page-info {
     background: var(--teal-light);
-    color: #20312e;
-    border: 1px solid #c8ded6;
+    color: var(--ink-strong);
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
     padding: 8px 12px;
 }
 
 .pagination a {
     background: var(--teal-light);
-    color: #176b62;
-    border: 1px solid #c8ded6;
+    color: var(--teal);
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
     padding: 8px 14px;
     text-decoration: none;
 }
 
 .pagination a:hover {
-    background: #176b62;
-    color: #ffffff;
+    background: var(--teal);
+    color: var(--on-accent);
 }
 
 /* Page number background */
 .pagination .page-current {
     background: var(--teal-light) !important;
-    color: #20312e !important;
-    border: 1px solid #c8ded6;
+    color: var(--ink-strong) !important;
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
     padding: 8px 12px;
 }
