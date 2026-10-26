@@ -10,7 +10,14 @@ from one that never existed.
 import hashlib
 import secrets
 
-from flask import abort, flash, redirect, render_template, url_for
+from flask import (
+    abort,
+    flash,
+    redirect,
+    render_template,
+    session,
+    url_for,
+)
 
 from ..db import get_db
 from ..helpers import current_user, login_required
@@ -82,7 +89,14 @@ def create_wishlist_share():
     token = create_share(connection, user["id"])
     connection.commit()
 
-    flash("Share link created. Anyone with the link can view your wishlist.", "success")
+    # The digest is all the database keeps, so the plaintext link is shown
+    # once from this reader's own session and never stored server-side.
+    session["wishlist_share_token"] = token
+
+    flash(
+        "Share link created. Anyone with the link can view your wishlist.",
+        "success",
+    )
 
     return redirect(url_for("shop.wishlist"))
 
@@ -102,6 +116,8 @@ def revoke_wishlist_share():
         (user["id"],),
     )
     connection.commit()
+
+    session.pop("wishlist_share_token", None)
 
     flash("Share link revoked. The old link no longer works.", "success")
 
