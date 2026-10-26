@@ -1,4 +1,48 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // 0. Dark-mode toggle (requirement 60). The initial theme is already
+    // applied by the inline pre-paint script in base.html; this only flips
+    // and persists it.
+    const themeToggle = document.querySelector("#themeToggle");
+
+    if (themeToggle) {
+        const rootElement = document.documentElement;
+
+        const currentTheme = function () {
+            return rootElement.getAttribute("data-theme") === "dark"
+                ? "dark"
+                : "light";
+        };
+
+        const syncToggleLabel = function () {
+            const nextTheme = currentTheme() === "dark" ? "light" : "dark";
+            const label = "Switch to " + nextTheme + " mode";
+
+            themeToggle.setAttribute("aria-label", label);
+            themeToggle.setAttribute("title", label);
+            themeToggle.setAttribute(
+                "aria-pressed",
+                currentTheme() === "dark" ? "true" : "false"
+            );
+        };
+
+        syncToggleLabel();
+
+        themeToggle.addEventListener("click", function () {
+            const nextTheme = currentTheme() === "dark" ? "light" : "dark";
+
+            rootElement.setAttribute("data-theme", nextTheme);
+
+            try {
+                window.localStorage.setItem("pageturner-theme", nextTheme);
+            } catch (error) {
+                // Storage can be blocked (private mode); the toggle still
+                // works for this page view.
+            }
+
+            syncToggleLabel();
+        });
+    }
+
     // 1. Show book suggestions while typing.
     const searchInput = document.querySelector("#searchBox");
     const suggestionBox = document.querySelector("#search-suggestions");
