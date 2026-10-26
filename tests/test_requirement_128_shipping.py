@@ -339,6 +339,7 @@ class ShippingThresholdTestCase(unittest.TestCase):
     # Screens describe the threshold from the constant
     # =================================================================
     def test_screens_render_the_threshold_from_the_constant(self):
+        self.register_and_login()
         book_id = self.prepare_book(price_paise=20_000, stock=10)
         self.add_to_cart(book_id, 1)
 
