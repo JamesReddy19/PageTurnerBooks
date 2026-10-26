@@ -6,7 +6,7 @@ from datetime import date
 from flask import abort, flash, jsonify, redirect, request, session, url_for
 
 from ..db import get_db
-from ..helpers import role_required, log_admin_action, add_notification, audit_action, permission_required
+from ..helpers import log_admin_action, add_notification
 from ..pricing import apply_percentage, set_book_price
 from .admin import admin_bp, read_book_form, save_uploaded_image, save_categories_and_tags
 
@@ -56,7 +56,6 @@ def read_release_date():
 
 
 @admin_bp.post("/books/add")
-@role_required("admin")
 @permission_required("catalog.manage")
 def add_book():
     connection = get_db()
@@ -125,7 +124,6 @@ def add_book():
 
 
 @admin_bp.post("/books/edit/<int:book_id>")
-@role_required("admin")
 @permission_required("catalog.manage")
 def edit_book(book_id):
     connection = get_db()
@@ -243,7 +241,6 @@ def edit_book(book_id):
 
 
 @admin_bp.post("/books/prices/bulk")
-@role_required("admin")
 @permission_required("pricing.manage")
 def bulk_update_prices():
     """Apply one percentage price change to several books at once (req 55).
@@ -351,7 +348,6 @@ def book_price_history(book_id):
 
 
 @admin_bp.post("/books/delete/<int:book_id>")
-@role_required("admin")
 @permission_required("catalog.manage")
 def delete_book(book_id):
     connection = get_db()

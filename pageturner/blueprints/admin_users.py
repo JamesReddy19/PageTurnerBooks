@@ -10,7 +10,7 @@ returns, and can demote staff back to customer. Guard rails:
 from flask import flash, redirect, render_template, request, url_for
 
 from ..db import get_db
-from ..helpers import current_user, log_admin_action, permission_required
+from ..helpers import current_user, log_admin_action
 from .admin import admin_bp
 
 ASSIGNABLE_ROLES = ("customer", "staff", "admin")

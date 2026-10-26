@@ -4,7 +4,7 @@ import io
 from datetime import datetime, timedelta
 from flask import abort, flash, make_response, redirect, request, render_template, url_for
 from ..db import get_db
-from ..helpers import role_required, log_admin_action, audit_action, permission_required
+from ..helpers import log_admin_action
 from .admin import admin_bp
 
 @admin_bp.get("/reports")
@@ -29,7 +29,6 @@ def reports():
 
 
 @admin_bp.get("/reports.csv")
-@role_required("admin")
 @permission_required("reports.view")
 def reports_csv():
     start = request.args.get("start", (datetime.now().date()-timedelta(days=30)).isoformat())
@@ -53,7 +52,6 @@ def reports_csv():
 
 
 @admin_bp.get("/export/orders.csv")
-@role_required("admin")
 @permission_required("reports.view")
 def export_orders():
     rows = get_db().execute("SELECT id,date,name,phone,address,status,subtotal_paise,discount_paise,shipping_paise,tax_paise,total_paise FROM orders ORDER BY id").fetchall()

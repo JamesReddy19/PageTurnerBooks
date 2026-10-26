@@ -6,7 +6,7 @@ from datetime import datetime
 from flask import abort, flash, redirect, render_template, request, url_for
 
 from ..db import get_db
-from ..helpers import rupees_to_paise, log_admin_action, permission_required
+from ..helpers import rupees_to_paise, log_admin_action
 from .admin import admin_bp
 
 

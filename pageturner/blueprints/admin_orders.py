@@ -1,8 +1,8 @@
 """Staff and administrator order management."""
 from flask import abort, flash, redirect, request, session, url_for, render_template
 from ..db import get_db
-from ..helpers import log_admin_action, add_notification, audit_action, permission_required
-from .admin import admin_bp, ALLOWED_STATUSES, staff_or_admin
+from ..helpers import log_admin_action, add_notification
+from .admin import admin_bp, ALLOWED_STATUSES
 
 @admin_bp.get("/orders")
 @permission_required("orders.manage")
@@ -12,7 +12,6 @@ def orders():
 
 
 @admin_bp.post("/orders/<int:order_id>/status")
-@staff_or_admin
 @permission_required("orders.manage")
 def update_order_status(order_id):
     new_status = request.form.get("status", "")

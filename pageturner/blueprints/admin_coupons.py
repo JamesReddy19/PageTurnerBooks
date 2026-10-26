@@ -3,7 +3,7 @@ import sqlite3
 from datetime import datetime
 from flask import flash, redirect, request, url_for, render_template
 from ..db import get_db
-from ..helpers import role_required, log_admin_action, rupees_to_paise, audit_action, permission_required
+from ..helpers import log_admin_action, rupees_to_paise
 from .admin import admin_bp
 
 @admin_bp.get("/coupons")
@@ -15,7 +15,6 @@ def coupons():
 
 
 @admin_bp.post("/coupons/add")
-@role_required("admin")
 @permission_required("pricing.manage")
 def add_coupon():
     connection = get_db()
@@ -44,7 +43,6 @@ def add_coupon():
 
 
 @admin_bp.post("/coupons/toggle/<int:coupon_id>")
-@role_required("admin")
 @permission_required("pricing.manage")
 def toggle_coupon(coupon_id):
     connection = get_db()
@@ -55,7 +53,6 @@ def toggle_coupon(coupon_id):
 
 
 @admin_bp.post("/coupons/delete/<int:coupon_id>")
-@role_required("admin")
 @permission_required("pricing.manage")
 def delete_coupon(coupon_id):
     try:

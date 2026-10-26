@@ -4,12 +4,11 @@ import io
 import sqlite3
 from flask import flash, redirect, request, url_for
 from ..db import get_db
-from ..helpers import role_required, log_admin_action, rupees_to_paise, audit_action, permission_required
+from ..helpers import log_admin_action, rupees_to_paise
 from ..pricing import set_book_price
 from .admin import admin_bp
 
 @admin_bp.post("/import/books.csv")
-@role_required("admin")
 @permission_required("catalog.manage")
 def import_books_csv():
     uploaded = request.files.get("file")

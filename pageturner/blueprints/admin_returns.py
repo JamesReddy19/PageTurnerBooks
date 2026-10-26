@@ -1,8 +1,8 @@
 """Return approvals and contact-message moderation."""
 from flask import abort, flash, redirect, request, session, url_for, render_template
 from ..db import get_db
-from ..helpers import role_required, log_admin_action, add_notification, audit_action, loyalty_claw_back_for_refund, permission_required
-from .admin import admin_bp, staff_or_admin
+from ..helpers import log_admin_action, add_notification, loyalty_claw_back_for_refund
+from .admin import admin_bp
 
 @admin_bp.get("/returns")
 @permission_required("returns.manage")
@@ -12,7 +12,6 @@ def returns():
 
 
 @admin_bp.post("/returns/<int:return_id>/<decision>")
-@role_required("admin")
 @permission_required("returns.manage")
 def review_return(return_id, decision):
     if decision not in ("approve", "reject"):
@@ -62,7 +61,6 @@ def messages():
 
 
 @admin_bp.post("/messages/<int:message_id>/read")
-@staff_or_admin
 @permission_required("orders.manage")
 def mark_message_read(message_id):
     get_db().execute("UPDATE contact_messages SET is_read=1 WHERE id=?", (message_id,))
