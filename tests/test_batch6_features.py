@@ -507,7 +507,7 @@ class SubscriptionTests(BatchSixTestCase):
         self.assertEqual(stock, 0, "stock must never go negative")
         self.assertIsNotNone(backorder, "the shortfall must join the queue")
         self.assertEqual(backorder["quantity"], 2)
-        self.assertEqual(backorder["quantity_fulfilled"], 0)
+        self.assertEqual(backorder["fulfilled_quantity"], 0)
 
     def test_pausing_stops_delivery_and_resuming_does_not_bill_the_gap(self):
         book_id = self.prepare_book(price_paise=20000, stock=10)
