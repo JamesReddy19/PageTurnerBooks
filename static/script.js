@@ -429,7 +429,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     );
 
-    // 13. Compare books selected across different catalog pages.
+    // 12. Compare books selected across different catalog pages.
     const compareForm = document.querySelector("#compareForm");
     const compareStorageKey = "pageturner_compare_book_ids";
 
