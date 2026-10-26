@@ -1,7 +1,7 @@
 """Order history, tracking, cancellation, invoices and returns."""
 from flask import abort, flash, redirect, render_template, request, session, url_for
 from ..db import get_db
-from ..helpers import current_user, login_required, add_notification, ORDER_STATUS_TRANSITIONS
+from ..helpers import current_user, login_required, add_notification, ORDER_STATUS_TRANSITIONS, loyalty_reverse_order
 from .shop import shop_bp
 
 @shop_bp.route("/order-history", methods=["GET", "POST"])
@@ -47,6 +47,13 @@ def cancel_order(order_id):
             for wish in connection.execute("SELECT user_id FROM wishlist WHERE book_id=?", (item["book_id"],)).fetchall():
                 add_notification(wish["user_id"], "A wishlisted book is back in stock.", url_for("shop.book_detail", book_id=item["book_id"]))
         connection.execute("INSERT INTO order_status_history(order_id,old_status,new_status,changed_by,note) VALUES (?, 'Placed','Cancelled',?,'Cancelled by customer')", (order_id,session["user_id"]))
+
+        # Requirement 49: cancelling must undo the loyalty movements too, or the
+        # customer keeps points for an order they did not pay for.
+        loyalty_reverse_order(
+            connection, order["user_id"], order_id, "order cancelled"
+        )
+
         connection.commit()
         flash("Order cancelled and stock restored.", "success")
     except ValueError as error:
