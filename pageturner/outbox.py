@@ -95,7 +95,7 @@ def enqueue(
 
     cursor = connection.execute(
         """
-        INSERT OR IGNORE INTO notification_outbox(
+        INSERT INTO notification_outbox(
             user_id, channel, recipient, subject, body, dedupe_key,
             max_attempts, next_attempt_at, created_at
         )
@@ -169,7 +169,7 @@ def deliver(connection, message, transport=None, now=None):
         transport(message)
     except Exception as error:  # noqa: BLE001 - a transport may raise anything
         attempts += 1
-        exhausted = False
+        exhausted = attempts >= max_attempts
         status = "failed" if exhausted else "pending"
         retry_at = moment + timedelta(
             seconds=0 if exhausted else backoff_seconds(attempts)
