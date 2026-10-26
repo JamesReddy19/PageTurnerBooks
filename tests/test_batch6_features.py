@@ -663,12 +663,10 @@ class SubscriptionTests(BatchSixTestCase):
 
         with self.app.app_context():
             connection = get_db()
-            # Remove the book so the run cannot bill it.
-            connection.execute("DELETE FROM cart WHERE book_id = ?", (book_id,))
-            connection.execute("DELETE FROM backorders WHERE book_id = ?", (book_id,))
-            connection.execute("DELETE FROM stock_log WHERE book_id = ?", (book_id,))
+            # The title is not released yet, so this month cannot ship. This is
+            # the same gate the checkout applies to a normal order.
             connection.execute(
-                "DELETE FROM book_of_the_month WHERE book_id = ?", (book_id,)
+                "UPDATE books SET release_date = '2999-01-01' WHERE id = ?", (book_id,)
             )
             connection.execute(
                 "UPDATE subscriptions SET next_run_on = ? WHERE id = ?",
@@ -682,9 +680,16 @@ class SubscriptionTests(BatchSixTestCase):
             row = connection.execute(
                 "SELECT * FROM subscriptions WHERE id = ?", (subscription_id,)
             ).fetchone()
+            run = connection.execute(
+                "SELECT * FROM subscription_runs WHERE subscription_id = ?",
+                (subscription_id,),
+            ).fetchone()
 
+        self.assertEqual(summary["blocked"], 1)
         self.assertEqual(summary["ordered"], 0)
         self.assertEqual(row["next_run_on"], date.today().isoformat())
+        self.assertEqual(run["outcome"], "blocked")
+        self.assertIn("not released", run["note"])
 
 
 if __name__ == "__main__":
