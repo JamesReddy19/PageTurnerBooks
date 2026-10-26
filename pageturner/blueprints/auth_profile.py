@@ -173,8 +173,9 @@ def export_my_data():
         "returns": _export_rows(
             connection,
             """
-            SELECT r.order_id, r.quantity, r.reason, r.status, r.created_at
+            SELECT oi.order_id, r.quantity, r.reason, r.status, r.created_at
             FROM returns r
+            JOIN order_items oi ON oi.id = r.order_item_id
             WHERE r.user_id = ?
             ORDER BY r.id
             """,
