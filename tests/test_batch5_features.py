@@ -444,9 +444,17 @@ class BatchFiveTestCase(unittest.TestCase):
 
         order = self.order_rows(user_id)[-1]
         self.assertEqual(order["subtotal_paise"], 20000)
-        self.assertEqual(order["gift_card_paise"], 20000)
+        # A gift card pays the whole amount owed, shipping and tax included -
+        # it is not limited to the book subtotal.
+        self.assertEqual(
+            order["gift_card_paise"],
+            order["subtotal_paise"]
+            + order["shipping_paise"]
+            + order["tax_paise"],
+        )
         self.assertEqual(order["total_paise"], 0, "the card paid the whole order")
         self.assertEqual(order["gift_card_id"], card["id"])
+        charged = order["gift_card_paise"]
 
         with self.app.app_context():
             connection = get_db()
