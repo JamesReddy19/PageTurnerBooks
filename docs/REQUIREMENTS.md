@@ -75,9 +75,9 @@ Every new table below follows that same pattern, so restarts never drop data.
 
 | # | Requirement | Status | Evidence / gap |
 |---|---|---|---|
-| 58 | Download my data | **Missing** | `auth_profile` routes are only `profile`, `devices`, `revoke_device`, `revoke_all_devices`. No JSON export, no `Content-Disposition`. |
+| 58 | Download my data | **Done** | `GET /profile/export` streams a JSON document (`Content-Disposition: attachment`) containing the signed-in user's profile, orders with line items, saved addresses, reviews, wishlist and loyalty ledger. Scoped strictly by `session['user_id']`; anonymous users are redirected to login and never reach the query. Verified by `tests/test_data_export.py` (own-data-only, attachment header, valid JSON). |
 | 59 | Delete my account | **Missing / Blocked** | No anonymise path; no password re-auth step; sessions are not invalidated. **Schema conflict:** `users.email` is `NOT NULL UNIQUE`, so "email cleared" cannot be done as written without a migration. |
-| 60 | Dark mode toggle | **Missing** | No `localStorage` usage anywhere; no CSS-variable theme switch. Needs an inline pre-paint script to avoid the white flash. |
+| 60 | Dark mode toggle | **Done** | `data-theme` attribute on `<html>` drives a CSS-variable palette in `static/style.css`; `static/script.js` persists the choice in `localStorage` and an inline pre-paint script in `base.html` applies it before first paint to avoid a white flash. Toggle is present in the header for every page and honours `prefers-color-scheme` when no choice is stored. Verified by `tests/test_dark_mode.py`. |
 
 ### Part F — Hard orders and money
 
@@ -93,9 +93,9 @@ Every new table below follows that same pattern, so restarts never drop data.
 
 | # | Requirement | Status | Evidence / gap |
 |---|---|---|---|
-| 66 | Optimistic locking on admin edits | **Missing** | `books` has **no `version` column**; edit is a blind `UPDATE ... WHERE id = ?`. |
+| 66 | Optimistic locking on admin edits | **Done** | `books.version` defaults to 1 and is bumped exactly once per accepted save. `edit_book` respects the hidden `version` field: a stale value, or a missing one, raises `BookEditConflict` and renders a 200 page saying the book "was changed by someone else" with **no** write to the row. The bump happens via `set_book_price()` when the price moves, and via an explicit `version = version + 1` when only non-price fields changed, so two concurrent editors cannot both win. Verified by 4 tests, one proven to fail with the version predicate removed. |
 | 67 | Keyset pagination for the API | **Done** | `/api/books` accepts `?limit=` (1–100, default 20) and `?after=<opaque cursor>`, and returns `next_cursor`/`next`. Ordering is the total order `relevance DESC, title COLLATE NOCASE, id`, so pages never overlap or skip. Verified by walking all 12 books in 4 pages with no duplicates and no gaps; an unparseable cursor returns 400 instead of silently restarting. |
-| 68 | Tamper-evident audit log | **Missing** | `admin_log` columns are only `id, actor_user_id, action, detail, created_at` — no `prev_hash`/`row_hash`. **Good news:** `helpers.log_admin_action()` is a single chokepoint, so the chain can be added in one function. |
+| 68 | Tamper-evident audit log | **Done** | `admin_log` gained `prev_hash`/`row_hash`; `helpers.log_admin_action()` is the single chokepoint that computes `sha256(prev_hash + canonical fields)`, linking each row to its predecessor from `GENESIS_HASH`. `audit.verify_chain()` walks the chain and compares the newest `row_hash` with the `audit_chain_head` pointer. Verified by 6 tests over real rows: editing `detail`, deleting a middle row, deleting the newest row (caught by the head pointer) and nulling `row_hash` are each detected, while an untouched chain verifies ok. |
 | 69 | Notification outbox with retry | **Missing** | A `notifications` table + `add_notification()` exist, but they are in-app messages with **no attempt counter, no retry, no give-up**. Needs a separate outbox written in the same transaction as the event. |
 | 70 | Book of the month subscription | **Missing** | No `subscriptions` table, no "run due" button. |
 
