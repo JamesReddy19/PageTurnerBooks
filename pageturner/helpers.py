@@ -123,6 +123,39 @@ def role_required(*roles):
     return decorate
 
 
+def permission_required(*codes):
+    """Allow the request when the caller's role holds any of ``codes``.
+
+    Requirement 73: the grants come from ``role_permissions``, so access can be
+    changed without editing a route.  The admin password login (a break-glass
+    session that exists without a user row) is treated as holding the ``admin``
+    role's grants.
+    """
+    from .permissions import has_permission, role_can
+
+    def decorate(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            user = current_user()
+
+            if user is None:
+                if session.get("admin_password_login") and any(
+                    role_can("admin", code) for code in codes
+                ):
+                    return view(*args, **kwargs)
+
+                abort(403)
+
+            if not any(has_permission(user, code) for code in codes):
+                abort(403)
+
+            return view(*args, **kwargs)
+
+        return wrapped
+
+    return decorate
+
+
 def make_session_token():
     token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(token.encode()).hexdigest()
