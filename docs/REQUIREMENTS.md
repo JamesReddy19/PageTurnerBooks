@@ -222,14 +222,13 @@ release — never on boot, so a restart can never reseed or wipe a live database
 
 ## Gap list — what remains (47–76)
 
-**Done and verified by executed checks:** 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
-57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 75 (25 of 29).
-**Remaining: 4** (71, 72, 73, 74). Ordered by dependency, cheapest first, so each
-batch leaves the app deployable.
+**Done and verified by executed checks: all of 47–76** (47, 48, 49, 50, 51, 52,
+53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
+72, 73, 74, 75; 76 is the standing "test as you go" rule, currently 170 tests).
 
-Batches 3, 4, 5 and 6 are complete; their rows are retained below only as a
-record of what shipped in each batch. All four open decisions are now answered
-and implemented, so nothing in 47–76 is blocked on a product call any more.
+**Remaining functional work in this range: none.** Batches 3–8 are complete;
+their rows are retained below only as a record of what shipped in each batch.
+All four open decisions are answered and implemented.
 
 | Batch | Reqs | Missing capability (one line each) | New storage |
 |---|---|---|---|
