@@ -58,7 +58,12 @@ def create_app(test_config=None):
     # Initialize the database and prepare the initial data.
     with app.app_context():
         init_db()
-        seed_books_if_empty()
+        # A demo catalogue is seeded after init_db, so give freshly seeded
+        # books their baseline price-history row too (idempotent).
+        if seed_books_if_empty():
+            backfill_price_history_baseline(get_db())
+            get_db().commit()
+
         create_environment_admin()
 
     # Create or retrieve the CSRF token.
