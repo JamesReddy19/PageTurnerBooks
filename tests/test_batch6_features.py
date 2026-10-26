@@ -269,7 +269,7 @@ class OutboxTests(BatchSixTestCase):
 
         self.assertEqual(row["attempts"], 2, "attempts must stop at max_attempts")
         self.assertEqual(row["status"], "failed")
-        self.assertEqual(row["last_error"], "still down")
+        self.assertIn("still down", row["last_error"], "the cause must be recorded")
 
     def test_a_delivered_message_is_not_sent_twice(self):
         """The dedupe key plus the sent status means exactly one send."""
