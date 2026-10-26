@@ -144,8 +144,9 @@ the one place that risks importing a float.
 
 ## Suggested batches (dependency-ordered)
 
-1. **Wire what exists (cheapest, highest value):** 47, 48, 49, 56, 57, 67, 75.
-   Mostly connecting existing columns/helpers to routes and templates.
+1. ~~**Wire what exists (cheapest, highest value):** 47, 48, 49, 56, 57, 67, 75.
+   Mostly connecting existing columns/helpers to routes and templates.~~
+   **Shipped** — see the "Done" rows above.
 2. **New single-table features:** 50, 51, 52, 53, 54, 55, 58, 59, 60, 66, 68.
 3. **Transactional money:** 61, 62, 63, 64, 65.
 4. **Background/asynchronous-ish:** 69, 70.
