@@ -19,6 +19,7 @@ import base64
 import hashlib
 import hmac
 import secrets
+import sqlite3
 import struct
 import time
 from urllib.parse import quote
@@ -136,9 +137,9 @@ def claim_step(connection, user_id, step):
             "INSERT INTO totp_used_codes(user_id, time_step) VALUES (?, ?)",
             (user_id, step),
         )
-    except Exception:
-        # IntegrityError: this code was already used.  Any other failure is
-        # surfaced by the caller's rollback, so re-raising is unnecessary here.
+    except sqlite3.IntegrityError:
+        # This step was already redeemed.  Real failures (a missing table, a
+        # closed connection) are deliberately not swallowed.
         return False
 
     return True
