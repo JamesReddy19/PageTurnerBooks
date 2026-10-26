@@ -257,6 +257,7 @@ def me():
             else None
         ),
         "available_scopes": apikeys.SCOPES,
+        "account_requires_scope": "account:read",
         "quota_per_minute": apikeys.KEY_QUOTA,
     })
 
