@@ -219,6 +219,10 @@ def me():
 
     This is how a client checks its scopes before using them; it requires a key
     because there is nothing to describe without one.
+
+    The owner's details are personal data, so they are only returned to a key
+    that actually holds ``account:read``.  Any other key still gets its own
+    metadata, which is what it needs to decide whether it is configured right.
     """
     if g.api_key is None:
         return jsonify({
@@ -226,10 +230,12 @@ def me():
             "hint": "Send Authorization: Bearer <token> or X-API-Key: <token>",
         }), 401
 
-    owner = get_db().execute(
-        "SELECT id, name, email, role FROM users WHERE id = ?",
-        (g.api_key["user_id"],),
-    ).fetchone()
+    owner = None
+    if "account:read" in apikeys.scopes_of(g.api_key):
+        owner = get_db().execute(
+            "SELECT id, name, email, role FROM users WHERE id = ?",
+            (g.api_key["user_id"],),
+        ).fetchone()
 
     return jsonify({
         "key": {
