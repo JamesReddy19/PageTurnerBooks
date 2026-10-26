@@ -84,7 +84,7 @@
   </div>
 </section>
 <section class="panel">
-<h2>Customer reviews</h2>
+<h2>Customer reviews ({{ book.review_count or 0 }})</h2>
 <p>Average rating: {% if book.average_rating %}{{ '%.1f'|format(book.average_rating) }} / 5{% else %}
 No ratings yet
 {% endif %}
@@ -93,6 +93,30 @@ No ratings yet
 <article class="review">
 <strong>{{ review.name }}</strong> · {{ review.rating }}/5 <p>{{ review.comment }}</p>
 <small class="muted">{{ review.created_at or '' }}</small>
+{% set vote = review_votes.get(review.id, {'count': 0, 'voted': False}) %}
+<div class="review-actions">
+<form method="post" action="{% if vote.voted %}{{ url_for('shop.unmark_review_helpful', review_id=review.id) }}{% else %}{{ url_for('shop.mark_review_helpful', review_id=review.id) }}{% endif %}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="link-button">{% if vote.voted %}Remove my helpful vote{% else %}Helpful{% endif %} ({{ vote.count }})</button>
+</form>
+{% if current_user and review.user_id != current_user.id %}
+<details class="report-review">
+<summary>Report</summary>
+<form method="post" action="{{ url_for('shop.report_review_route', review_id=review.id) }}" class="stack-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Reason <select name="reason" required>
+<option value="">Choose</option>
+{% for value, label in report_reasons.items() %}
+<option value="{{ value }}">{{ label }}</option>
+{% endfor %}
+</select>
+</label>
+<label>Details (optional) <textarea name="note" maxlength="500"></textarea></label>
+<button>Send report</button>
+</form>
+</details>
+{% endif %}
+</div>
 </article>
 {% else %}
 
