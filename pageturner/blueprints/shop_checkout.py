@@ -227,7 +227,12 @@ def place_order():
                     f"Not enough stock remains for {book['title']}."
                 )
 
-            line_total = book["price_paise"] * item["quantity"]
+            # Requirement 47: charge the price that is active right now, using
+            # the same helper the catalog and cart use. The resulting per-copy
+            # price is snapshotted onto the order line below, so the invoice
+            # keeps showing what was actually paid even after the sale ends.
+            unit_price = effective_book_price(book)
+            line_total = unit_price * item["quantity"]
             subtotal += line_total
             checked_items.append(
                 (book, item["quantity"], line_total)
@@ -260,7 +265,6 @@ def place_order():
 
         taxable_subtotal = max(0, subtotal - discount)
         tax_percent = current_app.config["TAX_PERCENT"]
-
         # Allocate coupon discounts across eligible books.
         if coupon and coupon["category_id"]:
             eligible_ids = {
