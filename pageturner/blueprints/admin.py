@@ -36,6 +36,13 @@ ALLOWED_IMAGE_TYPES = {
 
 
 def staff_or_admin(view):
+    """Kept for compatibility with older route modules.
+
+    Access is decided by ``permission_required`` now (requirement 73); this
+    shim still means "staff or admin" for anything that has not been migrated.
+    """
+    from ..helpers import role_required
+
     return role_required("staff", "admin")(view)
 
 
