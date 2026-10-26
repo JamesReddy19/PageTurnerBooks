@@ -119,3 +119,86 @@ CREATE INDEX IF NOT EXISTS idx_reviews_book_visible ON reviews(book_id, hidden);
 CREATE INDEX IF NOT EXISTS idx_review_votes_review ON review_votes(review_id);
 CREATE INDEX IF NOT EXISTS idx_review_reports_status ON review_reports(status, review_id);
 CREATE INDEX IF NOT EXISTS idx_book_requests_count ON book_requests(request_count DESC);
+
+-- ---------------------------------------------------------------------------
+-- Batch 5 (requirements 61-65)
+-- ---------------------------------------------------------------------------
+
+-- Requirement 61: a refresh, a Back button or a double click re-sends the same
+-- POST. The checkout form carries a single-use token; the token row records the
+-- order it produced, so a replay can be answered with that order instead of a
+-- second one.
+CREATE TABLE IF NOT EXISTS checkout_tokens (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ token_hash TEXT NOT NULL UNIQUE,
+ user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ used_at TEXT,
+ order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL
+);
+
+-- Requirement 63: data-driven pricing rules, editable without a code change.
+CREATE TABLE IF NOT EXISTS pricing_rules (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ name TEXT NOT NULL UNIQUE,
+ rule_type TEXT NOT NULL
+  CHECK(rule_type IN ('category_percent','book_percent','min_quantity_percent')),
+ category TEXT,
+ book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
+ min_quantity INTEGER NOT NULL DEFAULT 1 CHECK(min_quantity >= 1),
+ percent_off INTEGER NOT NULL CHECK(percent_off BETWEEN 1 AND 90),
+ active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0, 1)),
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ CHECK(
+  (rule_type = 'category_percent' AND category IS NOT NULL AND book_id IS NULL)
+  OR (rule_type = 'book_percent' AND book_id IS NOT NULL)
+  OR (rule_type = 'min_quantity_percent')
+ )
+);
+
+-- Requirement 64: gift cards. Only the SHA-256 of the code is stored, so a
+-- database leak cannot be turned into free money; the balance is the ledger SUM,
+-- never a mutable counter.
+CREATE TABLE IF NOT EXISTS gift_cards (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ code_hash TEXT NOT NULL UNIQUE,
+ code_last4 TEXT NOT NULL,
+ initial_paise INTEGER NOT NULL CHECK(initial_paise > 0),
+ issued_to_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+ purchased_order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+ expires_at TEXT,
+ disabled_at TEXT,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS gift_card_ledger (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ gift_card_id INTEGER NOT NULL REFERENCES gift_cards(id) ON DELETE CASCADE,
+ order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+ amount_paise INTEGER NOT NULL,
+ reason TEXT NOT NULL,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Requirement 65: a backorder is a quantity a customer paid for but that the
+-- warehouse cannot ship yet. `books.stock` never goes negative; the queue is
+-- allocated oldest-first when stock returns.
+CREATE TABLE IF NOT EXISTS backorders (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+ user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+ quantity INTEGER NOT NULL CHECK(quantity > 0),
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ fulfilled_at TEXT,
+ fulfilled_quantity INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_checkout_tokens_user
+ ON checkout_tokens(user_id, used_at);
+CREATE INDEX IF NOT EXISTS idx_gift_card_ledger_card
+ ON gift_card_ledger(gift_card_id);
+CREATE INDEX IF NOT EXISTS idx_backorders_book
+ ON backorders(book_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_backorders_open
+ ON backorders(fulfilled_at, book_id);
