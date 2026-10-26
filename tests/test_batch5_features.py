@@ -617,9 +617,23 @@ class BatchFiveTestCase(unittest.TestCase):
             queued = backorders.open_backorders(connection, book)
 
         self.assertEqual(len(queued), 1)
-        self.assertEqual(queued[0]["quantity"], 3)
+        self.assertEqual(
+            queued[0]["quantity"],
+            2,
+            "the backorder covers only the copies the shelf did not have",
+        )
         self.assertEqual(queued[0]["fulfilled_quantity"], 0)
         self.assertEqual(queued[0]["order_id"], orders[0]["id"])
+
+        with self.app.app_context():
+            connection = get_db()
+            sold = connection.execute(
+                "SELECT quantity FROM order_items WHERE order_id = ?",
+                (orders[0]["id"],),
+            ).fetchone()["quantity"]
+        self.assertEqual(
+            sold, 3, "the customer is billed for every copy they asked for"
+        )
 
     def test_backorder_is_fulfilled_oldest_first_on_restock(self):
         first_user = self.register_and_login()
