@@ -10,7 +10,7 @@ The app is a Flask + SQLite application served by **gunicorn** through
 | `SECRET_KEY` | **Required in production.** Long random value (e.g. `python -c "import secrets;print(secrets.token_hex(32))"`). The app refuses to start without it outside development. |
 | `PAGETURNER_DATABASE` | SQLite file path. Use persistent storage, e.g. `/data/instance/database.db`. |
 | `PAGETURNER_UPLOADS` | Cover-image folder. Defaults to `<project>/static/uploads`; point it at a mounted disk (e.g. `/app/static/uploads`). |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Creates/updates the administrator account at startup. Keep the password only in the platform's secret store. |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Creates the administrator at startup and re-applies that password on every boot (the env var is the source of truth). Keep the password only in the platform's secret store. |
 | `APP_ENV` | `production` (default) or `development`. |
 | `COOKIE_SECURE` | `1` when served over HTTPS (recommended). |
 | `PORT` | Supplied by the host; gunicorn binds it. |
