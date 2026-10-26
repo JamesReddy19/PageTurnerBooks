@@ -52,6 +52,14 @@
 </p>
 <p>Shipping <strong>{{ money(order.shipping_paise) }}</strong>
 </p>
+{% if order.rules_discount_paise %}
+<p>Offer savings <strong>−{{ money(order.rules_discount_paise) }}</strong>
+</p>
+{% endif %}
+{% if order.gift_card_paise %}
+<p>Gift card <strong>−{{ money(order.gift_card_paise) }}</strong>
+</p>
+{% endif %}
 <p>Tax <strong>{{ money(order.tax_paise) }}</strong>
 </p>
 <p class="total-line">Total <strong>{{ money(order.total_paise) }}</strong>
@@ -62,6 +70,13 @@
        href="{{ url_for('shop.invoice', order_id=order.id) }}">
         View printable invoice
     </a>
+
+    {% if order.status == 'Placed' and order.user_id == session.get('user_id') %}
+    <a class="button secondary action-button"
+       href="{{ url_for('shop.edit_order', order_id=order.id) }}">
+        Change quantities
+    </a>
+    {% endif %}
 
     {% if order.status == 'Placed' and order.user_id == session.get('user_id') %}
     <form method="post"
