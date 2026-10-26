@@ -295,6 +295,54 @@ class ApiKeyTests(BatchSevenTestCase):
             )
             connection.commit()
         return token, row
+
+    def test_minted_tokens_carry_no_delimiter_in_the_secret(self):
+        """The token is prefix_secret, so the secret must never contain "_".
+
+        It used to be minted with ``secrets.token_urlsafe``, whose alphabet
+        includes "_": roughly 40% of keys then failed to parse and silently
+        never worked.
+        """
+        first_token, row = self.issue(["books:read"])
+        tokens = [first_token]
+        with self.app.app_context():
+            connection = get_db()
+            for index in range(20):
+                _row, token = apikeys.create_key(
+                    connection, row["user_id"], f"extra {index}", ["books:read"]
+                )
+                tokens.append(token)
+            connection.commit()
+
+        for token in tokens:
+            self.assertEqual(
+                len(token.split("_")),
+                3,
+                f"token is not prefix_secret: {token}",
+            )
+            self.assertNotIn("_", token.split("_", 2)[2])
+
+    def test_a_secret_containing_an_underscore_still_authenticates(self):
+        """Tokens already handed out under the old alphabet must keep working."""
+        _token, row = self.issue(["books:read"])
+        legacy = f"ptk_{row['prefix']}_abc_def"
+
+        with self.app.app_context():
+            connection = get_db()
+            connection.execute(
+                "UPDATE api_keys SET token_hash = ? WHERE id = ?",
+                (apikeys.hash_token(legacy), row["id"]),
+            )
+            connection.commit()
+            resolved = apikeys.lookup(connection, legacy)
+            self.assertIsNotNone(resolved)
+            self.assertEqual(resolved["id"], row["id"])
+
+        response = self.client.get(
+            "/api/books", headers={"Authorization": f"Bearer {legacy}"}
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_the_database_never_stores_the_token_itself(self):
         token, row = self.issue(["books:read"])
 
