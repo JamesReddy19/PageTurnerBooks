@@ -121,18 +121,21 @@ def make_session_token():
 
 
 def log_admin_action(action, detail=""):
+    """Record an administrative action in the hash-chained audit log (req 68).
+
+    Callers keep relying on the surrounding transaction to commit; the chain
+    helpers therefore never commit on their own, so an audit row and the
+    change it describes are written (or rolled back) together.
+    """
+    from .audit import append_row
+
     user = current_user()
 
-    get_db().execute(
-        """
-        INSERT INTO admin_log(actor_user_id, action, detail)
-        VALUES (?, ?, ?)
-        """,
-        (
-            user["id"] if user else None,
-            action,
-            str(detail)[:500],
-        ),
+    append_row(
+        get_db(),
+        user["id"] if user else None,
+        action,
+        str(detail)[:500],
     )
 
 
