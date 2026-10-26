@@ -116,6 +116,77 @@
 </section>
 {% endif %}
 
+<!-- Requirement 75: personalised home-page recommendations -->
+{% if recommended and not query and not category and not category_ids and page == 1 %}
+<section class="catalog-section" id="recommended">
+    <div class="section-heading">
+        <div>
+            <p class="section-kicker">CHOSEN FOR YOU</p>
+            <h2>Recommended for you</h2>
+            <p>Based on what you and other readers buy. Books you already own are left out.</p>
+        </div>
+    </div>
+
+    <div class="book-grid">
+        {% for book in recommended %}
+            <article class="book-card">
+                <a
+                    href="{{ url_for('shop.book_detail', book_id=book['id']) }}"
+                    class="cover"
+                    aria-label="View {{ book['title'] }}"
+                >
+                    {% if book['image'] %}
+                        <img
+                            src="{{ url_for('static', filename=book['image']) }}"
+                            alt="{{ book['title'] }} cover"
+                            loading="lazy"
+                        >
+                    {% else %}
+                        <div class="cover-placeholder">
+                            <span>PAGE TURNER BOOKS</span>
+                            <strong>{{ book['title'] }}</strong>
+                            <span class="placeholder-author">
+                                {{ book['author'] }}
+                            </span>
+                        </div>
+                    {% endif %}
+                </a>
+
+                <div class="book-card-body">
+                    <span class="category-label">
+                        {{ book['category'] or 'Books' }}
+                    </span>
+
+                    <h3 class="book-title">
+                        <a href="{{ url_for('shop.book_detail', book_id=book['id']) }}">
+                            {{ book['title'] }}
+                        </a>
+                    </h3>
+
+                    <p class="book-author">
+                        by
+                        <a href="{{ url_for('shop.author_page', author_name=book['author']) }}">
+                            {{ book['author'] }}
+                        </a>
+                    </p>
+
+                    {% if book['average_rating'] %}
+                        <p class="book-rating">
+                            <span aria-hidden="true">★</span>
+                            {{ '%.1f'|format(book['average_rating']) }}
+                        </p>
+                    {% endif %}
+
+                    <strong class="book-price">
+                        ₹{{ "%.2f"|format(book['price_paise'] / 100) }}
+                    </strong>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
 <section class="catalog-section">
     <div class="section-heading">
         <div>
