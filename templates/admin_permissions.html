@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Role permissions · Admin{% endblock %}
+{% block content %}
+<h1>Role permissions</h1>
+<p class="muted">
+    These grants are read from the database on every request, so unticking a box
+    takes effect on the next page load — no deploy needed. The
+    <strong>{{ superuser_role }}</strong> role always holds every permission and
+    is shown for reference only; that keeps the admin area reachable whatever
+    this matrix says.
+</p>
+
+<form method="post" action="{{ url_for('admin.update_permission_matrix') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="table-wrap">
+        <table class="permission-matrix">
+            <thead>
+                <tr>
+                    <th>Permission</th>
+                    {% for role in roles %}
+                    <th>
+                        {{ role }}
+                        <div class="muted small">
+                            {{ users_per_role.get(role, 0) }} user(s)
+                        </div>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for permission in permissions %}
+                <tr>
+                    <td>
+                        <code>{{ permission.code }}</code>
+                        <div class="muted small">{{ permission.description }}</div>
+                    </td>
+                    {% for role in roles %}
+                    <td class="centre">
+                        {% if role == superuser_role %}
+                        <input type="checkbox" checked disabled
+                               title="The {{ superuser_role }} role always holds every permission">
+                        {% else %}
+                        <input type="checkbox" name="grant"
+                               value="{{ role }}:{{ permission.code }}"
+                               {% if (role, permission.code) in granted %}checked{% endif %}
+                               aria-label="{{ permission.code }} for {{ role }}">
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p>
+        <button class="action-button">Save permissions</button>
+        <a class="muted" href="{{ url_for('admin.dashboard') }}">Back to dashboard</a>
+    </p>
+</form>
+{% endblock %}
