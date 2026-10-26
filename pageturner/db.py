@@ -42,6 +42,26 @@ def add_column_if_missing(connection, table, column, definition):
         )
 
 
+def backfill_price_history_baseline(connection):
+    """Give every book a starting price-history row exactly once.
+
+    Requirement 54 needs a known starting price for the trail to be
+    meaningful.  This is idempotent: it only inserts for books that have no
+    history at all, so it is safe to run on every boot and after seeding.
+    """
+    connection.execute(
+        """
+        INSERT INTO book_price_history
+            (book_id, old_price_paise, new_price_paise, reason, actor_user_id)
+        SELECT b.id, NULL, b.price_paise, 'initial price', NULL
+        FROM books b
+        WHERE NOT EXISTS (
+            SELECT 1 FROM book_price_history h WHERE h.book_id = b.id
+        )
+        """
+    )
+
+
 def init_db():
     connection = get_db()
 
