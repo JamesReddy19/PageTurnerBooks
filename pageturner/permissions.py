@@ -39,7 +39,22 @@ DEFAULT_PERMISSIONS = {
     "reports.view": "View and export sales reports",
     "customers.manage": "Manage customer accounts and roles",
     "audit.view": "Read the audit trail",
+    "roles.manage": "Grant and revoke permissions for each role",
+    "keys.manage": "Revoke any customer's API keys",
 }
+
+
+# The ``admin`` role is the superuser and always holds the whole catalogue.
+# Two reasons to special-case it in code rather than in the table:
+#
+#   * bootstrapping - a brand new permission code is immediately usable by an
+#     admin without a migration that back-fills the grant, and
+#   * lockout safety - no edit to ``role_permissions`` can make the admin area
+#     unreachable, which is otherwise an unrecoverable state through the UI.
+#
+# Every other role is entirely data-driven, which is the point of the
+# requirement.
+SUPERUSER_ROLE = "admin"
 
 
 # What each role may do out of the box.  This reproduces the pre-refactor
