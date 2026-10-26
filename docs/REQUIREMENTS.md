@@ -253,6 +253,8 @@ python3 -m compileall -q .                → clean
 ```
 
 
+### Deployment configuration still manual
+
 The repository cannot create host resources, so these stay as operator steps in
 `DEPLOYMENT.md`: the persistent disk mount (`/data`), `SECRET_KEY`,
 `ADMIN_EMAIL`/`ADMIN_PASSWORD`, and running `python migrate.py` **once** during
