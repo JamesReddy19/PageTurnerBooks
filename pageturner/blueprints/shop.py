@@ -227,19 +227,27 @@ def recommended_books(user, limit=5):
 
     rows = []
     if user:
-        # A parameter list cannot be empty here: it always starts with user_id.
+        # Anchor on every order line containing a book this reader owns (whoever
+        # placed that order) and count the *other* books in those same orders.
+        # That is the "readers who bought your books also bought" signal; a
+        # reader's own orders alone could only ever return books they own.
         rows = connection.execute(
             """
-            SELECT b.*, COUNT(*) AS score,
+            SELECT b.*, COUNT(DISTINCT co.order_id) AS score,
                    (SELECT AVG(r.rating) FROM reviews r WHERE r.book_id=b.id) AS average_rating
-            FROM order_items mine
-            JOIN orders co_order ON co_order.id = mine.order_id AND co_order.status <> 'Cancelled'
+            FROM order_items anchor
             JOIN order_items co
-              ON co.order_id = mine.order_id
-             AND co.book_id <> mine.book_id
+              ON co.order_id = anchor.order_id
+             AND co.book_id <> anchor.book_id
+            JOIN orders co_order
+              ON co_order.id = co.order_id
+             AND co_order.status <> 'Cancelled'
             JOIN books b ON b.id = co.book_id
-            WHERE mine.order_id IN (
-                    SELECT id FROM orders WHERE user_id = ? AND status <> 'Cancelled'
+            WHERE anchor.book_id IN (
+                    SELECT oi.book_id
+                    FROM order_items oi
+                    JOIN orders o ON o.id = oi.order_id
+                    WHERE o.user_id = ? AND o.status <> 'Cancelled'
                   )
               AND b.stock > 0
             GROUP BY b.id
