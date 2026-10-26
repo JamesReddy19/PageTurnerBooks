@@ -503,6 +503,13 @@ def place_order():
 
         order_id = cursor.lastrowid
 
+        # The confirmation is addressed to the account's email, which the order
+        # row does not carry.
+        email_row = connection.execute(
+            "SELECT email FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+        email = email_row["email"] if email_row else None
+
         # Requirement 64: the card was priced before this order existed, so its
         # ledger row is written now that there is a real order id to point at.
         # Same transaction as the order: neither can exist without the other.
