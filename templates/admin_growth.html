@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Growth report · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Growth report</h1>
+<p class="muted">
+Month-over-month revenue for {{ start_month }} to {{ end_month }}, newest month last.
+Every calendar month appears, so a quiet month shows as zero rather than
+letting the comparison silently skip it.
+</p>
+
+<form method="get" class="inline-form panel">
+<label>Months
+<select name="months">
+{% for option in range(3, max_months + 1) %}
+<option value="{{ option }}" {% if option == months %}selected{% endif %}>{{ option }}</option>
+{% endfor %}
+</select>
+</label>
+<button>Run report</button>
+<a class="button secondary" href="{{ url_for('admin.growth_report_csv', months=months) }}">Download CSV</a>
+<a class="button secondary" href="{{ url_for('admin.reports') }}">Date-range reports</a>
+</form>
+
+<section class="stats-grid">
+<article class="stat-card">
+<span>Revenue in window</span>
+<strong>{{ money(summary.revenue) }}</strong>
+</article>
+<article class="stat-card">
+<span>Orders</span>
+<strong>{{ summary.orders }}</strong>
+</article>
+<article class="stat-card">
+<span>Average per month</span>
+<strong>{{ money(summary.average_per_month) }}</strong>
+</article>
+<article class="stat-card">
+<span>Best month</span>
+<strong>
+{% if summary.best_month %}{{ summary.best_month.label }} — {{ money(summary.best_month.revenue) }}{% else %}
+No sales in this window.
+{% endif %}
+</strong>
+</article>
+</section>
+
+<section class="panel">
+<h2>Month by month</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>Orders</th>
+<th>Revenue</th>
+<th>Previous month</th>
+<th>Change</th>
+<th>Growth</th>
+<th>3-month average</th>
+<th>Cumulative</th>
+</tr>
+</thead>
+<tbody>
+{% for row in rows %}
+<tr>
+<td>{{ row.label }}</td>
+<td>{{ row.orders }}</td>
+<td>{{ money(row.revenue) }}</td>
+<td>{% if row.previous_revenue is none %}—{% else %}{{ money(row.previous_revenue) }}{% endif %}</td>
+<td>
+{% if row.change_paise is none %}—
+{% elif row.change_paise > 0 %}<span class="positive">+{{ money(row.change_paise) }}</span>
+{% elif row.change_paise < 0 %}<span class="negative">−{{ money(-row.change_paise) }}</span>
+{% else %}no change{% endif %}
+</td>
+<td>
+{% if row.growth_percent is none %}—
+{% elif row.growth_percent > 0 %}<span class="positive">+{{ row.growth_percent }}%</span>
+{% elif row.growth_percent < 0 %}<span class="negative">{{ row.growth_percent }}%</span>
+{% else %}0.0%{% endif %}
+</td>
+<td>{{ money(row.rolling_three_revenue) }}</td>
+<td>{{ money(row.running_revenue) }}</td>
+</tr>
+{% else %}
+
+<tr>
+<td colspan="8">No data.</td>
+</tr>
+
+{% endfor %}
+</tbody>
+</table>
+</div>
+<p class="muted">
+A dash means "not comparable": the first month has no previous month, and
+growth from zero revenue has no meaningful percentage.
+Hand-check any row against <a href="{{ url_for('admin.reports_csv') }}">the order-level CSV</a>.
+</p>
+</section>
+
+{% endblock %}
