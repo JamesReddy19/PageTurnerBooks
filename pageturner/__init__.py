@@ -25,8 +25,32 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    # Make sure the instance directory exists.
+    # A predictable SECRET_KEY would let anyone forge signed session cookies.
+    # Tests and local development get a random per-process key instead, while
+    # production must supply one through the environment.
+    if not app.config.get("SECRET_KEY"):
+        is_development = bool(
+            app.config.get("TESTING")
+            or app.debug
+            or str(app.config.get("ENVIRONMENT", "")).lower() == "development"
+        )
+
+        if not is_development:
+            raise RuntimeError(
+                "SECRET_KEY is not set. Provide a long random SECRET_KEY "
+                "environment variable before running in production."
+            )
+
+        app.config["SECRET_KEY"] = secrets.token_hex(32)
+        app.logger.warning(
+            "SECRET_KEY was not provided; using a temporary development key. "
+            "Sessions will be invalidated on restart."
+        )
+
+    # Make sure the instance directory and upload folder exist. Both may live
+    # on a mounted persistent disk, so create them defensively.
     os.makedirs(app.instance_path, exist_ok=True)
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
     # Close database connections after each request.
     app.teardown_appcontext(close_db)
