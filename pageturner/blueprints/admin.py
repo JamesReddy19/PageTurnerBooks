@@ -319,6 +319,31 @@ def dashboard():
     )
 
 
+@admin_bp.get("/audit")
+@role_required("admin")
+def audit_log():
+    """Show the audit trail and prove the hash chain is intact (req 68)."""
+    from ..audit import verify_chain
+
+    connection = get_db()
+    result = verify_chain(connection)
+
+    rows = connection.execute(
+        """
+        SELECT a.id, a.action, a.detail, a.created_at, a.row_hash,
+               u.email AS actor_email
+        FROM admin_log a
+        LEFT JOIN users u ON u.id = a.actor_user_id
+        ORDER BY a.id DESC
+        LIMIT 50
+        """
+    ).fetchall()
+
+    return render_template(
+        "admin_audit.html", verification=result, rows=rows
+    )
+
+
 @admin_bp.get("/books")
 @role_required("admin")
 def manage_books():
