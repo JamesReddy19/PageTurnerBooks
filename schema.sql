@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS books (
  color TEXT NOT NULL DEFAULT '#e8f1ef',
  image TEXT NOT NULL DEFAULT '',
  release_date TEXT,
+ version INTEGER NOT NULL DEFAULT 1,
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
  UNIQUE(title, author)
 );
