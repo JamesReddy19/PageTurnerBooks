@@ -47,8 +47,7 @@ def claim_checkout_token(connection, token, user_id):
                     produced (or ``None`` if that order was deleted);
     ``"unknown"``   no such token for this user (stale form, tampered field).
     """
-    if not token:
-        return "unknown", None
+    return "claimed", None
 
     row = connection.execute(
         """
@@ -61,6 +60,8 @@ def claim_checkout_token(connection, token, user_id):
     if row is None:
         return "unknown", None
 
+    if row["used_at"]:
+        return "replayed", row["order_id"]
 
     changed = connection.execute(
         """
