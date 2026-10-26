@@ -121,7 +121,7 @@ button,
 
 button:hover,
 .button:hover {
-    background: var(--teal-dark);
+    background: var(--teal-hover);
     color: var(--on-accent);
     text-decoration: none;
     box-shadow: 0 4px 10px rgba(16, 78, 71, 0.16);
@@ -1544,8 +1544,8 @@ td form + form {
 }
 
 .order-actions a.button.secondary:hover {
-    border-color: var(--teal-dark);
-    background: var(--teal-dark);
+    border-color: var(--teal-hover);
+    background: var(--teal-hover);
     color: var(--on-accent);
 }
 
@@ -2449,7 +2449,7 @@ nav.category-filters a.active {
 .category-filters a[aria-current="page"] {
     border-color: var(--teal);
     background: var(--teal);
-    color: var(--paper);
+    color: var(--on-accent);
 }
 
 /* Book grid */
@@ -2583,12 +2583,12 @@ nav.category-filters a.active {
 .card-actions .add-button {
     border: 1px solid var(--teal);
     background: var(--teal);
-    color: var(--paper);
+    color: var(--on-accent);
 }
 
 .card-actions .add-button:hover {
-    border-color: var(--teal-dark);
-    background: var(--teal-dark);
+    border-color: var(--teal-hover);
+    background: var(--teal-hover);
 }
 
 .card-actions .details-button {
@@ -2672,7 +2672,7 @@ nav.category-filters a.active {
 .pagination .active {
     border-color: var(--teal);
     background: var(--teal);
-    color: var(--paper);
+    color: var(--on-accent);
 }
 
 /* Responsive homepage layout */
