@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ owner_name }}'s wishlist · PageTurner Books{% endblock %}
+{% block content %}
+<section class="panel">
+  <p class="eyebrow">SHARED WISHLIST</p>
+  <h1>{{ owner_name }}'s wishlist</h1>
+  <p class="muted">A read-only list shared with you. The owner can revoke this link at any time.</p>
+</section>
+
+<section class="book-grid">
+{% for book in books %}
+<article class="book-card">
+  <a class="cover" style="--cover-color: {{ book.color }}" href="{{ url_for('shop.book_detail', book_id=book.id) }}">
+    {% if book.image %}
+    <img src="{{ url_for('static', filename=book.image) }}" alt="Cover of {{ book.title }}">
+    {% else %}
+    <span class="cover-mark">📖</span>
+    <strong>{{ book.title }}</strong>
+    <small>{{ book.author }}</small>
+    {% endif %}
+  </a>
+  <div class="book-card-body">
+    <h2>{{ book.title }}</h2>
+    <p>{{ book.author }}</p>
+    <p class="price">{{ money(book.price_paise) }}</p>
+  </div>
+</article>
+{% else %}
+<p>This wishlist is currently empty.</p>
+{% endfor %}
+</section>
+{% endblock %}

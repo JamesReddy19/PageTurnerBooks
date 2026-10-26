@@ -3217,3 +3217,16 @@ nav.category-filters a.active {
   max-width: 34rem;
   margin-inline: auto;
 }
+
+/* Shared wishlist link (read-only, revocable) */
+.share-url {
+  width: 100%;
+  max-width: 34rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border, #d7d2c8);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+}

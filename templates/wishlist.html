@@ -3,6 +3,27 @@
 {% endblock %}
 {% block content %}
 <h1>Your wishlist</h1>
+<section class="panel wishlist-share-panel">
+  <h2>Share this wishlist</h2>
+  {% set share_token = session.get('wishlist_share_token') %}
+  {% if share_token %}
+  <p class="muted">Anyone with this link can view (but not edit) your wishlist. Creating a new link replaces this one.</p>
+  <p><input class="share-url" type="text" readonly value="{{ url_for('shop.shared_wishlist', token=share_token, _external=True) }}"></p>
+  {% else %}
+  <p class="muted">Create a read-only link you can send to friends. The link can be revoked at any time.</p>
+  {% endif %}
+  <div class="card-actions">
+    <form method="post" action="{{ url_for('shop.create_wishlist_share') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button>{% if share_token %}Replace share link{% else %}Create share link{% endif %}</button>
+    </form>
+    <form method="post" action="{{ url_for('shop.revoke_wishlist_share') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="danger">Revoke share link</button>
+    </form>
+  </div>
+</section>
+
 <section class="book-grid">
 {% for book in books %}
 <article class="book-card">
