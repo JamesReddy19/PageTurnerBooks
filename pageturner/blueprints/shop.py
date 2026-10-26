@@ -85,9 +85,12 @@ def save_quantity(book_id, quantity):
     available = book["stock"] - active_reservations(
         connection, book_id, cart_key
     )
+    available = max(available, 0)
 
-    if quantity > available:
-        return False, f"Only {max(available, 0)} copies are currently available."
+    # Requirement 65: asking for more copies than are on the shelf is a
+    # backorder, not an error. The order is accepted, the available copies ship
+    # now, and the rest is queued by backorders.allocate_backorders() when stock
+    # returns, oldest order first. Nothing here may drive stock negative.
 
     if user:
         connection.execute(
