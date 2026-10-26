@@ -40,12 +40,9 @@ def day_in_month(month, day=15):
 
 class GrowthTestBase(unittest.TestCase):
     def setUp(self):
-        import os
-        import tempfile
+        from pageturner import create_app as factory
 
         self.temp_dir = tempfile.TemporaryDirectory()
-
-        from pageturner import create_app as factory
 
         self.app = factory(
             {
