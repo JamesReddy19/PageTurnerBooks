@@ -309,21 +309,66 @@ def place_order():
             taxable_line = line_total - line_discount
             tax += (taxable_line * tax_percent + 50) // 100
 
-        total = taxable_subtotal + shipping + tax
+        # Requirement 48: gift wrapping is an optional flat extra charge. The
+        # message is stored verbatim and escaped on render, so a customer who
+        # types <script> sees those characters rather than executing them.
+        gift_wrap_paise = 0
+        gift_message = ""
+
+        if request.form.get("gift_wrap"):
+            gift_wrap_paise = int(current_app.config["GIFT_WRAP_PAISE"])
+            gift_message = (request.form.get("gift_message") or "").strip()
+
+            if len(gift_message) > current_app.config["GIFT_MESSAGE_MAX_LENGTH"]:
+                raise ValueError(
+                    "A gift message can be at most "
+                    f"{current_app.config['GIFT_MESSAGE_MAX_LENGTH']} characters."
+                )
+
+        payable_before_points = taxable_subtotal + shipping + tax + gift_wrap_paise
+
+        # Requirement 49: redeem loyalty points. The requested amount is clamped
+        # to the stored balance and to what is still payable, so the total can
+        # never become negative and a tampered form cannot spend more points
+        # than the ledger says this customer owns.
+        try:
+            requested_points = int(request.form.get("points_to_redeem") or 0)
+        except (TypeError, ValueError):
+            requested_points = 0
+
+        requested_points = max(0, requested_points)
+        requested_points = min(
+            requested_points, loyalty_points_balance(connection, user_id)
+        )
+
+        points_used = min(
+            loyalty_discount_paise(requested_points), payable_before_points
+        ) // 10
+
+        points_discount = points_used * 10
+        total = payable_before_points - points_discount
+
+        # Points are earned on the amount actually paid, not the pre-discount
+        # subtotal, so redeeming points cannot inflate future earnings.
+        points_earned = loyalty_points_earned(total)
 
         cursor = connection.execute(
             """
             INSERT INTO orders(
                 user_id, name, phone, address,
                 subtotal_paise, discount_paise, shipping_paise,
-                tax_paise, total_paise, coupon_code, pincode, status
+                tax_paise, total_paise, coupon_code, pincode, status,
+                gift_wrap_paise, gift_message,
+                loyalty_points_earned, loyalty_points_redeemed
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Placed')
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Placed', ?, ?, ?, ?)
             """,
             (
                 user_id, name, phone, address, subtotal, discount,
                 shipping, tax, total,
-                coupon["code"] if coupon else None, pincode
+                coupon["code"] if coupon else None, pincode,
+                gift_wrap_paise, gift_message or None,
+                points_earned, points_used
             )
         )
 
