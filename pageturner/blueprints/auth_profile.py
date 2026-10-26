@@ -15,6 +15,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 from ..db import get_db
 from ..helpers import current_user, login_required
+from ..privacy import anonymize_user
 from .auth import auth_bp
 
 @auth_bp.route("/profile", methods=["GET", "POST"])
