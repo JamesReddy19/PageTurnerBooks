@@ -24,6 +24,37 @@
     --radius: 14px;
     --shadow: 0 8px 24px rgba(32, 49, 46, 0.08);
     --shadow-hover: 0 12px 28px rgba(32, 49, 46, 0.13);
+
+    /* Semantic tokens introduced for the themeable palette (req 60).
+       Every themeable declaration now resolves through one of these, so the
+       dark theme only has to override this block — not 90 selectors. */
+    --ink-strong: #26332d;
+    --teal-deep: #285b50;
+    --teal-light-strong: #d2e7df;
+    --surface: #ffffff;
+    --surface-warm: #fffdf8;
+    --surface-subtle: #f7faf8;
+    --surface-tint: #f0f5ef;
+    --surface-disabled: #eeeee8;
+    --accent-soft: #f1e5d3;
+    --line-strong: #c8d9cf;
+    --line-warm: #d9cbbb;
+    --error-surface: #fff0f0;
+    --error-border: #f0cccc;
+    --error-border-strong: #dc7777;
+    --error-text: #c62828;
+    --success-surface: #e5f5e9;
+    --success-border: #b9dec7;
+    --heart: #d12f45;
+
+    /* Text and fills that sit on top of the dark teal header/hero. */
+    --on-accent: #ffffff;
+    --on-accent-muted: #eef8f4;
+    --header-gradient: linear-gradient(120deg, #103f3a, #176b62);
+    --hero-gradient: linear-gradient(130deg, #104e47 0%, #176b62 60%, #338579 100%);
+    --panel-gradient: linear-gradient(135deg, #fbf7ed, #f2f0e5);
+
+    color-scheme: light;
 }
 
 /* ------------------------------
