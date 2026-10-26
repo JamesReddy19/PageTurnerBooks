@@ -94,7 +94,7 @@ Every new table below follows that same pattern, so restarts never drop data.
 | # | Requirement | Status | Evidence / gap |
 |---|---|---|---|
 | 66 | Optimistic locking on admin edits | **Missing** | `books` has **no `version` column**; edit is a blind `UPDATE ... WHERE id = ?`. |
-| 67 | Keyset pagination for the API | **Missing** | `/api/books` is a hard `LIMIT 100`, no `after`/`limit` params, no `next_cursor` in the JSON. |
+| 67 | Keyset pagination for the API | **Done** | `/api/books` accepts `?limit=` (1–100, default 20) and `?after=<opaque cursor>`, and returns `next_cursor`/`next`. Ordering is the total order `relevance DESC, title COLLATE NOCASE, id`, so pages never overlap or skip. Verified by walking all 12 books in 4 pages with no duplicates and no gaps; an unparseable cursor returns 400 instead of silently restarting. |
 | 68 | Tamper-evident audit log | **Missing** | `admin_log` columns are only `id, actor_user_id, action, detail, created_at` — no `prev_hash`/`row_hash`. **Good news:** `helpers.log_admin_action()` is a single chokepoint, so the chain can be added in one function. |
 | 69 | Notification outbox with retry | **Missing** | A `notifications` table + `add_notification()` exist, but they are in-app messages with **no attempt counter, no retry, no give-up**. Needs a separate outbox written in the same transaction as the event. |
 | 70 | Book of the month subscription | **Missing** | No `subscriptions` table, no "run due" button. |
