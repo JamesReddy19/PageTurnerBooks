@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Pricing rule preview · Admin{% endblock %}
+{% block content %}
+<h1>Pricing rule preview</h1>
+<p class="muted">
+    {{ rule_count }} rule(s) live. This is what one copy of each of the first 40
+    books would cost today.
+</p>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Book</th><th>List price</th><th>Rule discount</th><th>You charge</th></tr>
+        </thead>
+        <tbody>
+            {% for book in books %}
+            <tr>
+                <td>{{ book.title }}</td>
+                <td>{{ money(book.price_paise) }}</td>
+                <td>{{ money(per_book.get(book.id, 0)) }}</td>
+                <td>{{ money(book.price_paise - per_book.get(book.id, 0)) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p>Total rule discount on this sample: <strong>{{ money(total) }}</strong></p>
+<a class="button secondary" href="{{ url_for('admin.pricing_rules_page') }}">Back to rules</a>
+{% endblock %}
