@@ -73,28 +73,32 @@ def checkout():
                     connection, book_id, cart_key
                 )
 
-                if item["quantity"] > book["stock"] - reserved:
-                    raise ValueError(
-                        f"There are not enough copies of {book['title']} available."
-                    )
+                # Requirement 65: we never sell stock we do not have, but
+                # asking for more copies than are on the shelf is a backorder
+                # rather than an error. Reserve what exists and queue the rest
+                # when the order is placed.
+                available = max(0, book["stock"] - reserved)
+                reserve_quantity = min(item["quantity"], available)
+                item["backordered_quantity"] = item["quantity"] - reserve_quantity
 
                 connection.execute(
                     "DELETE FROM reservations WHERE cart_key = ? AND book_id = ?",
                     (cart_key, book_id)
                 )
 
-                connection.execute(
-                    """
-                    INSERT INTO reservations(
-                        user_id, cart_key, book_id, quantity, expires_at
+                if reserve_quantity > 0:
+                    connection.execute(
+                        """
+                        INSERT INTO reservations(
+                            user_id, cart_key, book_id, quantity, expires_at
+                        )
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (
+                            user_id, cart_key, book_id,
+                            reserve_quantity, expires
+                        )
                     )
-                    VALUES (?, ?, ?, ?, ?)
-                    """,
-                    (
-                        user_id, cart_key, book_id,
-                        item["quantity"], expires
-                    )
-                )
 
             # Requirement 61: the form gets a single-use token, committed with
             # the reservation so a token can never outlive its reservation.
