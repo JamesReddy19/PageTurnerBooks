@@ -473,6 +473,14 @@ def place_order():
 
         order_id = cursor.lastrowid
 
+        # Requirement 64: the card was priced before this order existed, so its
+        # ledger row is written now that there is a real order id to point at.
+        # Same transaction as the order: neither can exist without the other.
+        if gift_card_id and gift_card_paise:
+            giftcards.record_redemption(
+                connection, gift_card_id, order_id, gift_card_paise
+            )
+
         for book, quantity, line_total in checked_items:
             ship_now = ship_now_by_book.get(book["id"], quantity)
 
