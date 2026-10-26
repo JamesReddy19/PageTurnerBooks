@@ -7,3 +7,5 @@ backups/
 static/uploads/*
 !.gitkeep
 .env
+instance/*.bak-*
+instance/*.db.bak*

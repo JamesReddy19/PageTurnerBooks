@@ -20,7 +20,14 @@ class Config:
     PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 7
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
-    FREE_SHIPPING_PAISE = 100000
+    # Requirement 128: the free-delivery threshold lives here and nowhere else.
+    # It is ₹500, stored as integer paise (500 * 100) so no float ever touches
+    # the comparison. Every screen and both order paths read this one value.
+    FREE_SHIPPING_PAISE = 50_000
+    # The flat fee charged when an order is below the threshold and the pincode
+    # has no shipping zone. Kept as a constant because the checkout fallback and
+    # the pre-packing order edit must charge the same amount.
+    DEFAULT_SHIPPING_PAISE = 8_000
     TAX_PERCENT = 5
     RESERVATION_MINUTES = 5
 
