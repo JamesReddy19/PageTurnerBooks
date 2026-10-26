@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}API keys · PageTurner Books{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h1>API keys</h1>
+
+  <p class="muted">
+    Keys let scripts read the catalogue and your account data. Each key can only
+    reach the scopes you grant it, and you can revoke one at any time.
+  </p>
+
+  {% if keys %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Prefix</th>
+          <th>Scopes</th>
+          <th>Created</th>
+          <th>Last used</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key in keys %}
+          <tr>
+            <td>{{ key.name }}</td>
+            <td><code>{{ key.prefix }}</code></td>
+            <td>
+              {% for scope in (key.scopes or "").split(",") if scope %}
+                <span class="badge">{{ scope }}</span>
+              {% endfor %}
+            </td>
+            <td class="muted small">{{ key.created_at }}</td>
+            <td class="muted small">{{ key.last_used_at or "never" }}</td>
+            <td>
+              {% if key.revoked_at %}
+                <span class="badge badge-muted">Revoked</span>
+              {% else %}
+                <span class="badge badge-success">Active</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if not key.revoked_at %}
+                <form method="post" action="{{ url_for('auth.revoke_api_key', key_id=key.id) }}">
+                  <button type="submit" class="button button-small">Revoke</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">You have no API keys yet.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Create a key</h2>
+
+  <form method="post" action="{{ url_for('auth.create_api_key') }}" class="stack">
+    <label for="name">Name</label>
+    <input id="name" name="name" type="text" maxlength="60" required
+           placeholder="Reporting script" />
+
+    <fieldset>
+      <legend>Scopes</legend>
+      {% for code, description in available_scopes.items() %}
+        <label class="checkbox">
+          <input type="checkbox" name="scopes" value="{{ code }}"
+                 {% if code in default_scopes %}checked{% endif %} />
+          <span><code>{{ code }}</code> — {{ description }}</span>
+        </label>
+      {% endfor %}
+    </fieldset>
+
+    <button type="submit" class="button">Create key</button>
+  </form>
+
+  <p class="muted small">
+    The key is shown once at creation. PageTurner stores only a hash, so it
+    cannot be displayed again.
+  </p>
+</section>
+{% endblock %}
