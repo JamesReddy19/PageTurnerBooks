@@ -269,6 +269,12 @@ class WindowFunctionUseTests(GrowthTestBase):
     """The aggregation must happen in one windowed statement, not a Python loop."""
 
     def test_the_report_is_one_statement_that_uses_window_functions(self):
+        """One round trip, and that statement is the windowed one.
+
+        The whole point of req 74 is that the previous-month comparison, the
+        running total and the rolling average are computed by SQLite.  If any of
+        them moved into a Python loop a second statement would appear here.
+        """
         self.add_order(day_in_month(month_key(0)), 5_000)
 
         with self.app.app_context():
@@ -282,14 +288,20 @@ class WindowFunctionUseTests(GrowthTestBase):
             finally:
                 connection.set_trace_callback(None)
 
-        selects = [text for text in statements if text.lstrip().upper().startswith("SELECT")]
-        self.assertEqual(len(selects), 1, statements)
+        # Exactly one statement was issued.
+        self.assertEqual(len(statements), 1, statements)
 
-        sql = selects[0].upper()
+        sql = statements[0].upper()
+        # It is a single recursive CTE that generates the month series...
+        self.assertIn("WITH RECURSIVE", sql)
+        self.assertTrue(sql.lstrip().startswith("WITH"))
+        # ...and the aggregation is done with window functions, not more queries.
         self.assertIn("LAG(", sql)
         self.assertIn("OVER (", sql)
         self.assertIn("SUM(", sql)
         self.assertIn("AVG(", sql)
+        self.assertIn("UNBOUNDED PRECEDING", sql)
+        self.assertIn("2 PRECEDING", sql)
 
 
 class RouteTests(GrowthTestBase):
