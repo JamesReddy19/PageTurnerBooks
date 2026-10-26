@@ -83,11 +83,14 @@ class AdminPricingTestBase(unittest.TestCase):
         )
 
     def edit_payload(self, book, price_paise, version=None):
+        # The form field is rupees with 2 decimals; the DB stores integer
+        # paise.  Sending paise here would silently multiply the price by 100.
+        rupees = "%d.%02d" % (price_paise // 100, price_paise % 100)
         return {
             "title": book["title"],
             "author": book["author"],
             "category": book["category"],
-            "price": str(price_paise),
+            "price": rupees,
             "description": book["description"],
             "stock": str(book["stock"]),
             "color": book["color"],
