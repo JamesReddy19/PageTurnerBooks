@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Notification outbox · Admin{% endblock %}
+{% block content %}
+<h1>Notification outbox</h1>
+<p class="muted">
+    Messages are written in the same transaction as the event that caused them,
+    then delivered from here. {{ counts_total }} message(s) recorded:
+    {{ counts.pending }} pending, {{ counts.sent }} sent, {{ counts.failed }} given up.
+</p>
+
+<form method="post" action="{{ url_for('admin.process_outbox') }}" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="action-button">Deliver everything that is due</button>
+</form>
+
+<p class="muted">
+    Showing <strong>{{ status }}</strong> messages.
+    <a href="{{ url_for('admin.outbox_page', status='pending') }}">Pending</a> ·
+    <a href="{{ url_for('admin.outbox_page', status='sent') }}">Sent</a> ·
+    <a href="{{ url_for('admin.outbox_page', status='failed') }}">Given up</a> ·
+    <a href="{{ url_for('admin.outbox_page', status='all') }}">All</a>
+</p>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Recipient</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Attempts</th>
+                <th>Next attempt</th>
+                <th>Last error</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for message in messages %}
+            <tr>
+                <td>{{ message.id }}</td>
+                <td>{{ message.recipient or ('user ' ~ message.user_id) }}</td>
+                <td>{{ message.subject }}</td>
+                <td><span class="pill">{{ message.status }}</span></td>
+                <td>{{ message.attempts }} / {{ message.max_attempts }}</td>
+                <td>{{ message.next_attempt_at }}</td>
+                <td class="muted">{{ message.last_error or '' }}</td>
+                <td>
+                    {% if message.status == 'failed' %}
+                    <form method="post"
+                          action="{{ url_for('admin.retry_outbox_message', message_id=message.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button class="action-button">Re-queue</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8">Nothing here.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p class="muted">
+    A message that fails is retried with increasing delays and parked as
+    <strong>failed</strong> after its attempt budget, so a broken transport can
+    neither lose a notification silently nor be hammered.
+</p>
+{% endblock %}
