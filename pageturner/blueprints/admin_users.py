@@ -68,10 +68,10 @@ def set_user_role(user_id):
     connection.execute(
         "UPDATE users SET role = ? WHERE id = ?", (new_role, target["id"])
     )
-    connection.commit()
     log_admin_action(
         "user_role_changed",
         f"user={target['email']} from={target['role']} to={new_role}",
     )
+    connection.commit()
     flash(f"{target['name']} is now {new_role}.", "success")
     return redirect(url_for("admin.users"))
