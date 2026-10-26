@@ -249,8 +249,8 @@ implemented, so nothing in 47–76 is blocked on a product call any more.
 | ~~5~~ | ~~63~~ | **Shipped.** Data-driven pricing rules with an admin CRUD/toggle page, per-book split, additive-but-capped stacking | `pricing_rules` |
 | ~~5~~ | ~~64~~ | **Shipped.** Gift cards: hash-only codes, ledger-`SUM` balance, partial redemption, per-customer ownership — decision 3 (simulated capture) | `gift_cards`, `gift_card_ledger` |
 | ~~5~~ | ~~65~~ | **Shipped.** Backorders: stock never negative, remainder queued and allocated oldest-first on restock — decision 4 | `backorders` |
-| 6 | 69 | Notification outbox: `notifications` has no attempt counter/retry/give-up; outbox must be written in the same transaction as the event | `notification_outbox` |
-| 6 | 70 | Book-of-the-month: no `subscriptions`, no "run due" action | `subscriptions` |
+| ~~6~~ | ~~69~~ | **Shipped.** Outbox: separate `notification_outbox` with attempts/backoff/park, written in the same transaction as the event it announces | `notification_outbox` |
+| ~~6~~ | ~~70~~ | **Shipped.** Book of the month: `subscriptions` + `subscription_runs`, admin "run due", rides the normal order pipeline (decision 3) | `subscriptions`, `subscription_runs` |
 | 7 | 71 | TOTP 2FA: no `hmac`/`struct` TOTP, no secret column, no replay store | `users.totp_secret`, replay table |
 | 7 | 72 | API keys + scopes: no `api_keys`, `/api/` is unauthenticated, and `rate_limit()` is keyed by IP not key | `api_keys` |
 | 7 | 73 | Permissions table: `role_required` at **27 call sites**, no `permissions`/`role_permissions` — largest refactor, do last | `permissions`, `role_permissions` |
