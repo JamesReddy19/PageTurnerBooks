@@ -223,12 +223,13 @@ release — never on boot, so a restart can never reseed or wipe a live database
 ## Gap list — what remains (47–76)
 
 **Done and verified by executed checks:** 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
-57, 58, 59, 60, 66, 67, 68, 75 (18 of 29). **Remaining: 11.** Ordered by
-dependency, cheapest first, so each batch leaves the app deployable.
+57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 75 (23 of 29). **Remaining: 6**
+(69, 70, 71, 72, 73, 74). Ordered by dependency, cheapest first, so each batch
+leaves the app deployable.
 
-Batches 3 and 4 are complete; their rows are retained below only as a record of
-what shipped in each batch. Decisions 1 and 2 are now answered and implemented,
-so 51 and 59 are unblocked; decisions 3 and 4 still gate 64 and 65.
+Batches 3, 4 and 5 are complete; their rows are retained below only as a record
+of what shipped in each batch. All four open decisions are now answered and
+implemented, so nothing in 47–76 is blocked on a product call any more.
 
 | Batch | Reqs | Missing capability (one line each) | New storage |
 |---|---|---|---|
@@ -243,11 +244,11 @@ so 51 and 59 are unblocked; decisions 3 and 4 still gate 64 and 65.
 | ~~4~~ | ~~52~~ | **Shipped.** Book requests grouped by normalised title with an upserted `request_count`; admin list sorted by demand | `book_requests` |
 | ~~4~~ | ~~53~~ | **Shipped.** Wishlist sharing with a hashed, revocable token; a revoked link 404s like an unknown one | `wishlist_shares` |
 | ~~4~~ | ~~59~~ | **Shipped.** Password-confirmed anonymisation; unique `.invalid` email placeholder resolves the UNIQUE conflict, orders preserved, sessions blocked | — |
-| 5 | 61 | Idempotent checkout: no `checkout_tokens`; refresh/Back re-posts and duplicates orders | `checkout_tokens` |
-| 5 | 62 | Edit order before packing: only `cancel`/`invoice`/`return` exist; `coupon_discount()` already re-checks `min_order_paise`/`usage_limit` for the re-price rule | — |
-| 5 | 63 | Pricing rules: no `pricing_rules` table; only coupon percent logic exists | `pricing_rules` |
-| 5 | 64 | Gift cards: no card/ledger tables; needs hash-only storage + ledger `SUM` balance — **decision 3 (simulated capture)** | `gift_cards`, `gift_card_ledger` |
-| 5 | 65 | Backorders: no backorder concept; `stock` is debited unconditionally at checkout — **decision 4 (no negative stock)** | `backorders` |
+| ~~5~~ | ~~61~~ | **Shipped.** Idempotent checkout: hashed single-use token minted with the reservation, claimed inside the order transaction; replay lands on the existing order | `checkout_tokens` |
+| ~~5~~ | ~~62~~ | **Shipped.** Edit before packing: `Placed`-only gate, full re-price of the surviving lines, stock moved through `stock_log` | — |
+| ~~5~~ | ~~63~~ | **Shipped.** Data-driven pricing rules with an admin CRUD/toggle page, per-book split, additive-but-capped stacking | `pricing_rules` |
+| ~~5~~ | ~~64~~ | **Shipped.** Gift cards: hash-only codes, ledger-`SUM` balance, partial redemption, per-customer ownership — decision 3 (simulated capture) | `gift_cards`, `gift_card_ledger` |
+| ~~5~~ | ~~65~~ | **Shipped.** Backorders: stock never negative, remainder queued and allocated oldest-first on restock — decision 4 | `backorders` |
 | 6 | 69 | Notification outbox: `notifications` has no attempt counter/retry/give-up; outbox must be written in the same transaction as the event | `notification_outbox` |
 | 6 | 70 | Book-of-the-month: no `subscriptions`, no "run due" action | `subscriptions` |
 | 7 | 71 | TOTP 2FA: no `hmac`/`struct` TOTP, no secret column, no replay store | `users.totp_secret`, replay table |
@@ -255,15 +256,18 @@ so 51 and 59 are unblocked; decisions 3 and 4 still gate 64 and 65.
 | 7 | 73 | Permissions table: `role_required` at **27 call sites**, no `permissions`/`role_permissions` — largest refactor, do last | `permissions`, `role_permissions` |
 | 8 | 74 | Growth report: no `LAG`/`SUM OVER`; CSV export already exists to hand-check the result | — |
 
-**Req 76 (tests continuously)** is at 91 tests over the 90-odd routes. Each batch
-above must add the tests for what it implements, and the batch is not "Done"
-until those tests fail-then-pass. Batch 4 did exactly that for reqs 51, 52, 53
-and 59 by temporarily reverting each mechanism and observing the failure before
-restoring it. Req 77 (`stress.py`) is sequenced after 61 and 65, because those
-are what make concurrent checkout safe.
+**Req 76 (tests continuously)** is at 106 tests over the 90-odd routes. Each
+batch above must add the tests for what it implements, and the batch is not
+"Done" until those tests fail-then-pass. Batch 4 did exactly that for 51, 52, 53
+and 59, and batch 5 repeated it for 61, 62, 63, 64 and 65 by temporarily
+reverting each mechanism and observing the failure before restoring it. Req 77
+(`stress.py`) is sequenced after 61 and 65, because those are what make
+concurrent checkout safe — both are now in place.
 
-**Still blocked on decisions 3–4 below** before 64 and 65 can be coded
-honestly. Everything else can start immediately.
+**Nothing left is blocked on a product decision.** Decisions 3 and 4 are
+answered and implemented in batch 5, so 69–74 are all pure engineering; 73
+(permissions table) is the largest and goes last, and 74 is deliberately last
+because it is read-only reporting with no schema change.
 
 ---
 
