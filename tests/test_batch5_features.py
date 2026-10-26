@@ -611,10 +611,22 @@ class BatchFiveTestCase(unittest.TestCase):
             card_id, _code = giftcards.issue_gift_card(
                 connection, 5000, issued_to_user_id=user_id
             )
+            order_id = connection.execute(
+                """
+                INSERT INTO orders(
+                    user_id, name, phone, address, subtotal_paise,
+                    discount_paise, shipping_paise, tax_paise, total_paise,
+                    status, pincode
+                )
+                VALUES (?, 'Reader', '9999999999', 'Addr', 9000, 0, 0, 0, 9000,
+                        'Placed', '560001')
+                """,
+                (user_id,),
+            ).lastrowid
             connection.commit()
 
             with self.assertRaises(ValueError):
-                giftcards.record_redemption(connection, card_id, 1, 9000)
+                giftcards.record_redemption(connection, card_id, order_id, 9000)
             connection.rollback()
 
             self.assertEqual(giftcards.gift_card_balance(connection, card_id), 5000)
