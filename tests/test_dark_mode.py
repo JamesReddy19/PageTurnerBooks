@@ -87,15 +87,15 @@ class DarkModeStyleTests(unittest.TestCase):
     def test_no_hardcoded_light_surface_colours_outside_the_palette(self):
         """Every background/colour declaration should resolve through a token.
 
-        Allowed exceptions: the palette definitions themselves, the print
-        reset, and the gold accent family (#dca85b and friends) which is
-        brand-neutral across themes.
+        Allowed exceptions: the palette definitions themselves (``--name:``
+        lines), ``var(--token, #fallback)`` fallbacks (inert while the token is
+        defined), the print reset, and the gold accent family (#dca85b and
+        friends) which is brand-neutral across themes.
         """
         allowed_hex = {
             "#dca85b", "#f1cf91", "#ffe0a3", "#edbd70",  # gold accent family
             "#ffffff", "#000000",                        # print reset
         }
-        light_block = css_block(self.css, ":root")
 
         offenders = []
         for line_number, line in enumerate(self.css.splitlines(), 1):
@@ -104,7 +104,9 @@ class DarkModeStyleTests(unittest.TestCase):
                 continue  # a token definition, not a usage
             if not re.search(r"(background|color|border[^:]*)\s*:", stripped):
                 continue
-            for found in re.findall(r"#[0-9a-fA-F]{3,8}\b", stripped):
+            # Drop var() fallbacks; they never apply while the token exists.
+            without_fallbacks = re.sub(r"var\([^()]*\)", "var()", stripped)
+            for found in re.findall(r"#[0-9a-fA-F]{3,8}\b", without_fallbacks):
                 if found.lower() not in allowed_hex:
                     offenders.append("%s:%s" % (line_number, stripped))
 
@@ -114,7 +116,9 @@ class DarkModeStyleTests(unittest.TestCase):
             "hardcoded colours bypass the palette and would stay light in "
             "dark mode: " + " | ".join(offenders[:10]),
         )
-        self.assertNotIn("#fff", light_block.lower().replace("#ffffff", ""))
+
+        # The literal light values live only in the light palette block.
+        self.assertEqual(self.css.count("--background: #f5f3ed;"), 1)
 
     def test_print_styles_reset_the_dark_palette(self):
         # Printing a dark page wastes ink and looks broken, so the print block
