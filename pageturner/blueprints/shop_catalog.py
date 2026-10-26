@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from flask import abort, render_template, request, session
 from ..db import get_db
 from ..helpers import current_user
-from .shop import shop_bp, customers_also_bought
+from .shop import shop_bp, customers_also_bought, recommended_books
 
 
 @shop_bp.get("/")
