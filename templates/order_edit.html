@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Change order #{{ order.id }} · PageTurner Books{% endblock %}
+{% block content %}
+<h1>Change order #{{ order.id }}</h1>
+<p class="muted">
+    Orders can be changed until the warehouse packs them. Set a quantity to 0 to
+    remove an item — the order cannot be emptied, cancel it instead.
+</p>
+
+<form method="post" class="panel stack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Book</th>
+                    <th>Price each</th>
+                    <th>In stock</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.title }}</td>
+                    <td>{{ money(item.price_paise) }}</td>
+                    <td>{{ item.stock }}</td>
+                    <td>
+                        <label class="sr-only" for="quantity_{{ item.id }}">
+                            Quantity for {{ item.title }}
+                        </label>
+                        <input id="quantity_{{ item.id }}"
+                               name="quantity_{{ item.id }}"
+                               type="number" min="0"
+                               max="{{ max_quantity }}"
+                               value="{{ item.quantity }}"
+                               class="quantity-input">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="muted">
+        The total is recalculated from the new lines: coupon, offer savings,
+        shipping, tax and any gift card are all applied again.
+    </p>
+    <button>Save changes</button>
+    <a class="button secondary"
+       href="{{ url_for('shop.order_detail', order_id=order.id) }}">Cancel</a>
+</form>
+{% endblock %}
