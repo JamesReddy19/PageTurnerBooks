@@ -59,6 +59,72 @@
 }
 
 /* ------------------------------
+   1b. Dark theme (req 60)
+   Toggled by data-theme on <html>; an inline pre-paint script in base.html
+   resolves the stored/system preference before first paint so there is no
+   white flash. Overriding the palette here is enough because every themeable
+   declaration now resolves through a token above.
+------------------------------ */
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --ink: #e7ecea;
+    --muted: #a2b0ab;
+    --teal: #63c3b1;
+    --teal-dark: #9adfd1;
+    --teal-light: #1b3a35;
+    --orange: #e2b271;
+    --paper: #171d1c;
+    --background: #101615;
+    --line: #2c3835;
+    --danger: #e5858d;
+    --danger-dark: #f3a6ac;
+    --success: #74d3a1;
+
+    --card-background: #1a2221;
+    --card-border: #35423e;
+    --card-text: #e8ebe6;
+    --card-muted: #aab2a8;
+    --card-accent: #dcae82;
+
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+    --shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.66);
+
+    --ink-strong: #f2f6f3;
+    --teal-deep: #8ed6c7;
+    --teal-hover: #1a6a60;
+    --teal-light-strong: #27473f;
+    --surface: #171d1c;
+    --surface-warm: #1a2221;
+    --surface-subtle: #19201f;
+    --surface-tint: #1e2725;
+    --surface-disabled: #2a322f;
+    --accent-soft: #2b2620;
+    --line-strong: #37453f;
+    --line-warm: #3c3a31;
+    --error-surface: #3a1d20;
+    --error-border: #5d2b30;
+    --error-border-strong: #90454a;
+    --error-text: #f4a6ab;
+    --success-surface: #16302a;
+    --success-border: #2d5c4b;
+    --heart: #f0758b;
+
+    --on-accent: #ffffff;
+    --on-accent-muted: #dfeae6;
+    --header-gradient: linear-gradient(120deg, #0a2723, #14504a);
+    --hero-gradient: linear-gradient(130deg, #0a2723 0%, #12504a 60%, #1c6a60 100%);
+    --panel-gradient: linear-gradient(135deg, #1a2221, #181f1d);
+}
+
+/* Images and the book cover tints should not look bleached on dark ground. */
+:root[data-theme="dark"] .book-cover img,
+:root[data-theme="dark"] .hero-image img {
+    filter: brightness(0.92);
+}
+
+/* ------------------------------
    2. General page styling
 ------------------------------ */
 
