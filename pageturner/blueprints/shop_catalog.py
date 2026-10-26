@@ -7,6 +7,7 @@ from ..db import get_db
 from ..helpers import current_user
 from ..reviews import (
     AVERAGE_RATING_SQL,
+    REPORT_REASONS,
     REVIEW_COUNT_SQL,
     helpful_vote_counts,
 )
@@ -209,10 +210,19 @@ def book_detail(book_id):
     recent_ids.insert(0, book_id)
     session["recently_viewed"] = recent_ids[:5]
 
+    # Requirement 51: hidden reviews are invisible to customers, so they must
+    # not appear in the list either - not just in the average.
     reviews = connection.execute(
-        "SELECT * FROM reviews WHERE book_id=? ORDER BY id DESC",
+        "SELECT * FROM reviews WHERE book_id=? AND hidden = 0 "
+        "ORDER BY id DESC",
         (book_id,),
     ).fetchall()
+
+    review_votes = helpful_vote_counts(
+        connection,
+        [review["id"] for review in reviews],
+        current_user()["id"] if current_user() else None,
+    )
 
     tags = connection.execute(
         "SELECT t.name FROM tags t "
@@ -242,6 +252,8 @@ def book_detail(book_id):
         "book.html",
         book=book,
         reviews=reviews,
+        review_votes=review_votes,
+        report_reasons=dict(REPORT_REASONS),
         tags=tags,
         user_review=user_review,
         is_wishlisted=is_wishlisted,
