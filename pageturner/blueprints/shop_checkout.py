@@ -6,7 +6,15 @@ from flask import (
     request, session, url_for
 )
 from ..db import get_db
-from ..helpers import login_required, active_reservations
+from ..helpers import (
+    login_required,
+    active_reservations,
+    effective_book_price,
+    loyalty_points_balance,
+    loyalty_points_earned,
+    loyalty_discount_paise,
+    loyalty_record,
+)
 from .shop import (
     shop_bp, get_cart_rows, coupon_discount,
     current_app_reservation_minutes
@@ -396,7 +404,21 @@ def place_order():
                 )
                 VALUES (?, ?, ?, ?)
                 """,
-                (order_id, book["id"], quantity, book["price_paise"])
+                (order_id, book["id"], quantity, line_total // quantity)
+            )
+
+        # Requirement 49: the ledger is the single source of truth for the
+        # balance, so both movements are written in this same transaction as the
+        # order. If anything below fails, the order and its points vanish
+        # together instead of leaving a half-credited customer.
+        if points_used:
+            loyalty_record(
+                connection, user_id, order_id, -points_used, "order redemption"
+            )
+
+        if points_earned:
+            loyalty_record(
+                connection, user_id, order_id, points_earned, "order earned"
             )
 
             connection.execute(
