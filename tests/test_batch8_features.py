@@ -294,16 +294,15 @@ class WindowFunctionUseTests(GrowthTestBase):
 
 class RouteTests(GrowthTestBase):
     def test_the_report_requires_the_reports_permission(self):
-        self.assertEqual(self.client.get("/admin/reports/growth").status_code, 403)
+        # Anonymous callers are sent to the login page, not shown money data.
+        self.assertIn(self.client.get("/admin/reports/growth").status_code, (302, 403))
 
         # Staff may fulfil orders but reports stay admin-only (existing rule).
         self.register_and_login(admin=False)
-        with self.app.app_context():
-            connection = get_db()
-            connection.execute("UPDATE users SET role='staff' WHERE email='ada@example.com'")
-            connection.commit()
+        self.set_role("staff")
 
         self.assertEqual(self.client.get("/admin/reports/growth").status_code, 403)
+        self.assertEqual(self.client.get("/admin/reports/growth.csv").status_code, 403)
 
     def test_an_admin_can_open_the_report_and_sees_the_numbers(self):
         month = month_key(-1)
