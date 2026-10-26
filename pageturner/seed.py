@@ -25,6 +25,7 @@ def seed_books_if_empty():
     connection.executemany("INSERT INTO books(title,author,category,price_paise,description,stock,color) VALUES (?,?,?,?,?,?,?)", books)
     connection.commit()
     seed_categories(connection)
+    return True
 
 
 def create_environment_admin():
