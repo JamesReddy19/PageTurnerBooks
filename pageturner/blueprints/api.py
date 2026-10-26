@@ -1,8 +1,16 @@
-"""Read-only JSON API with a simple SQLite-backed rate limit."""
+"""JSON API with scoped API keys and SQLite-backed rate limiting.
+
+Anonymous callers can read the public catalogue and share one 30/minute bucket
+per IP (requirement 25).  A caller presenting an API key (requirement 72) gets a
+bucket of its own and, for the endpoints that expose account or stock data, must
+hold the matching scope.  Keys are looked up and verified in ``apikeys``.
+"""
 import base64
 import json
 
-from flask import Blueprint, abort, jsonify, request
+from flask import Blueprint, abort, g, jsonify, request
+
+from .. import apikeys
 from ..db import get_db
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -11,17 +19,59 @@ DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 
 
+def presented_token():
+    """The API token on this request, from either accepted header."""
+    header = request.headers.get("Authorization", "")
+
+    if header.lower().startswith("bearer "):
+        return header[7:].strip()
+
+    return request.headers.get("X-API-Key", "").strip()
+
+
 @api_bp.before_request
-def rate_limit():
+def authenticate_and_throttle():
+    """Resolve the API key, then count the request against its bucket."""
     connection = get_db()
-    ip_address = request.remote_addr or "unknown"
-    connection.execute("DELETE FROM api_requests WHERE created_at < datetime('now', '-1 minute')")
-    count = connection.execute("SELECT COUNT(*) AS count FROM api_requests WHERE ip_address=? AND created_at>=datetime('now', '-1 minute')", (ip_address,)).fetchone()["count"]
-    if count >= 30:
-        connection.commit()
-        abort(429)
-    connection.execute("INSERT INTO api_requests(ip_address) VALUES (?)", (ip_address,))
-    connection.commit()
+    token = presented_token()
+
+    g.api_key = apikeys.lookup(connection, token) if token else None
+
+    # A token was presented but is not valid.  Answering 401 rather than
+    # treating the caller as anonymous avoids silently applying the small
+    # anonymous allowance to someone who believes they are authenticated.
+    if token and g.api_key is None:
+        return jsonify({"error": "Invalid or revoked API key"}), 401
+
+    if not apikeys.reserve_quota(
+        connection, request.remote_addr or "unknown", g.api_key
+    ):
+        return (
+            jsonify({"error": "Rate limit exceeded", "limit_per_minute": (
+                apikeys.KEY_QUOTA if g.api_key else apikeys.ANONYMOUS_QUOTA
+            )}),
+            429,
+        )
+
+    if g.api_key is not None:
+        apikeys.touch(connection, g.api_key)
+
+
+def require_scope(scope):
+    """Abort with 403 unless the presented key carries ``scope``.
+
+    Returning the response instead of raising keeps an explicit ``return`` at
+    each call site, so a forgotten check cannot silently fall through.
+    """
+    granted = apikeys.scopes_of(getattr(g, "api_key", None))
+
+    if scope not in granted:
+        return jsonify({
+            "error": "This endpoint requires the '%s' scope" % scope,
+            "granted_scopes": sorted(granted),
+        }), 403
+
+    return None
 
 
 def encode_cursor(payload):
