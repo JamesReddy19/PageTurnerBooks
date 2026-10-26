@@ -251,7 +251,7 @@ app deployable.
 | 7 | 73 | Permissions table: `role_required` at **27 call sites**, no `permissions`/`role_permissions` — largest refactor, do last | `permissions`, `role_permissions` |
 | 8 | 74 | Growth report: no `LAG`/`SUM OVER`; CSV export already exists to hand-check the result | — |
 
-**Req 76 (tests continuously)** is only partly met today: 32 tests cover 77
+**Req 76 (tests continuously)** is only partly met today: 35 tests cover 77
 routes, so the shopping and security paths that already exist are mostly
 uncovered. Each batch above must add the tests for what it implements, and the
 batch is not "Done" until those tests fail-then-pass. Req 77 (`stress.py`) is
