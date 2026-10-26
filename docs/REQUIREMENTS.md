@@ -271,27 +271,28 @@ because it is read-only reporting with no schema change.
 
 ---
 
-## Open decisions (needed before coding these)
+## Decisions (all four answered; kept as the record of *why*)
 
 1. **Req 51 — does a hidden review's rating still count in the average?**
-   Must be decided and written as a code comment. Recommendation: **exclude
-   hidden reviews from both the average and the count**, because a hidden review
-   is a moderation decision that the content should not be shown to shoppers at
-   all; leaving it in the average would silently let reported content keep
-   influencing the score with no visible explanation.
-2. **Req 59 — `users.email` is `NOT NULL UNIQUE`.** "Email cleared" needs either
-   a nullable email (migration + every `WHERE email` login path audited) or a
-   placeholder like `deleted+<id>@invalid`. Placeholder is safer: it preserves
-   UNIQUE, requires no null-handling, and keeps login failing because
-   `password_hash` is replaced and sessions are dropped.
+   **Answered: no.** A hidden review is a moderation decision that the content
+   should not be shown to shoppers at all, so it counts to neither the average
+   nor the count; leaving it in would silently let reported content keep
+   influencing the score with no visible explanation. Implemented in batch 4 as
+   the `AND r.hidden = 0` constants in `pageturner/reviews.py`.
+2. **Req 59 — `users.email` is `NOT NULL UNIQUE`.** **Answered: placeholder.**
+   `deleted+<id>@anonymised.invalid` preserves UNIQUE, needs no null-handling,
+   and keeps login failing because `password_hash` is replaced and sessions are
+   dropped. Implemented in batch 4.
 3. **Reqs 64 / 70 imply payment capture**, but the app has **no payment
-   gateway**. Decide whether these are simulated (create the order / mark the
-   card issued, no real charge) — recommended, and matching how checkout
-   already works.
-4. **Req 65 backorder vs. `stock` invariant:** decide whether a backorder order
-   debits stock at placement (allowing negative) or is only debited when the
-   fulfil step runs. Recommended: do **not** go negative; keep a separate
-   `backorder` quantity and allocate oldest-first on restock.
+   gateway**. **Answered: simulated.** Buying a gift card debits the order the
+   shop already charges and credits a ledger row; no external call is made, and
+   `orders.gift_card_paise` records what the card covered. Implemented in batch
+   5 for req 64; req 70 (book-of-the-month) must charge a subscription through
+   the same existing order pipeline, never a new gateway.
+4. **Req 65 backorder vs. `stock` invariant:** **Answered: `books.stock` never
+   goes negative.** The remainder of an order is a `backorders` row, and
+   `allocate_backorders()` fills the queue oldest-first when stock returns.
+   Implemented in batch 5.
 
 ---
 
