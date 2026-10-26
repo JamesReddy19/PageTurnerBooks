@@ -302,3 +302,109 @@ def loyalty_points_earned(spent_paise):
 def loyalty_discount_paise(points):
     """Every 100 points gives ₹10 off, or 10 paise per point."""
     return max(0, int(points)) * 10
+
+
+def loyalty_record(connection, user_id, order_id, points_change, reason):
+    """
+    Append one movement to the loyalty ledger.
+
+    The balance is always SUM(points_change), so a movement is never edited or
+    deleted after the fact: a correction is another row. That is what makes the
+    history auditable and lets cancellation/returns reverse an order exactly.
+    Callers are expected to already be inside a transaction so the ledger entry
+    and the order it belongs to commit (or roll back) together.
+    """
+    points_change = int(points_change)
+
+    if not points_change:
+        return 0
+
+    connection.execute(
+        """
+        INSERT INTO points_ledger (user_id, order_id, points_change, reason)
+        VALUES (?, ?, ?, ?)
+        """,
+        (user_id, order_id, points_change, reason),
+    )
+
+    return points_change
+
+
+def loyalty_award_for_order(connection, user_id, order_id, spend_paise):
+    """
+    Credit the points an order earned, and return how many were credited.
+
+    Points are earned on what the customer actually paid (after coupon, gift
+    wrap and redeemed points), which is why the caller passes the final total
+    rather than the subtotal.
+    """
+    return loyalty_record(
+        connection,
+        user_id,
+        order_id,
+        loyalty_points_earned(spend_paise),
+        "order earned",
+    )
+
+
+def loyalty_refund_redemption(connection, user_id, order_id, points_used):
+    """Give redeemed points back, e.g. when the order is cancelled."""
+    return loyalty_record(
+        connection,
+        user_id,
+        order_id,
+        abs(int(points_used)),
+        "redemption refunded",
+    )
+
+
+def loyalty_points_remaining_on_order(connection, user_id, order_id):
+    """Points from this order that have not been clawed back yet."""
+    row = connection.execute(
+        """
+        SELECT COALESCE(SUM(points_change), 0) AS total
+        FROM points_ledger
+        WHERE order_id = ? AND user_id = ?
+        """,
+        (order_id, user_id),
+    ).fetchone()
+
+    return max(0, int(row["total"]))
+
+
+def loyalty_reverse_order(connection, user_id, order_id, reason):
+    """
+    Undo every loyalty movement attached to an order.
+
+    Used when an order is cancelled: points earned are clawed back and points
+    redeemed are returned. The net sum is negated as a single balancing row, so
+    the ledger still shows exactly what happened and when.
+    """
+    row = connection.execute(
+        """
+        SELECT COALESCE(SUM(points_change), 0) AS total
+        FROM points_ledger
+        WHERE order_id = ? AND user_id = ?
+        """,
+        (order_id, user_id),
+    ).fetchone()
+
+    return loyalty_record(connection, user_id, order_id, -int(row["total"]), reason)
+
+
+def loyalty_claw_back_for_refund(connection, user_id, order_id, refund_paise):
+    """
+    Remove the points that the refunded part of an order had earned.
+
+    Capped at whatever is still available on that order so a partial refund can
+    never drive the customer's balance below zero, even if they have already
+    spent the points elsewhere.
+    """
+    earned = loyalty_points_earned(refund_paise)
+    available = loyalty_points_remaining_on_order(connection, user_id, order_id)
+
+    claw_back = min(earned, available)
+
+    return -loyalty_record(
+        connection, user_id, order_id, -claw_back, "refund clawback"
+    )
