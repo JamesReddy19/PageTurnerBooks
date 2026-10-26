@@ -65,6 +65,47 @@ CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, 
 CREATE TABLE IF NOT EXISTS returns (id INTEGER PRIMARY KEY AUTOINCREMENT, order_item_id INTEGER NOT NULL REFERENCES order_items(id), user_id INTEGER NOT NULL REFERENCES users(id), quantity INTEGER NOT NULL CHECK(quantity > 0), reason TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Pending' CHECK(status IN ('Pending','Approved','Rejected')), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, reviewed_by INTEGER REFERENCES users(id), reviewed_at TEXT);
 CREATE TABLE IF NOT EXISTS shipping_zones (prefix TEXT PRIMARY KEY, fee_paise INTEGER NOT NULL DEFAULT 5000);
 
+-- Requirement 50: one "helpful" vote per user per review, enforced here.
+CREATE TABLE IF NOT EXISTS review_votes (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+ user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE(review_id, user_id)
+);
+-- Requirement 51: customer reports feed the admin moderation queue.
+CREATE TABLE IF NOT EXISTS review_reports (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+ reporter_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ reason TEXT NOT NULL,
+ note TEXT NOT NULL DEFAULT '',
+ status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','hidden','kept')),
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ resolved_at TEXT,
+ resolved_by INTEGER REFERENCES users(id),
+ UNIQUE(review_id, reporter_user_id)
+);
+-- Requirement 52: repeated requests for the same title increment a counter.
+CREATE TABLE IF NOT EXISTS book_requests (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ normalized_title TEXT NOT NULL UNIQUE,
+ title TEXT NOT NULL,
+ author TEXT NOT NULL DEFAULT '',
+ request_count INTEGER NOT NULL DEFAULT 1 CHECK(request_count > 0),
+ first_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+-- Requirement 53: revocable, unguessable wishlist share links.
+CREATE TABLE IF NOT EXISTS wishlist_shares (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+ token_hash TEXT NOT NULL UNIQUE,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ revoked_at TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_books_category ON books(category);
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(date);
