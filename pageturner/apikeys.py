@@ -91,7 +91,10 @@ def create_key(connection, user_id, name, scopes=None):
         raise ValueError("A key needs at least one scope.")
 
     prefix = secrets.token_hex(PREFIX_LENGTH // 2)
-    secret = secrets.token_urlsafe(24)
+    # The secret alphabet must not contain "_" - that is the token's own field
+    # delimiter, so a secret containing one would make the token unparseable at
+    # authentication time and the key would silently never work.
+    secret = secrets.token_hex(24)
     token = f"{TOKEN_PREFIX}_{prefix}_{secret}"
 
     cursor = connection.execute(
