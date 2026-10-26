@@ -321,6 +321,20 @@ class ApiKeyTests(BatchSevenTestCase):
         self.assertEqual(payload["key"]["scopes"], ["books:read"])
         # The plaintext token must not be echoed back by the API.
         self.assertNotIn(token, response.data.decode())
+        # ...and neither must the owner's personal details, which need
+        # account:read rather than merely any key.
+        self.assertIsNone(payload["account"])
+        self.assertNotIn("owner@example.com", response.data.decode())
+
+    def test_account_details_need_the_account_scope(self):
+        token, _ = self.issue(["books:read", "account:read"])
+
+        payload = self.client.get(
+            "/api/me", headers={"Authorization": f"Bearer {token}"}
+        ).get_json()
+
+        self.assertIsNotNone(payload["account"])
+        self.assertEqual(payload["account"]["email"], "owner@example.com")
 
     def test_a_revoked_key_stops_working_immediately(self):
         token, row = self.issue(["books:read"])
