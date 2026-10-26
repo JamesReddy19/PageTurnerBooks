@@ -685,6 +685,80 @@
         linear-gradient(180deg, #fbfcf8 0%, #f8faf5 100%);
 }
 
+.admin-dashboard .revenue-chart {
+    margin: 0;
+}
+
+/*
+ * Requirement 56: the seven-day chart is pure CSS. Each bar reads its height
+ * from the --bar-height custom property set inline by the template, so the
+ * dashboard shows the trend even when JavaScript is blocked or still loading.
+ */
+.admin-dashboard .revenue-plot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: clamp(.35rem, 1.5vw, 1.1rem);
+    padding-top: .5rem;
+}
+
+.admin-dashboard .revenue-col {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: .45rem;
+}
+
+.admin-dashboard .revenue-track {
+    display: flex;
+    width: 100%;
+    height: 220px;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.admin-dashboard .revenue-bar {
+    width: min(46px, 78%);
+    height: var(--bar-height, 0%);
+    min-height: 3px;
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient(180deg, #2f8a6d 0%, #28745c 55%, #1d5a47 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35);
+    transition: filter .18s ease;
+}
+
+.admin-dashboard .revenue-bar:hover,
+.admin-dashboard .revenue-bar:focus-visible {
+    filter: brightness(1.12);
+}
+
+.admin-dashboard .revenue-bar.is-empty {
+    min-height: 0;
+    height: 0;
+    border-bottom: 2px dashed #c9d2c6;
+}
+
+.admin-dashboard .revenue-value {
+    font-size: .72rem;
+    font-weight: 600;
+    color: #25352e;
+    white-space: nowrap;
+}
+
+.admin-dashboard .revenue-day {
+    font-size: .72rem;
+    color: #6b776e;
+    white-space: nowrap;
+}
+
+.admin-dashboard .revenue-chart figcaption {
+    margin-top: .85rem;
+    font-size: .75rem;
+    color: #78847b;
+}
+
 .admin-dashboard #revenue-chart {
     display: block;
     width: 100%;
