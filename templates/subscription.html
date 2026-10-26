@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Book of the month · PageTurner Books{% endblock %}
+{% block content %}
+<h1>Book of the month</h1>
+
+{% if featured %}
+<section class="card">
+    <h2>{{ featured.title }}</h2>
+    <p class="muted">{{ featured.author }} · {{ featured.month }}</p>
+    <p>
+        Featured at
+        <strong>{{ '₹%.2f'|format(featured.price_paise / 100) }}</strong>.
+        Subscribers get this title delivered automatically each month.
+    </p>
+
+    {% if subscription %}
+    <p>
+        <span class="pill">{{ subscription.status }}</span>
+        {{ schedule }}
+    </p>
+
+    <div class="inline-form">
+        {% if subscription.status == 'active' %}
+        <form method="post" action="{{ url_for('shop.subscription') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="pause">
+            <button class="action-button">Pause</button>
+        </form>
+        <form method="post" action="{{ url_for('shop.skip_subscription_month') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="action-button">Skip this month</button>
+        </form>
+        {% elif subscription.status == 'paused' %}
+        <form method="post" action="{{ url_for('shop.subscription') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="resume">
+            <button class="action-button">Resume</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('shop.subscription') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="cancel">
+            <button class="action-button danger">Cancel</button>
+        </form>
+    </div>
+    {% else %}
+    <form method="post" action="{{ url_for('shop.subscription') }}" class="stacked-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="subscribe">
+        <label>
+            Copies each month
+            <input type="number" name="quantity" value="1" min="1" max="{{ max_quantity }}">
+        </label>
+        <button class="action-button">Subscribe to {{ featured.title }}</button>
+    </form>
+    <p class="muted">
+        Your first delivery is billed on the 1st of next month. Nothing is charged
+        today, and you can pause, skip or cancel at any time.
+    </p>
+    {% endif %}
+</section>
+{% else %}
+<p class="muted">
+    No book of the month has been picked yet. Check back soon.
+</p>
+{% endif %}
+
+{% if history %}
+<h2>Your deliveries</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Date</th><th>Book</th><th>Outcome</th><th>Order</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+            {% for row in history %}
+            <tr>
+                <td>{{ row.run_on }}</td>
+                <td>{{ row.title }}</td>
+                <td><span class="pill">{{ row.outcome }}</span></td>
+                <td>
+                    {% if row.order_id %}
+                    <a href="{{ url_for('shop.order_detail', order_id=row.order_id) }}">#{{ row.order_id }}</a>
+                    {% else %}—{% endif %}
+                </td>
+                <td class="muted">{{ row.note }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
