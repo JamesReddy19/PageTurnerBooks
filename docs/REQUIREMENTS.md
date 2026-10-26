@@ -222,12 +222,13 @@ release — never on boot, so a restart can never reseed or wipe a live database
 
 ## Gap list — what remains (47–76)
 
-**Done and verified by executed checks:** 47, 48, 49, 54, 55, 56, 57, 58, 60, 66,
-67, 68, 75 (13 of 29). **Remaining: 16.** Ordered by dependency, cheapest first,
-so each batch leaves the app deployable.
+**Done and verified by executed checks:** 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
+57, 58, 59, 60, 66, 67, 68, 75 (18 of 29). **Remaining: 11.** Ordered by
+dependency, cheapest first, so each batch leaves the app deployable.
 
-Batch 3 is complete; its rows are retained below only as a record of what shipped
-in that batch.
+Batches 3 and 4 are complete; their rows are retained below only as a record of
+what shipped in each batch. Decisions 1 and 2 are now answered and implemented,
+so 51 and 59 are unblocked; decisions 3 and 4 still gate 64 and 65.
 
 | Batch | Reqs | Missing capability (one line each) | New storage |
 |---|---|---|---|
@@ -237,11 +238,11 @@ in that batch.
 | ~~3~~ | ~~55~~ | **Shipped.** Bulk price change: no selection UI, and `execute` per book instead of one statement | — |
 | ~~3~~ | ~~66~~ | **Shipped.** Optimistic locking: `books` has no `version` column; edit is a blind `UPDATE ... WHERE id=?` | `books.version` |
 | ~~3~~ | ~~68~~ | **Shipped.** Audit log chain: `admin_log` has no `prev_hash`/`row_hash`; single chokepoint `log_admin_action()` makes this a one-function change | `admin_log.prev_hash`, `row_hash` |
-| 4 | 50 | Helpful votes: no `review_votes` table, no button, no count; needs `UNIQUE(user_id, review_id)` per Q2 above | `review_votes` |
-| 4 | 51 | Report a review: no `hidden` flag, no report table, no admin queue — **blocked on decision 1** | `review_reports`, `reviews.hidden` |
-| 4 | 52 | Request a book: no table, no form, no aggregation view; needs normalised title key + `COUNT(*)` ordering | `book_requests` |
-| 4 | 53 | Share a wishlist: `wishlist` exists but there is no share token, no `/w/<token>` route, no revoke | `wishlist_shares` |
-| 4 | 59 | Delete my account: no anonymise path, no password re-auth, sessions not invalidated — **blocked on decision 2** (`users.email NOT NULL UNIQUE`) | — |
+| ~~4~~ | ~~50~~ | **Shipped.** Helpful votes: `UNIQUE(review_id, user_id)` in the schema makes a double submit a no-op; toggle is idempotent | `review_votes` |
+| ~~4~~ | ~~51~~ | **Shipped.** Review reports + moderation queue; the average AND the count now come from one filtered constant (decision 1) | `review_reports`, `reviews.hidden` |
+| ~~4~~ | ~~52~~ | **Shipped.** Book requests grouped by normalised title with an upserted `request_count`; admin list sorted by demand | `book_requests` |
+| ~~4~~ | ~~53~~ | **Shipped.** Wishlist sharing with a hashed, revocable token; a revoked link 404s like an unknown one | `wishlist_shares` |
+| ~~4~~ | ~~59~~ | **Shipped.** Password-confirmed anonymisation; unique `.invalid` email placeholder resolves the UNIQUE conflict, orders preserved, sessions blocked | — |
 | 5 | 61 | Idempotent checkout: no `checkout_tokens`; refresh/Back re-posts and duplicates orders | `checkout_tokens` |
 | 5 | 62 | Edit order before packing: only `cancel`/`invoice`/`return` exist; `coupon_discount()` already re-checks `min_order_paise`/`usage_limit` for the re-price rule | — |
 | 5 | 63 | Pricing rules: no `pricing_rules` table; only coupon percent logic exists | `pricing_rules` |
@@ -254,13 +255,14 @@ in that batch.
 | 7 | 73 | Permissions table: `role_required` at **27 call sites**, no `permissions`/`role_permissions` — largest refactor, do last | `permissions`, `role_permissions` |
 | 8 | 74 | Growth report: no `LAG`/`SUM OVER`; CSV export already exists to hand-check the result | — |
 
-**Req 76 (tests continuously)** is only partly met today: 35 tests cover 77
-routes, so the shopping and security paths that already exist are mostly
-uncovered. Each batch above must add the tests for what it implements, and the
-batch is not "Done" until those tests fail-then-pass. Req 77 (`stress.py`) is
-sequenced after 61 and 65, because those are what make concurrent checkout safe.
+**Req 76 (tests continuously)** is at 91 tests over the 90-odd routes. Each batch
+above must add the tests for what it implements, and the batch is not "Done"
+until those tests fail-then-pass. Batch 4 did exactly that for reqs 51, 52, 53
+and 59 by temporarily reverting each mechanism and observing the failure before
+restoring it. Req 77 (`stress.py`) is sequenced after 61 and 65, because those
+are what make concurrent checkout safe.
 
-**Blocked on decisions 1–4 below** before any of 51, 59, 64, 65 can be coded
+**Still blocked on decisions 3–4 below** before 64 and 65 can be coded
 honestly. Everything else can start immediately.
 
 ---
