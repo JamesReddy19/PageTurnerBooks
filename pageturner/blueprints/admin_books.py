@@ -154,8 +154,7 @@ def edit_book(book_id):
             UPDATE books
             SET title = ?, author = ?, category = ?,
                 description = ?, stock = ?, color = ?, image = ?,
-                release_date = ?, version = version + 1,
-                updated_at = CURRENT_TIMESTAMP
+                release_date = ?, version = version + 1
             WHERE id = ? AND version = ?
             """,
             (
