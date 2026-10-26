@@ -277,7 +277,6 @@ class ApiKeyTests(BatchSevenTestCase):
             )
             connection.commit()
         return token, row
-
     def test_the_database_never_stores_the_token_itself(self):
         token, row = self.issue(["books:read"])
 
