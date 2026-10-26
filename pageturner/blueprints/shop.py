@@ -287,4 +287,10 @@ def recommended_books(user, limit=5):
 
 
 # Import route modules after the Blueprint and helpers exist.
-from . import shop_catalog, shop_cart, shop_checkout, shop_orders  # noqa: E402,F401
+from . import (  # noqa: E402,F401
+    shop_catalog,
+    shop_cart,
+    shop_checkout,
+    shop_orders,
+    shop_reviews,
+)
