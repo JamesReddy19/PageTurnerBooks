@@ -7,7 +7,7 @@ import secrets
 from flask import Flask, abort, request, session
 
 from .config import Config
-from .db import close_db, get_db, init_db
+from .db import backfill_price_history_baseline, close_db, get_db, init_db
 from .helpers import current_user, money, effective_book_price, sale_ends_in_seconds
 from .seed import seed_books_if_empty, create_environment_admin
 
