@@ -282,7 +282,6 @@ def place_order():
                 not reservation
                 or reservation["expires_at"]
                 <= datetime.now().isoformat(timespec="seconds")
-                or reservation["quantity"] < item["quantity"]
             ):
                 raise ValueError(
                     "Your checkout reservation expired. Please open checkout again."
@@ -295,9 +294,13 @@ def place_order():
             # Requirement 65: too few copies is no longer an error. Sell what
             # the warehouse holds and queue the remainder as a backorder; the
             # customer pays the same total either way. `books.stock` is debited
-            # by `ship_now` only, so it can never go negative.
+            # by `ship_now` only, so it can never go negative. `ship_now` is
+            # also capped by the reserved quantity, so a reservation made when
+            # fewer copies existed is never oversold by a later restock race.
             available_now = max(0, book["stock"] - reserved_others)
-            ship_now = min(item["quantity"], available_now)
+            ship_now = min(
+                item["quantity"], available_now, reservation["quantity"]
+            )
 
             # Requirement 47: charge the price that is active right now, using
             # the same helper the catalog and cart use. The resulting per-copy
