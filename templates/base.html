@@ -77,6 +77,12 @@
 
     <a href="{{ url_for('contact') }}">Contact</a>
 
+    <button type="button" class="theme-toggle no-print" id="themeToggle"
+            aria-label="Switch colour theme" title="Switch colour theme">
+      <span class="theme-toggle-icon-dark" aria-hidden="true">🌙</span>
+      <span class="theme-toggle-icon-light" aria-hidden="true">☀️</span>
+    </button>
+
     {% if session.get('admin_password_login') %}
       <a href="{{ url_for('admin.dashboard') }}">Admin</a>
       <a href="{{ url_for('admin.logout') }}">Admin logout</a>
