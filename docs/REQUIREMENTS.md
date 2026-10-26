@@ -422,6 +422,31 @@ show ₹500 — which is what proves the templates do not hardcode the number.
 
 ---
 
+## UI/UX pass — landmarks, mobile navigation, accessibility (no requirement IDs)
+
+This was the deferred redesign prerequisite, not a numbered requirement. It
+changes presentation and navigation only: no route, schema, money or business
+logic was touched, and the 182-test suite passed before and after.
+
+What was wrong (all verified in the templates/CSS, not screenshot guesses):
+
+| Problem | Consequence | Fix |
+|---|---|---|
+| No skip link, `<main>` had no `id` | ~15 nav links had to be tabbed through on every page (WCAG 2.4.1) | `.skip-link` first child of `<body>`, `<main id="main-content" tabindex="-1">` |
+| Header `position: sticky` became a flex **column** at ≤900px | wrapped links formed a permanent wall over the content on phones | header becomes a 2-row grid (brand + buttons / links); links collapse behind `#navToggle` |
+| Collapse would hide the menu if JS failed | unreachable navigation | collapse rules are gated on `html.js-nav`, added by `script.js` itself, never inline |
+| "Admin" rendered twice when `role='admin'` **and** `admin_password_login` | duplicate link, confusing admin/logout pairing | one conditional; a password-only session now sees "Admin" instead of "Admin Login" |
+| No `aria-current`, brand emoji read aloud, flash had no role, footer was one bare line | orientation/announcement gaps | `aria-current="page"` macro, `aria-hidden` brand mark, `role="alert|status"` + dismiss button, structured footer |
+| header gold hardcoded `#dca85b` / `#f1cf91` | dark mode kept the light gold | `var(--orange)`; no new tokens, so the dark-mode token contract is intact |
+
+`tests/test_ui_accessibility.py` (18 tests) encodes this contract; 13 of the 18
+fail against the pre-pass commit `00593ef`, which is what makes them
+regressions rather than decoration. The 5 that already passed (one `main`,
+one `header`, no duplicate ids, Admin/Admin Login for the simple cases,
+labelled controls) are invariants that must not now be broken.
+
+---
+
 ## Working protocol (per batch)
 
 1. Verify branch/HEAD/worktree clean; create a checkpoint tag.
