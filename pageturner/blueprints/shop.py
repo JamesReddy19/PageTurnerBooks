@@ -232,7 +232,6 @@ def recommended_books(user, limit=5):
         # That is the "readers who bought your books also bought" signal; a
         # reader's own orders alone could only ever return books they own.
         rows = connection.execute(
-            """
             f"""
             SELECT b.*, COUNT(DISTINCT co.order_id) AS score,
                    {AVERAGE_RATING_SQL} AS average_rating
@@ -263,7 +262,6 @@ def recommended_books(user, limit=5):
     if len(rows) < limit:
         chosen = {row["id"] for row in rows}
         fallback = connection.execute(
-            """
             f"""
             SELECT b.*, COALESCE(SUM(oi.quantity), 0) AS units_sold,
                    {AVERAGE_RATING_SQL} AS average_rating
