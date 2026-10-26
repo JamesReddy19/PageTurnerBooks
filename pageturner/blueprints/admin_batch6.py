@@ -14,7 +14,7 @@ from .admin import admin_bp, staff_or_admin
 
 
 @admin_bp.get("/outbox")
-@staff_or_admin
+@permission_required("outbox.manage")
 def outbox_page():
     connection = get_db()
     status = (request.args.get("status") or "pending").strip()
@@ -41,7 +41,7 @@ def outbox_page():
 
 
 @admin_bp.post("/outbox/process")
-@staff_or_admin
+@permission_required("outbox.manage")
 def process_outbox():
     """Deliver every message whose backoff has elapsed, then report the result."""
     connection = get_db()
@@ -72,7 +72,7 @@ def process_outbox():
 
 
 @admin_bp.post("/outbox/<int:message_id>/retry")
-@staff_or_admin
+@permission_required("outbox.manage")
 def retry_outbox_message(message_id):
     connection = get_db()
 
@@ -88,7 +88,7 @@ def retry_outbox_message(message_id):
 
 
 @admin_bp.route("/book-of-the-month", methods=["GET", "POST"])
-@staff_or_admin
+@permission_required("subscriptions.manage")
 def book_of_the_month():
     connection = get_db()
 
@@ -160,7 +160,7 @@ def book_of_the_month():
 
 
 @admin_bp.post("/book-of-the-month/run")
-@staff_or_admin
+@permission_required("subscriptions.manage")
 def run_subscriptions():
     """Create this month's order for every subscription that is due."""
     connection = get_db()

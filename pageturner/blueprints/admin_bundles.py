@@ -18,7 +18,7 @@ from .admin import admin_bp
 
 
 @admin_bp.route("/bundles", methods=["GET", "POST"])
-@role_required("admin")
+@permission_required("pricing.manage")
 def manage_bundles():
     connection = get_db()
 

@@ -7,7 +7,7 @@ from ..helpers import role_required, log_admin_action, rupees_to_paise, audit_ac
 from .admin import admin_bp
 
 @admin_bp.get("/coupons")
-@role_required("admin")
+@permission_required("pricing.manage")
 def coupons():
     rows = get_db().execute("SELECT cp.*,c.name AS category_name FROM coupons cp LEFT JOIN categories c ON c.id=cp.category_id ORDER BY cp.id DESC").fetchall()
     categories = get_db().execute("SELECT * FROM categories ORDER BY name").fetchall()
@@ -16,7 +16,7 @@ def coupons():
 
 @admin_bp.post("/coupons/add")
 @role_required("admin")
-@audit_action("coupon_added")
+@permission_required("pricing.manage")
 def add_coupon():
     connection = get_db()
     code = request.form.get("code", "").strip().upper()[:40]
@@ -45,7 +45,7 @@ def add_coupon():
 
 @admin_bp.post("/coupons/toggle/<int:coupon_id>")
 @role_required("admin")
-@audit_action("coupon_toggled")
+@permission_required("pricing.manage")
 def toggle_coupon(coupon_id):
     connection = get_db()
     connection.execute("UPDATE coupons SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?", (coupon_id,))
@@ -56,7 +56,7 @@ def toggle_coupon(coupon_id):
 
 @admin_bp.post("/coupons/delete/<int:coupon_id>")
 @role_required("admin")
-@audit_action("coupon_deleted")
+@permission_required("pricing.manage")
 def delete_coupon(coupon_id):
     try:
         get_db().execute("DELETE FROM coupons WHERE id=?", (coupon_id,))

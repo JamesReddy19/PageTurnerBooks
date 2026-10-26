@@ -11,7 +11,7 @@ from .admin import admin_bp
 
 
 @admin_bp.route("/sales", methods=["GET", "POST"])
-@role_required("admin")
+@permission_required("pricing.manage")
 def manage_sales():
     connection = get_db()
 

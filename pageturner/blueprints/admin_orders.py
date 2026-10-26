@@ -5,7 +5,7 @@ from ..helpers import role_required, log_admin_action, add_notification, audit_a
 from .admin import admin_bp, ALLOWED_STATUSES, staff_or_admin
 
 @admin_bp.get("/orders")
-@staff_or_admin
+@permission_required("orders.manage")
 def orders():
     rows = get_db().execute("SELECT * FROM orders ORDER BY id DESC").fetchall()
     return render_template("orders.html", orders=rows, transitions=ALLOWED_STATUSES)
@@ -13,7 +13,7 @@ def orders():
 
 @admin_bp.post("/orders/<int:order_id>/status")
 @staff_or_admin
-@audit_action("order_status_changed")
+@permission_required("orders.manage")
 def update_order_status(order_id):
     new_status = request.form.get("status", "")
     connection = get_db()
@@ -52,6 +52,6 @@ def update_order_status(order_id):
 
 
 @admin_bp.post("/order-status/<int:order_id>")
-@staff_or_admin
+@permission_required("orders.manage")
 def old_order_status_url(order_id):
     return redirect(url_for("admin.update_order_status", order_id=order_id), code=307)

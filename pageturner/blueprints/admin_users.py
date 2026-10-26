@@ -17,7 +17,7 @@ ASSIGNABLE_ROLES = ("customer", "staff", "admin")
 
 
 @admin_bp.get("/users")
-@role_required("admin")
+@permission_required("customers.manage")
 def users():
     rows = get_db().execute(
         """
@@ -32,7 +32,7 @@ def users():
 
 
 @admin_bp.post("/users/<int:user_id>/role")
-@role_required("admin")
+@permission_required("customers.manage")
 def set_user_role(user_id):
     new_role = (request.form.get("role") or "").strip().lower()
     if new_role not in ASSIGNABLE_ROLES:

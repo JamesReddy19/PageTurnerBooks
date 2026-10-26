@@ -173,7 +173,7 @@ def logout():
 
 
 @admin_bp.get("/")
-@role_required("admin")
+@permission_required("admin.access")
 def dashboard():
     connection = get_db()
 
@@ -320,7 +320,7 @@ def dashboard():
 
 
 @admin_bp.get("/audit")
-@role_required("admin")
+@permission_required("audit.view")
 def audit_log():
     """Show the audit trail and prove the hash chain is intact (req 68)."""
     from ..audit import verify_chain
@@ -345,7 +345,7 @@ def audit_log():
 
 
 @admin_bp.get("/books")
-@role_required("admin")
+@permission_required("catalog.manage")
 def manage_books():
     books = get_db().execute(
         """

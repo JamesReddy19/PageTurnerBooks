@@ -16,7 +16,7 @@ STATUS_FILTERS = ("open", "hidden", "kept", "all")
 
 
 @admin_bp.get("/reviews")
-@staff_or_admin
+@permission_required("reviews.moderate")
 def review_moderation():
     connection = get_db()
     status = (request.args.get("status") or "open").strip()
@@ -85,7 +85,7 @@ def review_moderation():
 
 
 @admin_bp.post("/reviews/<int:review_id>/hide")
-@staff_or_admin
+@permission_required("reviews.moderate")
 def hide_review_route(review_id):
     connection = get_db()
 
@@ -111,7 +111,7 @@ def hide_review_route(review_id):
 
 
 @admin_bp.post("/reviews/<int:review_id>/keep")
-@staff_or_admin
+@permission_required("reviews.moderate")
 def keep_review_route(review_id):
     connection = get_db()
 

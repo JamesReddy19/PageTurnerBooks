@@ -8,7 +8,7 @@ from ..helpers import role_required, log_admin_action, audit_action
 from .admin import admin_bp
 
 @admin_bp.get("/reports")
-@role_required("admin")
+@permission_required("reports.view")
 def reports():
     start = request.args.get("start", (datetime.now().date()-timedelta(days=30)).isoformat())
     end = request.args.get("end", datetime.now().date().isoformat())
@@ -30,7 +30,7 @@ def reports():
 
 @admin_bp.get("/reports.csv")
 @role_required("admin")
-@audit_action("reports_exported")
+@permission_required("reports.view")
 def reports_csv():
     start = request.args.get("start", (datetime.now().date()-timedelta(days=30)).isoformat())
     end = request.args.get("end", datetime.now().date().isoformat())
@@ -54,7 +54,7 @@ def reports_csv():
 
 @admin_bp.get("/export/orders.csv")
 @role_required("admin")
-@audit_action("orders_exported")
+@permission_required("reports.view")
 def export_orders():
     rows = get_db().execute("SELECT id,date,name,phone,address,status,subtotal_paise,discount_paise,shipping_paise,tax_paise,total_paise FROM orders ORDER BY id").fetchall()
     output = io.StringIO()
@@ -72,12 +72,12 @@ def export_orders():
 
 
 @admin_bp.get("/export")
-@role_required("admin")
+@permission_required("reports.view")
 def old_export_url():
     return redirect(url_for("admin.export_orders"))
 
 
 @admin_bp.get("/report")
-@role_required("admin")
+@permission_required("reports.view")
 def old_report_url():
     return redirect(url_for("admin.reports"))

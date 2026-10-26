@@ -15,7 +15,7 @@ RULE_TYPES = ("category_percent", "book_percent", "min_quantity_percent")
 
 
 @admin_bp.get("/pricing-rules")
-@staff_or_admin
+@permission_required("pricing.rules.manage")
 def pricing_rules_page():
     connection = get_db()
 
@@ -40,7 +40,7 @@ def pricing_rules_page():
 
 
 @admin_bp.post("/pricing-rules")
-@staff_or_admin
+@permission_required("pricing.rules.manage")
 def create_pricing_rule():
     connection = get_db()
 
@@ -110,7 +110,7 @@ def create_pricing_rule():
 
 
 @admin_bp.post("/pricing-rules/<int:rule_id>/toggle")
-@staff_or_admin
+@permission_required("pricing.rules.manage")
 def toggle_pricing_rule(rule_id):
     connection = get_db()
 
@@ -138,7 +138,7 @@ def toggle_pricing_rule(rule_id):
 
 
 @admin_bp.get("/backorders")
-@staff_or_admin
+@permission_required("stock.manage")
 def backorders_page():
     connection = get_db()
 
@@ -154,7 +154,7 @@ def backorders_page():
 
 
 @admin_bp.post("/backorders/allocate/<int:book_id>")
-@staff_or_admin
+@permission_required("stock.manage")
 def allocate_backorders(book_id):
     """Hand newly arrived stock to the oldest waiting orders, first come first served."""
     connection = get_db()
@@ -182,7 +182,7 @@ def allocate_backorders(book_id):
 
 
 @admin_bp.get("/pricing-rules/preview")
-@staff_or_admin
+@permission_required("pricing.rules.manage")
 def pricing_preview():
     """Explain what the current rules would do to a basket, for staff sanity."""
     connection = get_db()

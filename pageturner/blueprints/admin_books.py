@@ -57,7 +57,7 @@ def read_release_date():
 
 @admin_bp.post("/books/add")
 @role_required("admin")
-@audit_action("book_added")
+@permission_required("catalog.manage")
 def add_book():
     connection = get_db()
 
@@ -126,7 +126,7 @@ def add_book():
 
 @admin_bp.post("/books/edit/<int:book_id>")
 @role_required("admin")
-@audit_action("book_edited")
+@permission_required("catalog.manage")
 def edit_book(book_id):
     connection = get_db()
     old = connection.execute(
@@ -244,7 +244,7 @@ def edit_book(book_id):
 
 @admin_bp.post("/books/prices/bulk")
 @role_required("admin")
-@audit_action("book_prices_bulk")
+@permission_required("pricing.manage")
 def bulk_update_prices():
     """Apply one percentage price change to several books at once (req 55).
 
@@ -321,7 +321,7 @@ def bulk_update_prices():
 
 
 @admin_bp.get("/books/<int:book_id>/price-history")
-@role_required("admin")
+@permission_required("pricing.manage")
 def book_price_history(book_id):
     """JSON price history for one book, newest first (req 54)."""
     book = get_db().execute(
@@ -352,7 +352,7 @@ def book_price_history(book_id):
 
 @admin_bp.post("/books/delete/<int:book_id>")
 @role_required("admin")
-@audit_action("book_deleted")
+@permission_required("catalog.manage")
 def delete_book(book_id):
     connection = get_db()
 
@@ -377,13 +377,13 @@ def delete_book(book_id):
 
 # Compatibility URLs retained from the first project version.
 @admin_bp.post("/add")
-@role_required("admin")
+@permission_required("catalog.manage")
 def old_add_book_url():
     return redirect(url_for("admin.add_book"), code=307)
 
 
 @admin_bp.post("/edit/<int:book_id>")
-@role_required("admin")
+@permission_required("catalog.manage")
 def old_edit_book_url(book_id):
     return redirect(
         url_for("admin.edit_book", book_id=book_id),
@@ -392,7 +392,7 @@ def old_edit_book_url(book_id):
 
 
 @admin_bp.post("/delete/<int:book_id>")
-@role_required("admin")
+@permission_required("catalog.manage")
 def old_delete_book_url(book_id):
     return redirect(
         url_for("admin.delete_book", book_id=book_id),

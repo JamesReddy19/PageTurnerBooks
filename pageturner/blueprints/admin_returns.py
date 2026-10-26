@@ -5,7 +5,7 @@ from ..helpers import role_required, log_admin_action, add_notification, audit_a
 from .admin import admin_bp, staff_or_admin
 
 @admin_bp.get("/returns")
-@role_required("admin")
+@permission_required("returns.manage")
 def returns():
     rows = get_db().execute("SELECT r.*,oi.order_id,oi.book_id,b.title,u.name AS customer_name FROM returns r JOIN order_items oi ON oi.id=r.order_item_id JOIN books b ON b.id=oi.book_id JOIN users u ON u.id=r.user_id ORDER BY r.id DESC").fetchall()
     return render_template("returns.html", returns=rows)
@@ -13,7 +13,7 @@ def returns():
 
 @admin_bp.post("/returns/<int:return_id>/<decision>")
 @role_required("admin")
-@audit_action("return_reviewed")
+@permission_required("returns.manage")
 def review_return(return_id, decision):
     if decision not in ("approve", "reject"):
         abort(404)
@@ -55,7 +55,7 @@ def review_return(return_id, decision):
 
 
 @admin_bp.get("/messages")
-@staff_or_admin
+@permission_required("orders.manage")
 def messages():
     rows = get_db().execute("SELECT * FROM contact_messages ORDER BY is_read,id DESC").fetchall()
     return render_template("messages.html", messages=rows)
@@ -63,7 +63,7 @@ def messages():
 
 @admin_bp.post("/messages/<int:message_id>/read")
 @staff_or_admin
-@audit_action("contact_message_read")
+@permission_required("orders.manage")
 def mark_message_read(message_id):
     get_db().execute("UPDATE contact_messages SET is_read=1 WHERE id=?", (message_id,))
     get_db().commit()

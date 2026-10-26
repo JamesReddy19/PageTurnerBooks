@@ -11,7 +11,7 @@ from .admin import admin_bp, staff_or_admin
 
 
 @admin_bp.get("/book-requests")
-@staff_or_admin
+@permission_required("requests.manage")
 def book_requests():
     connection = get_db()
 
@@ -35,7 +35,7 @@ def book_requests():
 
 
 @admin_bp.post("/book-requests/<int:request_id>/fulfil")
-@staff_or_admin
+@permission_required("requests.manage")
 def fulfil_book_request(request_id):
     """Drop a request row once the title has actually been stocked."""
     connection = get_db()

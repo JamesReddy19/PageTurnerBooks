@@ -10,7 +10,7 @@ from .admin import admin_bp
 
 @admin_bp.post("/import/books.csv")
 @role_required("admin")
-@audit_action("books_csv_imported")
+@permission_required("catalog.manage")
 def import_books_csv():
     uploaded = request.files.get("file")
     if not uploaded or not uploaded.filename.lower().endswith(".csv"):
