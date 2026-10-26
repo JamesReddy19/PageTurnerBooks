@@ -120,6 +120,9 @@ def create_app(test_config=None):
             "effective_price": effective_book_price,
             "sale_ends_in_seconds": sale_ends_in_seconds,
             "csrf_token": csrf_value(),
+            # Requirement 128: screens describe the delivery threshold from the
+            # config constant, so the wording can never drift from the rule.
+            "free_shipping_paise": current_app.config["FREE_SHIPPING_PAISE"],
         }
 
     # Import and register the application blueprints.
