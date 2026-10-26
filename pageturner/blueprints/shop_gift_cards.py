@@ -12,7 +12,7 @@ from flask import (
 
 from .. import giftcards
 from ..db import get_db
-from ..helpers import current_user, login_required, money_or_zero
+from ..helpers import current_user, login_required
 from .shop import shop_bp
 
 # Preset amounts, in whole rupees, so the form cannot be used to mint an
@@ -51,8 +51,12 @@ def gift_cards():
                 VALUES (?, ?, ?, ?, ?, 0, 0, 0, ?, 'Placed', ?)
                 """,
                 (
-                    user["id"], user["name"], user["phone"], user["address"],
-                    amount, amount, user["pincode"],
+                    # A gift card is delivered by email, so there is no
+                    # shipping address to record. The columns are NOT NULL,
+                    # so they carry an explicit "digital" marker rather than
+                    # a fake street address.
+                    user["id"], user["name"], "", "Digital delivery", amount,
+                    amount, "",
                 ),
             )
             order_id = cursor.lastrowid
