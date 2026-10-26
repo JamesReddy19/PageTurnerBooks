@@ -124,9 +124,14 @@ def lookup(connection, token):
     if not token.startswith(TOKEN_PREFIX + "_"):
         return None
 
-    parts = token.split("_")
+    # Split on the first two delimiters only, so a secret that itself contains
+    # "_" (older tokens were minted with a URL-safe alphabet) still parses.
+    parts = token.split("_", 2)
 
     if len(parts) != 3 or len(parts[1]) != PREFIX_LENGTH:
+        return None
+
+    if not all(character in _PREFIX_ALPHABET for character in parts[1]):
         return None
 
     row = connection.execute(
