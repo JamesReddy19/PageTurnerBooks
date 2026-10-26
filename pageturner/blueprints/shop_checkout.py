@@ -153,6 +153,20 @@ def place_order():
     items, _subtotal = get_cart_rows()
 
     if not items:
+        # Requirement 61: a refresh arrives *after* the first submission
+        # emptied the cart, so an empty cart must not swallow the replay — it
+        # has to land on the order that was already placed.
+        replayed = idempotency.replayed_order_id(
+            connection, request.form.get("checkout_token", ""), user_id
+        )
+
+        if replayed:
+            flash(
+                "That order has already been placed - it is open below.",
+                "success"
+            )
+            return redirect(url_for("shop.order_detail", order_id=replayed))
+
         flash("Your cart is empty.", "error")
         return redirect(url_for("shop.cart"))
 
