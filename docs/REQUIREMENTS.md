@@ -69,7 +69,7 @@ Every new table below follows that same pattern, so restarts never drop data.
 | 54 | Price history | **Missing** | No `price_history` table. Price is written in **two** places today (`admin.py` add-book INSERT, `admin_books.py` edit UPDATE), so there is no single choke point yet. Needs one `set_book_price()` and both routes routed through it. |
 | 55 | Bulk price change | **Missing** | No bulk selection UI and no combined statements; `execute` is called per book today. |
 | 56 | Dashboard charts (CSS only) | **Done** | The dashboard now builds a zero-filled 7-day series and renders it as div bars with a `--bar-height` percentage per day (no chart library, no JS). Verified: the admin page contains exactly 7 bars for a week with a single order (`0,0,0,0,0,0,100.0`). |
-| 57 | Staff role with limited rights | **Partial** | Closer than expected: `staff` is in the `users.role` CHECK constraint, and **5 routes already admit staff** — `admin_orders` list/detail/status (pack & ship) and `admin_returns` list/decide. The other **22 admin routes 403 staff** via `role_required`, which correctly `abort(403)`. Gaps: (a) **no way to appoint a staff user** (no admin user-role UI; `seed.py` only promotes to admin); (b) `staff_or_admin()` at `admin.py:42` is **dead code**; (c) no test asserting staff is denied coupons/prices/reports. |
+| 57 | Staff role with limited rights | **Done** | `/admin/users` (admin-only) lists members and lets an admin set `role=staff`, writing an `admin_log` row with action `user_role_changed`. Staff keep the 5 order/return routes (`/admin/orders` → 200) and are still refused `/admin/books` and `/admin/users` (403). Covered by three tests added in batch 2 (`test_27`–`test_29`), including the denial side. |
 
 ### Part E — User control
 
