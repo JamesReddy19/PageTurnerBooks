@@ -381,14 +381,12 @@ class RouteTests(GrowthTestBase):
             totals[key] = totals.get(key, 0) + int(fields["total_paise"])
 
         report = self.client.get("/admin/reports/growth.csv?months=2")
-        report_rows = report.get_data(as_text=True).strip().splitlines()[1:]
+        self.assertEqual(report.status_code, 200)
+        report_lines = list(csv.DictReader(io.StringIO(report.get_data(as_text=True))))
 
-        for line in report_rows:
-            fields = dict(zip(report.headers and [
-                "month", "orders", "revenue_paise", "previous_month_revenue_paise",
-                "change_paise", "growth_percent", "running_revenue_paise",
-                "rolling_three_month_revenue_paise",
-            ], line.split(",")))
+        self.assertEqual(len(report_lines), 2)
+
+        for fields in report_lines:
             self.assertEqual(
                 int(fields["revenue_paise"]), totals.get(fields["month"], 0), fields["month"]
             )
