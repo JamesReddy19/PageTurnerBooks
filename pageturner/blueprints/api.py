@@ -1,8 +1,14 @@
 """Read-only JSON API with a simple SQLite-backed rate limit."""
+import base64
+import json
+
 from flask import Blueprint, abort, jsonify, request
 from ..db import get_db
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
+
+DEFAULT_PAGE_SIZE = 20
+MAX_PAGE_SIZE = 100
 
 
 @api_bp.before_request
