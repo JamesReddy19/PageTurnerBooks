@@ -557,11 +557,18 @@ class AccountDeletionTests(BatchFourTestCase):
     def place_order(self):
         self.post(f"/cart/add/{self.book_id}", {"quantity": "1"})
         # GET /checkout creates the stock reservation; posting without it is
-        # refused as an expired reservation.
+        # refused as an expired reservation. The same response carries the
+        # single-use checkout token (requirement 61), so it is read from there
+        # rather than invented.
         self.token("/checkout")
+        checkout_token = re.search(
+            r'name="checkout_token" value="([^"]+)"',
+            self.client.get("/checkout").get_data(as_text=True),
+        ).group(1)
         self.post(
             "/checkout",
             {
+                "checkout_token": checkout_token,
                 "name": "Delete Me",
                 "phone": "9876543210",
                 "new_address": "9 Delete Lane",

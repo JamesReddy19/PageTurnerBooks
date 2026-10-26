@@ -7,7 +7,6 @@ was too small to earn loyalty points. The ledger is what reconciles
 ``books.stock`` against real movements, so both halves are covered here.
 """
 import os
-import re
 import tempfile
 import re
 import unittest
