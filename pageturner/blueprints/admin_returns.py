@@ -1,7 +1,7 @@
 """Return approvals and contact-message moderation."""
 from flask import abort, flash, redirect, request, session, url_for, render_template
 from ..db import get_db
-from ..helpers import role_required, log_admin_action, add_notification, audit_action
+from ..helpers import role_required, log_admin_action, add_notification, audit_action, loyalty_claw_back_for_refund
 from .admin import admin_bp
 
 @admin_bp.get("/returns")
