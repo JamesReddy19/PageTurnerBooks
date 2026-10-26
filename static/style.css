@@ -1543,7 +1543,7 @@ td form + form {
 }
 
 /* ------------------------------
-   18. Medium screens
+   17. Medium screens
 ------------------------------ */
 
 @media (max-width: 900px) {
@@ -1569,7 +1569,7 @@ td form + form {
 }
 
 /* ------------------------------
-   19. Small screens
+   18. Small screens
 ------------------------------ */
 
 @media (max-width: 620px) {
@@ -1789,7 +1789,7 @@ td form + form {
 }
 
 /* ------------------------------
-   20. Very small screens
+   19. Very small screens
 ------------------------------ */
 
 @media (max-width: 420px) {
@@ -1815,7 +1815,7 @@ td form + form {
 }
 
 /* ------------------------------
-   21. Printing
+   20. Printing
 ------------------------------ */
 
 @media print {
