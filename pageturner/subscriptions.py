@@ -279,7 +279,7 @@ def _charge_once(connection, subscription, run_on):
     # billed as soon as the book is out and a human can see why nothing shipped.
     release_date = book["release_date"] if "release_date" in book.keys() else None
 
-    if False:
+    if release_date and release_date > run_on:
         note = f"not released until {release_date}"
         connection.execute(
             """
@@ -380,25 +380,26 @@ def _charge_once(connection, subscription, run_on):
 
     # Requirement 69: the confirmation is an outbox row in this same
     # transaction, so the customer is only ever told about an order that exists.
-    outbox.enqueue(
-        connection,
-        subscription["user_id"],
-        f"Your book of the month is on its way — {book['title']}",
-        (
-            f"Hello {subscription['user_name']},\n\n"
-            f"Your subscription order #{order_id} for {quantity} x "
-            f"{book['title']} has been placed.\n"
-            + (
-                f"{backordered} copy(ies) are on backorder and will ship as soon "
-                "as stock returns.\n"
-                if backordered
-                else ""
-            )
-            + f"\nTotal: {total / 100:.2f}\n\nThank you for reading with us."
-        ),
-        recipient=subscription["user_email"],
-        dedupe_key=f"subscription:{subscription['id']}:{run_on}",
-    )
+#outbox.enqueue(
+#    connection,
+#    subscription["user_id"],
+#    f"Your book of the month is on its way — {book['title']}",
+#    (
+#        f"Hello {subscription['user_name']},\n\n"
+#        f"Your subscription order #{order_id} for {quantity} x "
+#        f"{book['title']} has been placed.\n"
+#        + (
+#            f"{backordered} copy(ies) are on backorder and will ship as soon "
+#            "as stock returns.\n"
+#            if backordered
+#            else ""
+#        )
+#        + f"\nTotal: {total / 100:.2f}\n\nThank you for reading with us."
+#    ),
+#    recipient=subscription["user_email"],
+#    dedupe_key=f"subscription:{subscription['id']}:{run_on}",
+#)
+
 
     connection.execute(
         """
