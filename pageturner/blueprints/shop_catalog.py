@@ -173,6 +173,7 @@ def index():
         current_user=user,
         wishlist_ids=wishlist_ids,
         recently_viewed=recently_viewed,
+        recommended=recommended_books(user),
         today_date=date.today().isoformat(),
         new_arrivals_cutoff=(date.today() - timedelta(days=14)).isoformat(),
     )
