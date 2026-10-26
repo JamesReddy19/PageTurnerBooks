@@ -434,7 +434,7 @@ def place_order():
 
         if gift_card_code:
             gift_card_id, gift_card_paise = giftcards.redeem_gift_card(
-                connection, gift_card_code, 0, total
+                connection, gift_card_code, None, total
             )
 
             if gift_card_id is None:
