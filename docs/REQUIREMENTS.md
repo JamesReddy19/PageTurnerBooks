@@ -1,111 +1,210 @@
-# Requirements Tracker — Requirements 47–75
+# Requirements 47–75 — verified gap analysis
 
-Status legend: `TODO` · `IN PROGRESS` · `DONE` · `BLOCKED` · `UNKNOWN`
+Status: audit complete. **No implementation started for 47–75 yet.**
+Baseline at time of audit: branch `master`, HEAD `19ac350`, worktree clean,
+`python3 -m pytest tests/ -q` → **29 passed**, `compileall` clean.
 
-**Verification legend**
+Status vocabulary:
 
-- `unit` — covered by a new/existing test in `tests/`
-- `sweep` — `tests/test_route_sweep.py` (no 5xx, no duplicate rules)
-- `manual` — exercised by hand against a temp DB, result recorded here
-- `sql` — row counts / integrity query checked
+- **Verified** — behaves as the requirement asks, proven by reading the code path.
+- **Partial** — the storage, helper or single module already exists, but the
+  feature is not reachable / not wired to its consumers.
+- **Missing** — no code does this today.
+- **Blocked** — cannot be finished without a decision (see *Open decisions*).
 
 ---
 
-## Status of the requirement list itself
+## Corrected audit context
 
-The text of Requirements **47–75 has not been provided yet.** It is not present
-in this repository: `README.md` and `START_HERE.txt` contain numbered *chapters*,
-not numbered requirements. Requirements **1–46** are also unavailable.
+An earlier pass contained claims that were **wrong** and are retracted here so
+nobody rebuilds something that already works:
 
-Per instructions, their contents will **not** be invented. This file holds the
-process and the guardrails; the requirement rows are filled in from the real
-list when it is supplied.
+- ~~"blueprints are imported by nothing, so their routes never register"~~ —
+  **false**. All blueprints register; the app serves 77 routes.
+- ~~"templates with no backing route"~~, ~~"`/books` returns 404"~~,
+  ~~"`/api/health` 404"~~ — **false**. That audit globbed
+  `pageturner/templates/`, which does not exist. Templates live at `./templates`.
+  Re-run against the real directory: **no broken `url_for`**; the only
+  "unmatched" template is `base.html`, which is expected (it is `{% extends %}`ed).
+- `admin.py.backup` / `style.css.backup` are dead files and can be deleted
+  in a cleanup batch, not now.
 
-| Block | Count | Received |
+Schema ownership is settled and must be respected: `schema.sql` is authoritative
+for base tables; `db.py::init_db()` executes it then applies **additive,
+idempotent** migrations (`add_column_if_missing`, `CREATE TABLE IF NOT EXISTS`).
+Every new table below follows that same pattern, so restarts never drop data.
+
+---
+
+## The matrix
+
+### Part B — Money and loyalty
+
+| # | Requirement | Status | Evidence / gap |
+|---|---|---|---|
+| 47 | Flash sale with a timer | **Partial** | `books` already has `sale_price_paise`, `sale_start`, `sale_end`; `admin_sales.py` validates and writes windows; `helpers.effective_book_price()` (line 212) is **correct** (`sale_start <= now < sale_end`, rejects sale ≥ normal). **But it has zero callers** — cart (`shop.py:44`) and checkout (`shop_checkout.py:230`) compute `book["price_paise"] * qty`. Product page never shows a sale price. Gap = wire the one function into the read paths. |
+| 48 | Gift option | **Missing** | `orders.gift_wrap_paise` and `orders.gift_message` exist but **no code reads or writes them**; `INSERT INTO orders` omits both. No checkbox, no 150-char validation, no invoice block. Escaping is free once rendered (`autoescape` is on) — needs a test to prove it. |
+| 49 | Loyalty points | **Partial** | `points_ledger` table exists; `loyalty_points_balance` (SUM), `loyalty_points_earned` (`spent // 10000` = 1 pt / ₹100) and `loyalty_discount_paise` exist and are correct — **all zero callers**. No earn-on-order, no redeem-at-checkout, no reversal on cancel/return. |
+
+### Part C — Community
+
+| # | Requirement | Status | Evidence / gap |
+|---|---|---|---|
+| 50 | Review helpful votes | **Missing** | `reviews` has no vote column and there is no `review_votes` table, no button, no count. Needs `UNIQUE(user_id, review_id)`. |
+| 51 | Report a review (moderation) | **Missing** | `reviews` has no `hidden` flag; no report table; no admin queue. **Blocked on a decision** about the rating average (below). |
+| 52 | Request a book | **Missing** | No `book_requests` table, no form, no admin aggregation view. Needs a normalised title key + `COUNT(*)` ordering so two askers increment one row. |
+| 53 | Share my wishlist | **Missing** | `wishlist` table and toggle/view routes exist, but there is no share token, no `/w/<token>` route, no revoke. |
+| 75 | Recommendations for me | **Partial** | `shop.customers_also_bought()` (line 173) is **already exactly** the required JOIN + GROUP BY co-purchase query — but it is only used on the book-detail page. Missing: a home-page block, "exclude books I own", and a bestsellers fallback for a user with no orders. |
+
+### Part D — Store owner tools
+
+| # | Requirement | Status | Evidence / gap |
+|---|---|---|---|
+| 54 | Price history | **Missing** | No `price_history` table. Price is written in **two** places today (`admin.py` add-book INSERT, `admin_books.py` edit UPDATE), so there is no single choke point yet. Needs one `set_book_price()` and both routes routed through it. |
+| 55 | Bulk price change | **Missing** | No bulk selection UI and no combined statements; `execute` is called per book today. |
+| 56 | Dashboard charts (CSS only) | **Missing** | Dashboard (`admin.py:176`) aggregates 7 days into **one** row (`COUNT`, `SUM`), so there is no per-day series. `admin_report.html` renders a `daily` series as a **table**, not bars. Needs a 7-day series with zero-filled days + div/percentage-height bars. |
+| 57 | Staff role with limited rights | **Partial** | Closer than expected: `staff` is in the `users.role` CHECK constraint, and **5 routes already admit staff** — `admin_orders` list/detail/status (pack & ship) and `admin_returns` list/decide. The other **22 admin routes 403 staff** via `role_required`, which correctly `abort(403)`. Gaps: (a) **no way to appoint a staff user** (no admin user-role UI; `seed.py` only promotes to admin); (b) `staff_or_admin()` at `admin.py:42` is **dead code**; (c) no test asserting staff is denied coupons/prices/reports. |
+
+### Part E — User control
+
+| # | Requirement | Status | Evidence / gap |
+|---|---|---|---|
+| 58 | Download my data | **Missing** | `auth_profile` routes are only `profile`, `devices`, `revoke_device`, `revoke_all_devices`. No JSON export, no `Content-Disposition`. |
+| 59 | Delete my account | **Missing / Blocked** | No anonymise path; no password re-auth step; sessions are not invalidated. **Schema conflict:** `users.email` is `NOT NULL UNIQUE`, so "email cleared" cannot be done as written without a migration. |
+| 60 | Dark mode toggle | **Missing** | No `localStorage` usage anywhere; no CSS-variable theme switch. Needs an inline pre-paint script to avoid the white flash. |
+
+### Part F — Hard orders and money
+
+| # | Requirement | Status | Evidence / gap |
+|---|---|---|---|
+| 61 | Idempotent checkout | **Missing** | No `checkout_tokens` table; checkout is a plain POST. A refresh/Back currently re-posts. |
+| 62 | Edit an order before packing | **Missing** | `shop_orders` has only `cancel`, `invoice`, `return`. No quantity edit / item removal. `coupon_discount()` already re-checks `min_order_paise` and `usage_limit` — reusable for the "coupon no longer qualifies" rule. |
+| 63 | Pricing rules engine | **Missing** | No `pricing_rules` table. Only coupon percent logic exists (`shop.coupon_discount`). |
+| 64 | Gift cards | **Missing** | No `gift_cards` / `gift_card_ledger`. Needs hash-only storage and a ledger SUM balance. |
+| 65 | Backorders with a fair queue | **Missing** | No backorder concept; `stock` is debited unconditionally at checkout. |
+
+### Part G — Data and concurrency
+
+| # | Requirement | Status | Evidence / gap |
+|---|---|---|---|
+| 66 | Optimistic locking on admin edits | **Missing** | `books` has **no `version` column**; edit is a blind `UPDATE ... WHERE id = ?`. |
+| 67 | Keyset pagination for the API | **Missing** | `/api/books` is a hard `LIMIT 100`, no `after`/`limit` params, no `next_cursor` in the JSON. |
+| 68 | Tamper-evident audit log | **Missing** | `admin_log` columns are only `id, actor_user_id, action, detail, created_at` — no `prev_hash`/`row_hash`. **Good news:** `helpers.log_admin_action()` is a single chokepoint, so the chain can be added in one function. |
+| 69 | Notification outbox with retry | **Missing** | A `notifications` table + `add_notification()` exist, but they are in-app messages with **no attempt counter, no retry, no give-up**. Needs a separate outbox written in the same transaction as the event. |
+| 70 | Book of the month subscription | **Missing** | No `subscriptions` table, no "run due" button. |
+
+### Part H — Advanced security
+
+| # | Requirement | Status | Evidence / gap |
+|---|---|---|---|
+| 71 | Two-factor login (TOTP, stdlib) | **Missing** | No `hmac`/`struct` TOTP anywhere; `users` has no secret column. No replay protection store. |
+| 72 | API keys with scopes | **Missing** | No `api_keys` table, no auth decorator on `/api/`. `api.rate_limit()` exists but is keyed by **IP**, not by key. A JSON 429 handler already exists (`site.py:58`). |
+| 73 | Permissions table | **Missing** | `role_required` is used at **27 call sites**; no `permissions` / `role_permissions` tables. Largest refactor in the set. |
+
+### Part I — Analytics
+
+| # | Requirement | Status | Evidence / gap |
+|---|---|---|---|
+| 74 | Growth report with window functions | **Missing** | Reports are date-range aggregates; no `LAG` / `SUM OVER`. The CSV export already exists and can serve as the hand-check the acceptance criterion demands. |
+
+**Tally:** 0 Verified · 5 Partial (47, 49, 57, 75, and 49's helpers) · 24 Missing ·
+2 Blocked (51, 59).
+
+---
+
+## Reuse first — do not rebuild these
+
+| Existing asset | Location | Serves |
 |---|---|---|
-| 1–46 (prerequisite context) | 46 | No — not supplied |
-| 47–75 (this batch) | 29 | **No — not supplied** |
+| `effective_book_price()` | `helpers.py:212` | 47 (already correct, just uncalled) |
+| `points_ledger` + `loyalty_points_balance/earned/discount_paise` | `db.py`, `helpers.py:244-263` | 49 |
+| `customers_also_bought()` | `shop.py:173` | 75 |
+| `log_admin_action()` single chokepoint | `helpers.py:123` | 68, 69 |
+| `notifications` + `add_notification()` | `helpers.py:139` | 69, 70 |
+| `api.rate_limit()` + JSON 429 handler | `api.py:9`, `site.py:58` | 72 |
+| `role_required()` | `helpers.py:92` | 57, 73 |
+| `coupon_discount()` re-checks min order | `shop.py:109-160` | 62 |
+| `order_items.price_paise` snapshot (already written; invoice reads it) | `shop_checkout.py`, `invoice.html` | 47, 62, 63 |
+| `money()`, `rupees_to_paise()` (Decimal in, int paise out) | `helpers.py:26-41` | all money work |
+
+Money hygiene is currently **good**: input via `Decimal(...).quantize(ROUND_HALF_UP)`,
+integer paise throughout, tax rounded `(base*pct + 50)//100`, formatting via
+`divmod`. No floats in any money path. **Any new money code must keep using
+`money()`** — note `manage_sales.html` does `sale_price_paise / 100` for display,
+the one place that risks importing a float.
 
 ---
 
-## Baseline (Batch 1, complete)
+## Suggested batches (dependency-ordered)
 
-| Item | Status | Verification |
-|---|---|---|
-| Migrator IndentationError repaired, source opened read-only | DONE | manual — legacy DB migrated, 0 FK violations, source unchanged |
-| `api_bp` registered, `/api/books` reachable | DONE | unit + sweep |
-| Legacy redirect routes registered, no duplicate paths | DONE | sweep — `test_no_duplicate_url_rules` |
-| Gunicorn entry point, `$PORT`, 1 worker for SQLite | DONE | manual — boot verified, `/health` 200 |
-| Production refuses to start without `SECRET_KEY` | DONE | manual |
-| Persistent DB + upload storage configured | DONE | manual — volumes `/data/`, `/app/static/uploads/` |
-| Anonymous-route regression sweep in permanent suite | DONE | proven to fail on an injected 5xx |
-
-Baseline test count: **29 passed** (26 original + 3 sweep guards).
+1. **Wire what exists (cheapest, highest value):** 47, 48, 49, 56, 57, 67, 75.
+   Mostly connecting existing columns/helpers to routes and templates.
+2. **New single-table features:** 50, 51, 52, 53, 54, 55, 58, 59, 60, 66, 68.
+3. **Transactional money:** 61, 62, 63, 64, 65.
+4. **Background/asynchronous-ish:** 69, 70.
+5. **Security:** 71, 72, 73 (73 last — it touches 27 call sites).
+6. **Analytics:** 74 (independent).
+7. **Tests (76) continuously; `stress.py` (77) after 61/65.**
 
 ---
 
-## Requirements 47–75
+## Open decisions (needed before coding these)
 
-_Pending receipt of the list. Each row will record: requirement text, what
-already exists, the gap, status, and verification method._
-
-| # | Requirement (verbatim) | Existing code to reuse | Gap | Status | Verified by |
-|---|---|---|---|---|---|
-| 47 | _awaiting text_ | — | — | UNKNOWN | — |
-| … | | | | | |
-| 75 | _awaiting text_ | — | — | UNKNOWN | — |
+1. **Req 51 — does a hidden review's rating still count in the average?**
+   Must be decided and written as a code comment. Recommendation: **exclude
+   hidden reviews from both the average and the count**, because a hidden review
+   is a moderation decision that the content should not be shown to shoppers at
+   all; leaving it in the average would silently let reported content keep
+   influencing the score with no visible explanation.
+2. **Req 59 — `users.email` is `NOT NULL UNIQUE`.** "Email cleared" needs either
+   a nullable email (migration + every `WHERE email` login path audited) or a
+   placeholder like `deleted+<id>@invalid`. Placeholder is safer: it preserves
+   UNIQUE, requires no null-handling, and keeps login failing because
+   `password_hash` is replaced and sessions are dropped.
+3. **Reqs 64 / 70 imply payment capture**, but the app has **no payment
+   gateway**. Decide whether these are simulated (create the order / mark the
+   card issued, no real charge) — recommended, and matching how checkout
+   already works.
+4. **Req 65 backorder vs. `stock` invariant:** decide whether a backorder order
+   debits stock at placement (allowing negative) or is only debited when the
+   fulfil step runs. Recommended: do **not** go negative; keep a separate
+   `backorder` quantity and allocate oldest-first on restock.
 
 ---
 
-## Known context from the audit (likely overlap with 47–75)
+## Answers to the two QUESTIONS
 
-These are verified facts about the current code. They are recorded here because
-they will probably intersect the incoming requirements, and because building on
-what exists is cheaper than rebuilding.
+**Q1 — Why copy the sale price into the order line instead of reading it from
+the book later?** Because an order and its invoice are a record of what was
+actually agreed at a moment in time. A sale window expires and the normal price
+can be edited afterwards, so re-reading `books` would retroactively change
+historical totals and make the invoice disagree with what the customer paid.
+The snapshot (`order_items.price_paise`, which already exists here) makes the
+money arithmetic reproducible and auditable, and is what lets the cart, the
+order and the invoice agree permanently rather than momentarily.
+Note the two are complementary: `effective_book_price()` decides *today's*
+price at add-to-cart/checkout time, and the snapshot freezes it at order time.
 
-**Implemented but unreachable (highest-value gap):**
-
-- `admin_bundles`, `admin_coupons`, `admin_import`, `admin_orders`,
-  `admin_reports`, `admin_returns`, `admin_sales` — modules exist but are imported
-  by nothing, so their routes never register.
-- `shop_cart`, `shop_checkout`, `shop_orders`, `auth_addresses` — exist, but the
-  logic is duplicated inside the monolithic `shop.py` / `auth.py`.
-- Templates with no backing route: `manage_bundles.html`, `manage_sales.html`,
-  `returns.html`, `coupons.html`, `admin_report.html` (and others to be audited).
-
-**Schema exists, no routes:** `bundles`, `bundle_items`, `cart_bundles`,
-`order_bundles`, `order_bundle_items`, `points_ledger` are created in `db.py`,
-but `shop.py` / `site.py` / `api.py` never reference them.
-
-**Missing routes:** `/books` (catalog listing) returns 404; `/api/health` 404.
-
-**Test coverage gaps:** 0 tests for coupons, bundles, sales, returns.
-77 routes total.
-
-**Dead files:** `pageturner/blueprints/admin.py.backup`, `static/style.css.backup`.
-
-**RESOLVED — schema ownership:** `schema.sql` (top level) is authoritative for the
-27 base tables (`users`, `books`, `orders`, `coupons`, `returns`, …). `db.py::init_db()`
-executes it on every startup, then applies additive migrations: `ALTER TABLE ... ADD
-COLUMN` via `add_column_if_missing` (books: release_date, sale_price_paise, sale_start,
-sale_end; orders: gift_wrap_paise, gift_message, loyalty_points_earned,
-loyalty_points_redeemed) plus the 6 bundle/points tables created inline.
-
-**Rule for new work:** start from `schema.sql` when reading table definitions, and
-follow the `db.py` additive pattern for new tables/columns (`CREATE TABLE IF NOT
-EXISTS` / `add_column_if_missing`). Both are idempotent and non-destructive, so
-restarts never drop data. `migrations/001_initial_schema.sql` is documentation —
-no code reads it.
+**Q2 — Why is a UNIQUE pair better than checking in Python for helpful votes?**
+A Python check is a time-of-check/time-of-use race: two concurrent requests can
+both read "no vote exists" and both insert. `UNIQUE(user_id, review_id)` makes
+the database the single atomic authority, so a double-click, a retry or two
+workers cannot create two votes — the second `INSERT` simply fails and is
+handled as "already voted". It also matches this project's own rule: *do not
+rely on a Python check where the database can enforce the rule.*
 
 ---
 
 ## Working protocol (per batch)
 
-1. Verify branch/HEAD/worktree clean; create checkpoint tag.
+1. Verify branch/HEAD/worktree clean; create a checkpoint tag.
 2. Implement 5–6 related requirements.
 3. Run: focused tests → full `pytest` → `compileall` → route sweep.
 4. Commit only if all pass. If a check fails, fix the regression first.
 5. Record results in this file.
 
 **Non-negotiables:** no weakened tests, no destructive schema changes, no
-orphaned or duplicate routes, no push without approval, no deploy without approval.
+orphaned or duplicate routes, no push without approval, no deploy without
+approval, no float for money, no SQL built by joining user input, no trusting an
+ID from the URL without an ownership check, no secret/token stored in a form
+that is usable if the table is read.
