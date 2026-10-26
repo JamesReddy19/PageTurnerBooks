@@ -116,7 +116,7 @@ def create_app(test_config=None):
         }
 
     # Import and register the application blueprints.
-    
+
     from .blueprints.api import api_bp
     from .blueprints.auth import auth_bp
     from .blueprints.shop import shop_bp
