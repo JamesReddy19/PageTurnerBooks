@@ -196,5 +196,86 @@ def customers_also_bought(book_id):
     ).fetchall()
 
 
+def owned_book_ids(connection, user_id):
+    """Ids of books the shopper already bought (cancelled orders do not count)."""
+    rows = connection.execute(
+        "SELECT DISTINCT oi.book_id FROM order_items oi "
+        "JOIN orders o ON o.id = oi.order_id "
+        "WHERE o.user_id = ? AND o.status <> 'Cancelled'",
+        (user_id,)
+    ).fetchall()
+    return {row["book_id"] for row in rows}
+
+
+def recommended_books(user, limit=5):
+    """
+    Requirement 75: personalised picks for the home page.
+
+    The cheapest useful signal wins:
+
+    1. Co-purchase — books other shoppers bought in the same orders as the books
+       this reader already owns, ranked by how often that happened.
+    2. Bestsellers by units sold — the fallback for a signed-out visitor or a
+       brand-new account with no order history at all.
+
+    Either way, books the reader already owns and books with no stock are
+    excluded, so the block never recommends something they cannot buy.
+    """
+    connection = get_db()
+
+    excluded = owned_book_ids(connection, user["id"]) if user else set()
+
+    rows = []
+    if user:
+        # A parameter list cannot be empty here: it always starts with user_id.
+        rows = connection.execute(
+            """
+            SELECT b.*, COUNT(*) AS score,
+                   (SELECT AVG(r.rating) FROM reviews r WHERE r.book_id=b.id) AS average_rating
+            FROM order_items mine
+            JOIN orders co_order ON co_order.id = mine.order_id AND co_order.status <> 'Cancelled'
+            JOIN order_items co
+              ON co.order_id = mine.order_id
+             AND co.book_id <> mine.book_id
+            JOIN books b ON b.id = co.book_id
+            WHERE mine.order_id IN (
+                    SELECT id FROM orders WHERE user_id = ? AND status <> 'Cancelled'
+                  )
+              AND b.stock > 0
+            GROUP BY b.id
+            ORDER BY score DESC, b.title COLLATE NOCASE
+            LIMIT ?
+            """,
+            (user["id"], limit + len(excluded))
+        ).fetchall()
+
+        rows = [row for row in rows if row["id"] not in excluded][:limit]
+
+    if len(rows) < limit:
+        chosen = {row["id"] for row in rows}
+        fallback = connection.execute(
+            """
+            SELECT b.*, COALESCE(SUM(oi.quantity), 0) AS units_sold,
+                   (SELECT AVG(r.rating) FROM reviews r WHERE r.book_id=b.id) AS average_rating
+            FROM books b
+            LEFT JOIN order_items oi ON oi.book_id = b.id
+            WHERE b.stock > 0
+            GROUP BY b.id
+            ORDER BY units_sold DESC, b.title COLLATE NOCASE
+            LIMIT ?
+            """,
+            (limit + len(excluded) + len(chosen),)
+        ).fetchall()
+
+        for row in fallback:
+            if len(rows) >= limit:
+                break
+            if row["id"] in excluded or row["id"] in chosen:
+                continue
+            rows.append(row)
+
+    return rows
+
+
 # Import route modules after the Blueprint and helpers exist.
 from . import shop_catalog, shop_cart, shop_checkout, shop_orders  # noqa: E402,F401
