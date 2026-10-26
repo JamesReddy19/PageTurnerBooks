@@ -307,9 +307,7 @@ def revoke_all_devices():
 # ---------------------------------------------------------------------------
 
 def _api_keys_for(user_id):
-    return get_db().execute(
-        "SELECT * FROM api_keys WHERE user_id = ? ORDER BY id DESC", (user_id,)
-    ).fetchall()
+    return apikeys.keys_for_user(get_db(), user_id)
 
 
 @auth_bp.get("/api-keys")
@@ -319,6 +317,7 @@ def api_keys_page():
         "api_keys.html",
         keys=_api_keys_for(session["user_id"]),
         available_scopes=apikeys.SCOPES,
+        default_scopes=apikeys.DEFAULT_SCOPES,
     )
 
 
@@ -327,47 +326,46 @@ def api_keys_page():
 def create_api_key():
     """Issue a key and show the secret exactly once.
 
-    The plaintext token is never stored: only a hash and a short prefix are
-    kept, so a database leak cannot be replayed against the API.  That means
-    this response is the customer's only chance to copy it.
+    Only a hash and a short prefix are stored, so a database leak cannot be
+    replayed against the API.  That makes this response the customer's only
+    chance to copy the token.
     """
     user_id = session["user_id"]
-    name = (request.form.get("name") or "").strip() or "Unnamed key"
-    requested = request.form.getlist("scopes")
+    name = (request.form.get("name") or "").strip()
 
-    granted, error = apikeys.validate_scopes(requested)
-
-    if error:
-        flash(error, "error")
+    if not name:
+        flash("Give the key a name so you can recognise it later.", "error")
         return redirect(url_for("auth.api_keys_page"))
 
-    token, prefix = apikeys.issue(get_db(), user_id, name, granted)
-    get_db().commit()
+    requested = request.form.getlist("scopes") or list(apikeys.DEFAULT_SCOPES)
+
+    connection = get_db()
+
+    try:
+        key_row, token = apikeys.create_key(connection, user_id, name, requested)
+    except ValueError as error:
+        connection.rollback()
+        flash(str(error), "error")
+        return redirect(url_for("auth.api_keys_page"))
+
+    connection.commit()
 
     return render_template(
         "api_key_issued.html",
         token=token,
-        prefix=prefix,
-        name=name,
-        scopes=granted,
+        key=key_row,
+        scopes=apikeys.scopes_of(key_row),
     )
 
 
 @auth_bp.post("/api-keys/<int:key_id>/revoke")
 @login_required
 def revoke_api_key(key_id):
-    connection = get_db()
-    row = connection.execute(
-        "SELECT id FROM api_keys WHERE id = ? AND user_id = ?",
-        (key_id, session["user_id"]),
-    ).fetchone()
-
-    # Scoped to the owner, so one customer can never revoke another's key.
-    if row is None:
-        flash("That API key does not exist.", "error")
-    else:
-        apikeys.revoke(connection, key_id, session["user_id"])
-        connection.commit()
+    # ``revoke`` matches on user_id as well, so one customer can never revoke
+    # another customer's key.
+    if apikeys.revoke(get_db(), session["user_id"], key_id):
         flash("API key revoked.", "success")
+    else:
+        flash("That API key does not exist.", "error")
 
     return redirect(url_for("auth.api_keys_page"))
