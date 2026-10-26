@@ -210,9 +210,10 @@ class OutboxTests(BatchSixTestCase):
 
     def test_a_failing_transport_is_retried_with_backoff(self):
         """A send failure must be recorded and retried, never dropped."""
+        user_id = self.register_and_login()
         with self.app.app_context():
             connection = get_db()
-            outbox.enqueue(connection, 1, "Subject A", "Body A")
+            outbox.enqueue(connection, user_id, "Subject A", "Body A")
             connection.commit()
 
             calls = {"count": 0}
