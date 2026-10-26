@@ -310,5 +310,169 @@ def password_reset_confirm():
     return render_template("password_reset_confirm.html")
 
 
+# ---------------------------------------------------------------------------
+# Requirement 71: two-factor authentication
+# ---------------------------------------------------------------------------
+
+# How long the password-only state stays valid.  Long enough to find a phone,
+# short enough that a stolen session cookie is not a permanent key.
+PENDING_2FA_TTL = 300
+
+# Ten consecutive wrong codes and the pending login is abandoned, so the second
+# factor cannot be brute-forced with a password alone.
+MAX_2FA_ATTEMPTS = 10
+
+
+def _pending_two_factor_user():
+    """Return the user awaiting a second factor, or ``None``.
+
+    Expired or malformed pending state is cleared as a side effect, so the
+    caller never has to reason about it.
+    """
+    user_id = session.get("pending_2fa_user_id")
+    started = session.get("pending_2fa_started")
+
+    if not user_id or not started:
+        return None
+
+    if time.time() - int(started) > PENDING_2FA_TTL:
+        _clear_pending_two_factor()
+        return None
+
+    user = get_db().execute(
+        "SELECT * FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+
+    if user is None or not user["totp_enabled"] or is_anonymized(user):
+        _clear_pending_two_factor()
+        return None
+
+    return user
+
+
+def _clear_pending_two_factor():
+    session.pop("pending_2fa_user_id", None)
+    session.pop("pending_2fa_started", None)
+    session.pop("pending_2fa_attempts", None)
+
+
+@auth_bp.route("/login/2fa", methods=["GET", "POST"])
+def login_two_factor():
+    """Second step of login for accounts with a confirmed authenticator."""
+    user = _pending_two_factor_user()
+
+    if user is None:
+        flash("Please log in again.", "error")
+        return redirect(url_for("auth.login"))
+
+    if request.method == "POST":
+        attempts = int(session.get("pending_2fa_attempts", 0)) + 1
+
+        if attempts > MAX_2FA_ATTEMPTS:
+            _clear_pending_two_factor()
+            flash("Too many incorrect codes. Please log in again.", "error")
+            return redirect(url_for("auth.login"))
+
+        connection = get_db()
+        step = matching_step(user["totp_secret"], request.form.get("code", ""))
+
+        # claim_step makes the code single-use: a replay of an already accepted
+        # step fails even though the digits would still validate.
+        if step is not None and claim_step(connection, user["id"], step):
+            connection.commit()
+            _clear_pending_two_factor()
+            save_login_session(user)
+            flash("Signed in.", "success")
+            return redirect(url_for("shop.index"))
+
+        connection.rollback()
+        session["pending_2fa_attempts"] = attempts
+        flash("That code is not valid. Try the current one.", "error")
+
+    return render_template("login_two_factor.html")
+
+
+@auth_bp.route("/security/2fa", methods=["GET", "POST"])
+@login_required
+def manage_two_factor():
+    """Enrol or disable the authenticator app on the signed-in account."""
+    user = current_user()
+    connection = get_db()
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+
+        if action == "start":
+            # Generate a secret but do not enable it: the user must prove they
+            # can produce a code before it becomes a login requirement,
+            # otherwise a bad copy-paste locks them out of their account.
+            secret = generate_secret()
+            session["pending_totp_secret"] = secret
+            connection.execute(
+                "UPDATE users SET totp_secret = ?, totp_enabled = 0 WHERE id = ?",
+                (secret, user["id"]),
+            )
+            connection.commit()
+            return redirect(url_for("auth.manage_two_factor"))
+
+        if action == "confirm":
+            secret = session.get("pending_totp_secret") or user["totp_secret"]
+            step = matching_step(secret, request.form.get("code", ""))
+
+            if secret and step is not None and claim_step(
+                connection, user["id"], step
+            ):
+                connection.execute(
+                    """
+                    UPDATE users SET totp_secret = ?, totp_enabled = 1
+                    WHERE id = ?
+                    """,
+                    (secret, user["id"]),
+                )
+                connection.commit()
+                session.pop("pending_totp_secret", None)
+                flash("Two-factor authentication is now on.", "success")
+            else:
+                connection.rollback()
+                flash("That code is not valid. Nothing has changed.", "error")
+
+            return redirect(url_for("auth.manage_two_factor"))
+
+        if action == "disable":
+            # Turning it off requires the current password, so a borrowed
+            # session alone cannot weaken the account's protection.
+            password = request.form.get("password", "")
+
+            if not check_password_hash(user["password_hash"], password):
+                flash("Password is incorrect.", "error")
+            else:
+                connection.execute(
+                    """
+                    UPDATE users SET totp_secret = NULL, totp_enabled = 0
+                    WHERE id = ?
+                    """,
+                    (user["id"],),
+                )
+                connection.execute(
+                    "DELETE FROM totp_used_codes WHERE user_id = ?", (user["id"],)
+                )
+                connection.commit()
+                session.pop("pending_totp_secret", None)
+                flash("Two-factor authentication is off.", "success")
+
+            return redirect(url_for("auth.manage_two_factor"))
+
+    secret = session.get("pending_totp_secret")
+
+    return render_template(
+        "two_factor.html",
+        enabled=bool(user["totp_enabled"]),
+        pending_secret=secret,
+        provisioning_uri=(
+            provisioning_uri(secret, user["email"]) if secret else None
+        ),
+    )
+
+
 # Import route modules after the shared Blueprint and login helpers exist.
 from . import auth_profile, auth_addresses  # noqa: E402,F401
