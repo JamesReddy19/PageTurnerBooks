@@ -123,7 +123,14 @@ class PageTurnerTests(unittest.TestCase):
         response = self.client.get("/checkout")
         self.assertEqual(response.status_code, 200)
         token = self.token("/checkout")
-        response = self.client.post("/checkout", data={"csrf_token": token, "name": "Reader", "phone": "9876543210", "new_address": "12 Main Road", "pincode": "500001"}, follow_redirects=True)
+        # Requirement 61: the form carries a single-use token; submit it the way
+        # a browser would.
+        import re as _re
+        checkout_token = _re.search(
+            r'name="checkout_token" value="([^"]+)"',
+            self.client.get("/checkout").get_data(as_text=True)
+        ).group(1)
+        response = self.client.post("/checkout", data={"csrf_token": token, "checkout_token": checkout_token, "name": "Reader", "phone": "9876543210", "new_address": "12 Main Road", "pincode": "500001"}, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Order #", response.data)
         with self.app.app_context():

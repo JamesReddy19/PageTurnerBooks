@@ -9,6 +9,7 @@ was too small to earn loyalty points. The ledger is what reconciles
 import os
 import re
 import tempfile
+import re
 import unittest
 
 from pageturner import create_app
@@ -57,6 +58,23 @@ class CheckoutLedgerTests(unittest.TestCase):
             follow_redirects=True,
         )
 
+    def checkout_token(self):
+        """Read the single-use token out of the rendered checkout form.
+
+        Requirement 61: the form carries a token so that a replayed POST cannot
+        place a second order. A browser submits whatever the form rendered, so
+        the test does the same rather than inventing a value.
+        """
+        page = self.client.get("/checkout")
+        self.assertEqual(page.status_code, 200)
+
+        match = re.search(
+            r'name="checkout_token" value="([^"]+)"', page.get_data(as_text=True)
+        )
+        self.assertIsNotNone(match, "checkout form must carry a token")
+
+        return match.group(1)
+
     def place_order(self):
         # GET /checkout is what creates the stock reservation, so it must happen
         # before the POST or the order is refused as expired.
@@ -65,6 +83,7 @@ class CheckoutLedgerTests(unittest.TestCase):
             "/checkout",
             data={
                 "csrf_token": token,
+                "checkout_token": self.checkout_token(),
                 "name": "Ledger Reader",
                 "phone": "9876543210",
                 "new_address": "12 Main Road",
