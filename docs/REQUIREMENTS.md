@@ -113,8 +113,9 @@ Every new table below follows that same pattern, so restarts never drop data.
 |---|---|---|---|
 | 74 | Growth report with window functions | **Missing** | Reports are date-range aggregates; no `LAG` / `SUM OVER`. The CSV export already exists and can serve as the hand-check the acceptance criterion demands. |
 
-**Tally (29 requirements):** 0 Verified · **4 Partial** (47, 49, 57, 75) ·
-**25 Missing** — of which **2 are additionally Blocked** on a decision (51, 59).
+**Tally (29 requirements):** 7 **Done** (47, 48, 49, 56, 57, 67, 75) ·
+**0 Partial** · **22 Missing** — of which **2 are additionally Blocked** on a
+decision (51, 59).
 
 ---
 
