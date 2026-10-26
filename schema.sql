@@ -72,3 +72,4 @@ CREATE INDEX IF NOT EXISTS idx_order_items_book ON order_items(book_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_expiry ON reservations(expires_at);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_api_requests_ip_time ON api_requests(ip_address, created_at);
+CREATE INDEX IF NOT EXISTS idx_price_history_book ON book_price_history(book_id, changed_at);
