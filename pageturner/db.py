@@ -28,13 +28,20 @@ def close_db(_error=None):
 
 
 def add_column_if_missing(connection, table, column, definition):
-    """Add a column only when it does not already exist."""
+    """Add a column only when the table exists and lacks that column.
+
+    A missing table means this is a fresh install: ``schema.sql`` creates the
+    full current shape moments later, so there is nothing to migrate.
+    """
     columns = {
         row["name"]
         for row in connection.execute(
             f"PRAGMA table_info({table})"
         ).fetchall()
     }
+
+    if not columns:
+        return
 
     if column not in columns:
         connection.execute(
@@ -60,6 +67,66 @@ def backfill_price_history_baseline(connection):
         )
         """
     )
+
+
+def _migrate_columns(connection):
+    """Bring a pre-existing database up to the current column set.
+
+    This has to run *before* ``schema.sql``.  The schema creates indexes over
+    columns that older databases do not have yet (``reviews.hidden`` is the
+    current example), and SQLite aborts the whole script when a ``CREATE INDEX``
+    names a missing column — which would take the app down on restart instead of
+    upgrading it.  On a fresh database every table is absent here, so each call
+    is a no-op and ``schema.sql`` then builds the complete shape.
+    """
+    add_column_if_missing(
+        connection, "books", "release_date", "TEXT"
+    )
+    add_column_if_missing(
+        connection, "books", "sale_price_paise", "INTEGER"
+    )
+    add_column_if_missing(
+        connection, "books", "sale_start", "TEXT"
+    )
+    add_column_if_missing(
+        connection, "books", "sale_end", "TEXT"
+    )
+
+    add_column_if_missing(
+        connection, "orders", "gift_wrap_paise",
+        "INTEGER NOT NULL DEFAULT 0"
+    )
+    add_column_if_missing(
+        connection, "orders", "gift_message", "TEXT"
+    )
+    add_column_if_missing(
+        connection, "orders", "loyalty_points_earned",
+        "INTEGER NOT NULL DEFAULT 0"
+    )
+    add_column_if_missing(
+        connection, "orders", "loyalty_points_redeemed",
+        "INTEGER NOT NULL DEFAULT 0"
+    )
+
+    # Optimistic locking for concurrent editorial edits (requirement 66).
+    add_column_if_missing(
+        connection, "books", "version", "INTEGER NOT NULL DEFAULT 1"
+    )
+
+    # Hash-chained audit log (requirement 68).  Columns are added to existing
+    # databases here; schema.sql defines them for fresh installs.
+    add_column_if_missing(connection, "admin_log", "prev_hash", "TEXT")
+    add_column_if_missing(connection, "admin_log", "row_hash", "TEXT")
+
+    # Review moderation and account anonymization (requirements 50, 51, 59).
+    # Remember: hidden reviews must vanish from the average rating *and* the
+    # review count, so every rating query filters on this column.
+    add_column_if_missing(
+        connection, "reviews", "hidden", "INTEGER NOT NULL DEFAULT 0"
+    )
+    add_column_if_missing(connection, "reviews", "hidden_at", "TEXT")
+    add_column_if_missing(connection, "reviews", "hidden_by", "INTEGER")
+    add_column_if_missing(connection, "users", "anonymized_at", "TEXT")
 
 
 def init_db():
