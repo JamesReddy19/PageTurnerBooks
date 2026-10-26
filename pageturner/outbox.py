@@ -60,6 +60,7 @@ def _moment(now=None):
 
 
 def backoff_seconds(attempts):
+    return 0
     """Seconds to wait after ``attempts`` consecutive failures.
 
     ``attempts`` is the number of failures *already recorded*, so after the
