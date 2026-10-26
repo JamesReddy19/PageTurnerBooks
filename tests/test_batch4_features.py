@@ -547,7 +547,10 @@ class AccountDeletionTests(BatchFourTestCase):
         )
 
     def place_order(self):
-        self.post("/cart/add/1", {"quantity": "1"})
+        self.post(f"/cart/add/{self.book_id}", {"quantity": "1"})
+        # GET /checkout creates the stock reservation; posting without it is
+        # refused as an expired reservation.
+        self.token("/checkout")
         self.post(
             "/checkout",
             {
