@@ -274,6 +274,22 @@ def _charge_once(connection, subscription, run_on):
         )
         return "blocked", "book no longer exists"
 
+    # Same rule the checkout applies: a title that is not released yet cannot be
+    # shipped. The subscription stays due instead of being skipped, so it is
+    # billed as soon as the book is out and a human can see why nothing shipped.
+    release_date = book["release_date"] if "release_date" in book.keys() else None
+
+    if release_date and release_date > run_on:
+        note = f"not released until {release_date}"
+        connection.execute(
+            """
+            INSERT INTO subscription_runs(subscription_id, run_on, outcome, note)
+            VALUES (?, ?, 'blocked', ?)
+            """,
+            (subscription["id"], run_on, note),
+        )
+        return "blocked", note
+
     unit_price = int(effective_book_price(book))
     line_total = unit_price * quantity
 
