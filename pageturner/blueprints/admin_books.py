@@ -209,6 +209,10 @@ def edit_book(book_id):
         connection.commit()
         flash("Book updated.", "success")
 
+    except BookEditConflict as error:
+        connection.rollback()
+        flash(str(error), "error")
+
     except (ValueError, sqlite3.IntegrityError) as error:
         connection.rollback()
 
@@ -222,6 +226,110 @@ def edit_book(book_id):
             )
 
     return redirect(url_for("admin.manage_books"))
+
+
+@admin_bp.post("/books/prices/bulk")
+@role_required("admin")
+@audit_action("book_prices_bulk")
+def bulk_update_prices():
+    """Apply one percentage price change to several books at once (req 55).
+
+    Every adjusted price still travels through set_book_price, so bulk edits
+    are recorded in the same immutable history as single edits.
+    """
+    connection = get_db()
+
+    book_ids = []
+    for raw in request.form.getlist("book_id"):
+        try:
+            book_ids.append(int(raw))
+        except ValueError:
+            continue
+
+    if not book_ids:
+        flash("Select at least one book to reprice.", "error")
+        return redirect(url_for("admin.manage_books"))
+
+    try:
+        percent = int(request.form.get("percent", "").strip())
+    except ValueError:
+        flash("Enter a whole-number percentage between -90 and 500.", "error")
+        return redirect(url_for("admin.manage_books"))
+
+    if percent < -90 or percent > 500:
+        flash("Enter a whole-number percentage between -90 and 500.", "error")
+        return redirect(url_for("admin.manage_books"))
+
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        changed = 0
+
+        for book_id in book_ids:
+            row = connection.execute(
+                "SELECT price_paise FROM books WHERE id = ?", (book_id,)
+            ).fetchone()
+
+            if not row:
+                continue
+
+            new_price = apply_percentage(row["price_paise"], percent)
+
+            if new_price != row["price_paise"]:
+                set_book_price(
+                    connection, book_id, new_price, session.get("user_id"),
+                    reason="bulk %+d%% price change" % percent,
+                )
+                changed += 1
+
+        log_admin_action(
+            "book_prices_bulk", "%+d%% on %d book(s)" % (percent, changed)
+        )
+        connection.commit()
+
+    except (ValueError, sqlite3.IntegrityError) as error:
+        connection.rollback()
+        flash(str(error) or "Could not update those prices.", "error")
+        return redirect(url_for("admin.manage_books"))
+
+    if changed:
+        flash(
+            "Updated %d price(s) by %+d%%." % (changed, percent),
+            "success"
+        )
+    else:
+        flash("Those prices already had that value; nothing changed.", "error")
+
+    return redirect(url_for("admin.manage_books"))
+
+
+@admin_bp.get("/books/<int:book_id>/price-history")
+@role_required("admin")
+def book_price_history(book_id):
+    """JSON price history for one book, newest first (req 54)."""
+    book = get_db().execute(
+        "SELECT id, title, price_paise FROM books WHERE id = ?", (book_id,)
+    ).fetchone()
+
+    if not book:
+        abort(404)
+
+    rows = get_db().execute(
+        """
+        SELECT old_price_paise, new_price_paise, reason, changed_at,
+               actor_user_id
+        FROM book_price_history
+        WHERE book_id = ?
+        ORDER BY id DESC
+        """,
+        (book_id,)
+    ).fetchall()
+
+    return jsonify(
+        book_id=book["id"],
+        title=book["title"],
+        current_price_paise=book["price_paise"],
+        history=[dict(row) for row in rows],
+    )
 
 
 @admin_bp.post("/books/delete/<int:book_id>")
