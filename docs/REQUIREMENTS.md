@@ -256,17 +256,18 @@ implemented, so nothing in 47–76 is blocked on a product call any more.
 | 7 | 73 | Permissions table: `role_required` at **27 call sites**, no `permissions`/`role_permissions` — largest refactor, do last | `permissions`, `role_permissions` |
 | 8 | 74 | Growth report: no `LAG`/`SUM OVER`; CSV export already exists to hand-check the result | — |
 
-**Req 76 (tests continuously)** is at 107 tests over the 90-odd routes. Each
+**Req 76 (tests continuously)** is at 128 tests over the 90-odd routes. Each
 batch above must add the tests for what it implements, and the batch is not
 "Done" until those tests fail-then-pass. Batch 4 did exactly that for 51, 52, 53
-and 59, and batch 5 repeated it for 61, 62, 63, 64 and 65 by temporarily
-reverting each mechanism and observing the failure before restoring it. Req 77
-(`stress.py`) is sequenced after 61 and 65, because those are what make
-concurrent checkout safe — both are now in place.
+and 59, batch 5 repeated it for 61, 62, 63, 64 and 65, and batch 6 did it for 69
+and 70 — each mechanism was temporarily reverted, the specific test observed
+failing, and the file restored (checksums re-verified). Req 77 (`stress.py`) is
+sequenced after 61 and 65, because those are what make concurrent checkout safe
+— both are now in place.
 
 **Nothing left is blocked on a product decision.** Decisions 3 and 4 are
-answered and implemented in batch 5, so 69–74 are all pure engineering; 73
-(permissions table) is the largest and goes last, and 74 is deliberately last
+answered and implemented in batches 5 and 6, so 71–74 are all pure engineering;
+73 (permissions table) is the largest and goes last, and 74 is deliberately last
 because it is read-only reporting with no schema change.
 
 ---
