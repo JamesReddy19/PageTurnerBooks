@@ -200,6 +200,17 @@ def record_redemption(connection, card_id, order_id, amount_paise):
         (card_id, order_id, -amount_paise),
     )
 
+    # Defence in depth for "the balance is a SUM, never a column": the cap in
+    # `redeem_gift_card` is what normally prevents an overspend, but a caller
+    # that prices a card and then writes the debit later (checkout does) has a
+    # window between those two steps. Re-reading the SUM here means a card can
+    # never end up negative even if that window is ever widened, and raising
+    # rolls the whole order back rather than leaving a silently overdrawn card.
+    if gift_card_balance(connection, card_id) < 0:
+        raise ValueError(
+            "That gift card does not have enough balance left for this order."
+        )
+
 
 def cards_for_user(connection, user_id):
     """Cards a customer bought, with their live balance (never the code)."""
