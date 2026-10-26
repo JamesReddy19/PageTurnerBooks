@@ -32,6 +32,9 @@ DEFAULT_SCOPES = ("books:read",)
 
 TOKEN_PREFIX = "ptk"
 PREFIX_LENGTH = 8
+# Lookup handles are minted with token_hex, so anything else is malformed and is
+# rejected before it can reach the database.
+_PREFIX_ALPHABET = frozenset("0123456789abcdef")
 
 # Requests per minute.  Anonymous callers share one bucket per IP (requirement
 # 25 keeps its 30/min allowance); each key gets a bucket of its own.
