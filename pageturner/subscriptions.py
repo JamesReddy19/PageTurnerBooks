@@ -29,7 +29,7 @@ Decisions that shape this module
   payable/settled like any other order. Nothing here invents a capture.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from . import backorders, outbox, pricing_rules
 from .helpers import effective_book_price, loyalty_points_earned, loyalty_record
