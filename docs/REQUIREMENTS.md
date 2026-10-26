@@ -48,7 +48,7 @@ Every new table below follows that same pattern, so restarts never drop data.
 
 | # | Requirement | Status | Evidence / gap |
 |---|---|---|---|
-| 47 | Flash sale with a timer | **Partial** | `books` already has `sale_price_paise`, `sale_start`, `sale_end`; `admin_sales.py` validates and writes windows; `helpers.effective_book_price()` (line 212) is **correct** (`sale_start <= now < sale_end`, rejects sale ≥ normal). **But it has zero callers** — cart (`shop.py:44`) and checkout (`shop_checkout.py:230`) compute `book["price_paise"] * qty`. Product page never shows a sale price. Gap = wire the one function into the read paths. |
+| 47 | Flash sale with a timer | **Done** | `helpers.effective_book_price()` is now called from the cart, the checkout total, the product page and the order line, so the sale price reaches `order_items.price_paise` and the invoice without any later re-read of `books`. The product page renders the countdown from `sale_ends_in_seconds`. |
 | 48 | Gift option | **Missing** | `orders.gift_wrap_paise` and `orders.gift_message` exist but **no code reads or writes them**; `INSERT INTO orders` omits both. No checkbox, no 150-char validation, no invoice block. Escaping is free once rendered (`autoescape` is on) — needs a test to prove it. |
 | 49 | Loyalty points | **Partial** | `points_ledger` table exists; `loyalty_points_balance` (SUM), `loyalty_points_earned` (`spent // 10000` = 1 pt / ₹100) and `loyalty_discount_paise` exist and are correct — **all zero callers**. No earn-on-order, no redeem-at-checkout, no reversal on cancel/return. |
 
