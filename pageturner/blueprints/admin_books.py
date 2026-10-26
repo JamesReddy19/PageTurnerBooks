@@ -135,24 +135,43 @@ def edit_book(book_id):
     try:
         title, author, category, price, description, stock, color = read_book_form()
         release_date = read_release_date()
+        version = read_book_version()
         image = save_uploaded_image() or old["image"]
 
         connection.execute("BEGIN IMMEDIATE")
 
         stock_change = stock - old["stock"]
 
-        connection.execute(
+        # Optimistic locking (req 66): only apply the edit if nobody else has
+        # saved this book since the form was rendered.  The version is bumped
+        # in the same statement, so two concurrent editors cannot both win.
+        updated = connection.execute(
             """
             UPDATE books
-            SET title = ?, author = ?, category = ?, price_paise = ?,
+            SET title = ?, author = ?, category = ?,
                 description = ?, stock = ?, color = ?, image = ?,
-                release_date = ?
-            WHERE id = ?
+                release_date = ?, version = version + 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND version = ?
             """,
             (
-                title, author, category, price, description,
-                stock, color, image, release_date, book_id
+                title, author, category, description,
+                stock, color, image, release_date, book_id, version
             )
+        )
+
+        if updated.rowcount == 0:
+            raise BookEditConflict(
+                "%s was changed by someone else after you opened this form. "
+                "Your edits were not saved; reload the page to see the "
+                "current values." % (old["title"],)
+            )
+
+        # Price writes go through the single choke point that records history
+        # (req 54) and applies the optimistic lock's new row state.
+        set_book_price(
+            connection, book_id, price, session.get("user_id"),
+            reason="manual edit",
         )
 
         save_categories_and_tags(
