@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS users (
  password_hash TEXT NOT NULL,
  role TEXT NOT NULL DEFAULT 'customer' CHECK(role IN ('customer','staff','admin')),
  anonymized_at TEXT,
+ -- Requirement 71: TOTP second factor.  A secret can exist while enrollment is
+ -- still unconfirmed, so `totp_enabled` (not the secret) is the gate.
+ totp_secret TEXT,
+ totp_enabled INTEGER NOT NULL DEFAULT 0,
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS books (
