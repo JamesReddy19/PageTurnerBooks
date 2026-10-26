@@ -148,13 +148,15 @@ def edit_book(book_id):
 
         # Optimistic locking (req 66): only apply the edit if nobody else has
         # saved this book since the form was rendered.  The version is bumped
-        # in the same statement, so two concurrent editors cannot both win.
+        # exactly once per successful save: by set_book_price when the price
+        # actually moves, or by the explicit statement below when it does not,
+        # so two concurrent editors still cannot both win.
         updated = connection.execute(
             """
             UPDATE books
             SET title = ?, author = ?, category = ?,
                 description = ?, stock = ?, color = ?, image = ?,
-                release_date = ?, version = version + 1
+                release_date = ?
             WHERE id = ? AND version = ?
             """,
             (
@@ -170,12 +172,21 @@ def edit_book(book_id):
                 "current values." % (old["title"],)
             )
 
+        price_changed = price != old["price_paise"]
+
         # Price writes go through the single choke point that records history
         # (req 54) and applies the optimistic lock's new row state.
         set_book_price(
             connection, book_id, price, session.get("user_id"),
             reason="manual edit",
         )
+
+        if not price_changed:
+            # A non-price edit still has to invalidate any other open form.
+            connection.execute(
+                "UPDATE books SET version = version + 1 WHERE id = ?",
+                (book_id,),
+            )
 
         save_categories_and_tags(
             book_id, category, request.form.get("tags", "")
