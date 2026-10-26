@@ -30,65 +30,87 @@
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 
+{# Marks the nav link that matches the page being viewed, so screen-reader and
+   sighted keyboard users can tell where they are. Emits nothing when inactive. #}
+{% macro aria_current(endpoint) -%}
+{%- if request.endpoint == endpoint %} aria-current="page"{% endif -%}
+{%- endmacro %}
 <body>
+<a class="skip-link no-print" href="#main-content">Skip to main content</a>
+
 <header class="site-header">
   <a class="brand" href="{{ url_for('shop.index') }}">
-    📚 PageTurner Books
+    <span class="brand-mark" aria-hidden="true">📚</span>
+    <span class="brand-text">PageTurner Books</span>
   </a>
 
-  <nav class="nav-links" aria-label="Main navigation">
-    <a href="{{ url_for('shop.index') }}">Shop</a>
+  <nav class="nav-links" id="primaryNav" aria-label="Main navigation">
+    <a href="{{ url_for('shop.index') }}"{{ aria_current('shop.index') }}>Shop</a>
 
-    <a href="{{ url_for('shop.cart') }}">
-      🛒 Cart <span class="cart-badge">{{ cart_count }}</span>
+    <a href="{{ url_for('shop.cart') }}"{{ aria_current('shop.cart') }}>
+      <span aria-hidden="true">🛒</span> Cart <span class="cart-badge">{{ cart_count }}</span>
     </a>
 
-    {% if current_user %}
-      <a href="{{ url_for('auth.addresses') }}">Addresses</a>
+    <span class="nav-sep" aria-hidden="true"></span>
 
-      <a href="{{ url_for('shop.wishlist') }}">
+    {% if current_user %}
+      <a href="{{ url_for('auth.addresses') }}"{{ aria_current('auth.addresses') }}>Addresses</a>
+
+      <a href="{{ url_for('shop.wishlist') }}"{{ aria_current('shop.wishlist') }}">
         <span aria-hidden="true">♡</span>
         Wishlist <span class="cart-badge">{{ wishlist_count }}</span>
       </a>
 
-      <a href="{{ url_for('shop.order_history') }}">Orders</a>
-      <a href="{{ url_for('shop.subscription') }}">Book of the month</a>
-      <a href="{{ url_for('auth.profile') }}">Profile</a>
-      <a href="{{ url_for('auth.devices') }}">Devices</a>
+      <a href="{{ url_for('shop.order_history') }}"{{ aria_current('shop.order_history') }}>Orders</a>
+      <a href="{{ url_for('shop.subscription') }}"{{ aria_current('shop.subscription') }}>Book of the month</a>
+      <a href="{{ url_for('auth.profile') }}"{{ aria_current('auth.profile') }}>Profile</a>
+      <a href="{{ url_for('auth.devices') }}"{{ aria_current('auth.devices') }}>Devices</a>
 
-      <a href="{{ url_for('notifications') }}">
+      <a href="{{ url_for('notifications') }}"{{ aria_current('notifications') }}>
         Notifications{% if unread_notifications %} ({{ unread_notifications }}){% endif %}
       </a>
 
       {% if current_user.role in ['admin', 'staff'] %}
-        <a href="{{ url_for('admin.orders') }}">Staff</a>
+        <a href="{{ url_for('admin.orders') }}"{{ aria_current('admin.orders') }}>Staff</a>
       {% endif %}
 
-      {% if current_user.role == 'admin' %}
-        <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+      {# One Admin link only: the password-login flag and an admin account can
+         both be true at once (see auth.login, which keeps the flag). #}
+      {% if current_user.role == 'admin' or session.get('admin_password_login') %}
+        <a href="{{ url_for('admin.dashboard') }}"{{ aria_current('admin.dashboard') }}>Admin</a>
       {% endif %}
 
       <span class="nav-greeting">Hi {{ current_user.name }}</span>
       <a href="{{ url_for('auth.logout') }}">Logout</a>
 
+    {% elif session.get('admin_password_login') %}
+      <a href="{{ url_for('admin.dashboard') }}"{{ aria_current('admin.dashboard') }}>Admin</a>
     {% else %}
-      <a href="{{ url_for('auth.login') }}">Login</a>
-      <a href="/admin/login">Admin Login</a>
+      <a href="{{ url_for('auth.login') }}"{{ aria_current('auth.login') }}>Login</a>
+      <a href="{{ url_for('admin.login') }}"{{ aria_current('admin.login') }}>Admin Login</a>
     {% endif %}
 
-    <a href="{{ url_for('contact') }}">Contact</a>
+    <a href="{{ url_for('contact') }}"{{ aria_current('contact') }}>Contact</a>
 
+    {% if session.get('admin_password_login') %}
+      <a href="{{ url_for('admin.logout') }}">Admin logout</a>
+    {% endif %}
+  </nav>
+
+  <div class="header-actions">
     <button type="button" class="theme-toggle no-print" id="themeToggle"
             aria-label="Switch colour theme" title="Switch colour theme">
       <span class="theme-toggle-icon-dark" aria-hidden="true">🌙</span>
       <span class="theme-toggle-icon-light" aria-hidden="true">☀️</span>
     </button>
 
-    {% if session.get('admin_password_login') %}
-      <a href="{{ url_for('admin.dashboard') }}">Admin</a>
-      <a href="{{ url_for('admin.logout') }}">Admin logout</a>
-    {% endif %}
-  </nav>
+    {# Progressive enhancement: without JS the nav simply wraps as before; the
+       toggle only becomes clickable once script.js has wired it up. #}
+    <button type="button" class="nav-toggle no-print" id="navToggle"
+            aria-expanded="false" aria-controls="primaryNav" aria-label="Menu">
+      <span class="nav-toggle-bars" aria-hidden="true"></span>
+    </button>
+  </div>
 </header>
 
 <main class="container">
