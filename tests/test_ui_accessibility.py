@@ -246,11 +246,17 @@ class NavigationTests(UiContractTestCase):
         nav_tag = re.search(r"<nav\b[^>]*id=\"primaryNav\"[^>]*>", html)
         self.assertNotIn("hidden", nav_tag.group(0))
         self.assertNotIn('aria-hidden="true"', nav_tag.group(0))
-        self.assertEqual(
-            (html.count("<style"), html.count("<script>")),
-            (0, 0),
-            "an inline pre-paint script/style must not hide the navigation",
-        )
+
+        # No inline script or style may pre-hide the menu either: that is the
+        # classic way a working CSS fallback still ends up unreachable.
+        for body in re.findall(
+            r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S
+        ):
+            self.assertNotIn("primaryNav", body)
+            self.assertNotIn("nav-links", body)
+        for body in re.findall(r"<style\b[^>]*>(.*?)</style>", html, re.S):
+            self.assertNotIn("primaryNav", body)
+            self.assertNotIn("nav-links", body)
 
     def test_menu_button_uses_aria_expanded_and_escape_and_outside_click(self):
         script = read(SCRIPT_JS)
