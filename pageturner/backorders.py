@@ -90,14 +90,6 @@ def allocate_backorders(connection, book_id, notify=None):
     ).fetchall()
 
     for row in queue:
-        if allocated >= 0:
-            stock_row = connection.execute(
-                "SELECT stock, title FROM books WHERE id = ?", (book_id,)
-            ).fetchone()
-
-            if not stock_row or stock_row["stock"] <= 0:
-                break
-
         remaining = row["quantity"] - row["fulfilled_quantity"]
 
         if remaining <= 0:
