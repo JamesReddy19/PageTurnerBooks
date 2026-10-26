@@ -205,7 +205,29 @@ def init_db():
             "INSERT INTO schema_version(version) VALUES (1)"
         )
 
+    # One-time baseline for price history: books that have never been edited
+    # through set_book_price get a single "initial price" row so the audit
+    # trail starts from a known value.  Existing price rows are never touched.
+    connection.execute(
+        """
+        INSERT INTO book_price_history
+            (book_id, old_price_paise, new_price_paise, reason, actor_user_id)
+        SELECT b.id, NULL, b.price_paise, 'initial price', NULL
+        FROM books b
+        WHERE NOT EXISTS (
+            SELECT 1 FROM book_price_history h WHERE h.book_id = b.id
+        )
+        """
+    )
+
     connection.commit()
+
+    # Seal legacy audit rows into the hash chain (idempotent: only rows whose
+    # row_hash is still NULL are hashed, and an existing head is preserved).
+    from .audit import seal_chain
+
+    if seal_chain(connection):
+        connection.commit()
 
     seed_categories(connection)
     seed_shipping_zones(connection)
