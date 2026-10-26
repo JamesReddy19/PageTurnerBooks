@@ -104,6 +104,15 @@ def login():
             )
             connection.commit()
 
+            # Requirement 71: a correct password only gets you as far as the
+            # second-factor prompt.  Nothing is signed in yet - the pending
+            # state is a user id plus its start time, and it is consumed by the
+            # /login/2fa POST.
+            if user["totp_enabled"]:
+                session["pending_2fa_user_id"] = user["id"]
+                session["pending_2fa_started"] = int(time.time())
+                return redirect(url_for("auth.login_two_factor"))
+
             save_login_session(user)
 
             destination = request.args.get("next", "")
