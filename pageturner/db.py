@@ -208,17 +208,7 @@ def init_db():
     # One-time baseline for price history: books that have never been edited
     # through set_book_price get a single "initial price" row so the audit
     # trail starts from a known value.  Existing price rows are never touched.
-    connection.execute(
-        """
-        INSERT INTO book_price_history
-            (book_id, old_price_paise, new_price_paise, reason, actor_user_id)
-        SELECT b.id, NULL, b.price_paise, 'initial price', NULL
-        FROM books b
-        WHERE NOT EXISTS (
-            SELECT 1 FROM book_price_history h WHERE h.book_id = b.id
-        )
-        """
-    )
+    backfill_price_history_baseline(connection)
 
     connection.commit()
 
