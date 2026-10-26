@@ -28,6 +28,18 @@
 </label>
 <label>6-digit pincode<input name="pincode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Required for a new address">
 </label>
+<h2>Gift options</h2>
+<label class="inline-check"><input type="checkbox" name="gift_wrap" value="1"> Add gift wrap (+{{ money(gift_wrap_paise) }})</label>
+<label>Gift message (optional, up to {{ gift_message_max_length }} characters)<textarea name="gift_message" rows="3" maxlength="{{ gift_message_max_length }}" placeholder="Printed on the invoice"></textarea>
+</label>
+<h2>Loyalty points</h2>
+{% if loyalty_balance %}
+<p>You have <strong>{{ loyalty_balance }} points</strong> available.</p>
+<label>Points to use (100 points = ₹10)<input name="points_to_redeem" inputmode="numeric" pattern="[0-9]*" min="0" max="{{ loyalty_balance }}" value="0">
+</label>
+{% else %}
+<p class="muted">You have no points yet — you earn 1 point for every ₹100 spent.</p>
+{% endif %}
 <button class="checkout-button">Place order</button>
 </form>
 <aside class="panel">
