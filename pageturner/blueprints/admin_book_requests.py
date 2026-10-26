@@ -6,8 +6,8 @@ Sorted by request count, so the most-wanted books are literally the top rows.
 from flask import flash, redirect, render_template, url_for
 
 from ..db import get_db
-from ..helpers import log_admin_action
-from .admin import admin_bp, staff_or_admin
+from ..helpers import log_admin_action, permission_required
+from .admin import admin_bp
 
 
 @admin_bp.get("/book-requests")

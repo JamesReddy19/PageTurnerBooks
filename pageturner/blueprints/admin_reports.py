@@ -4,7 +4,7 @@ import io
 from datetime import datetime, timedelta
 from flask import abort, flash, make_response, redirect, request, render_template, url_for
 from ..db import get_db
-from ..helpers import role_required, log_admin_action, audit_action
+from ..helpers import role_required, log_admin_action, audit_action, permission_required
 from .admin import admin_bp
 
 @admin_bp.get("/reports")

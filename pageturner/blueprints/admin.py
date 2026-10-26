@@ -19,12 +19,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
 
 from ..db import get_db
-from ..helpers import (
-    log_admin_action,
-    role_required,
-    rupees_to_paise,
-    ORDER_STATUS_TRANSITIONS,
-)
+from ..helpers import log_admin_action, rupees_to_paise, ORDER_STATUS_TRANSITIONS, permission_required
 from ..pricing import price_history_for_books
 
 
