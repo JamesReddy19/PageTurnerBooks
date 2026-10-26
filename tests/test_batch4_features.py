@@ -148,6 +148,7 @@ class HiddenReviewRatingTests(BatchFourTestCase):
         super().setUp()
         self.book_id = self.add_book()
         self.author_id = self.register_and_login()
+        self.other_id = self.add_user("second@example.com")
 
     def rating_row(self):
         with self.app.app_context():
@@ -160,7 +161,7 @@ class HiddenReviewRatingTests(BatchFourTestCase):
 
     def test_visible_reviews_are_averaged(self):
         self.add_review(self.book_id, self.author_id, rating=4)
-        self.add_review(self.book_id, self.author_id + 1, rating=2)
+        self.add_review(self.book_id, self.other_id, rating=2)
 
         row = self.rating_row()
 
@@ -169,7 +170,7 @@ class HiddenReviewRatingTests(BatchFourTestCase):
 
     def test_hidden_review_leaves_the_average_and_the_count(self):
         kept = self.add_review(self.book_id, self.author_id, rating=5)
-        hidden = self.add_review(self.book_id, self.author_id + 1, rating=1)
+        hidden = self.add_review(self.book_id, self.other_id, rating=1)
 
         with self.app.app_context():
             connection = get_db()
@@ -193,8 +194,12 @@ class HiddenReviewRatingTests(BatchFourTestCase):
         self.assertEqual([review["id"] for review in visible], [kept])
 
     def test_storefront_page_agrees_with_the_helper(self):
-        self.add_review(self.book_id, self.author_id, rating=5)
-        hidden = self.add_review(self.book_id, self.author_id + 1, rating=1)
+        self.add_review(
+            self.book_id, self.author_id, rating=5, comment="Kept comment"
+        )
+        hidden = self.add_review(
+            self.book_id, self.other_id, rating=1, comment="Hidden comment"
+        )
 
         with self.app.app_context():
             connection = get_db()
@@ -208,9 +213,13 @@ class HiddenReviewRatingTests(BatchFourTestCase):
         self.assertEqual(response.status_code, 200)
         body = response.data.decode()
 
-        # The hidden review's text must not appear, and the count is 1.
-        self.assertNotIn("Good", body.split("reviews")[-1] if False else body)
-        self.assertIn("5.0", body.replace("5.00", "5.0"))
+        # The page must render the same number the helper computes.
+        self.assertIn("Customer reviews (1)", body)
+        self.assertIn("5.0 / 5", body)
+
+        # The hidden review's text must not be published.
+        self.assertIn("Kept comment", body)
+        self.assertNotIn("Hidden comment", body)
 
 
 class HelpfulVoteTests(BatchFourTestCase):
