@@ -128,6 +128,19 @@ def _migrate_columns(connection):
     add_column_if_missing(connection, "reviews", "hidden_by", "INTEGER")
     add_column_if_missing(connection, "users", "anonymized_at", "TEXT")
 
+    # Requirement 63/64: the order records how much of the total came from an
+    # automatic pricing rule and from a gift card, so the invoice can explain the
+    # total instead of only showing a number.
+    add_column_if_missing(
+        connection, "orders", "rules_discount_paise",
+        "INTEGER NOT NULL DEFAULT 0"
+    )
+    add_column_if_missing(
+        connection, "orders", "gift_card_paise",
+        "INTEGER NOT NULL DEFAULT 0"
+    )
+    add_column_if_missing(connection, "orders", "gift_card_id", "INTEGER")
+
 
 def init_db():
     connection = get_db()
