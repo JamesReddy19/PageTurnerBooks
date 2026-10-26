@@ -128,11 +128,17 @@ def permissions_for_role(role):
         g._permission_cache = cache
 
     if role not in cache:
-        rows = get_db().execute(
-            "SELECT permission_code FROM role_permissions WHERE role = ?",
-            (role,),
-        ).fetchall()
-        cache[role] = {row["permission_code"] for row in rows}
+        connection = get_db()
+
+        if role == SUPERUSER_ROLE:
+            rows = connection.execute("SELECT code FROM permissions").fetchall()
+        else:
+            rows = connection.execute(
+                "SELECT permission_code AS code FROM role_permissions WHERE role = ?",
+                (role,),
+            ).fetchall()
+
+        cache[role] = {row["code"] for row in rows}
 
     return cache[role]
 
