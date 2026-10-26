@@ -80,3 +80,83 @@ def old_export_url():
 @permission_required("reports.view")
 def old_report_url():
     return redirect(url_for("admin.reports"))
+
+
+def _requested_months():
+    """Parse ``?months=`` into a sane month count (req 74).
+
+    A bad value widens to the default rather than erroring: this is a read-only
+    report and the page still renders usefully.
+    """
+    try:
+        months = int(request.args.get("months", DEFAULT_MONTHS))
+    except (TypeError, ValueError):
+        return DEFAULT_MONTHS
+
+    return max(1, min(months, MAX_MONTHS))
+
+
+@admin_bp.get("/reports/growth")
+@permission_required("reports.view")
+def growth_report():
+    """Month-over-month growth table (req 74).
+
+    Uses ``LAG``/``SUM() OVER``/``AVG() OVER`` in SQLite rather than a Python
+    loop, so the previous-month comparison, running total and rolling average
+    are all produced by the database in one pass.
+    """
+    months = _requested_months()
+    rows = monthly_growth(get_db(), months=months)
+    start_month, end_month = month_window(months)
+
+    return render_template(
+        "admin_growth.html",
+        rows=rows,
+        summary=growth_summary(rows),
+        months=months,
+        max_months=MAX_MONTHS,
+        start_month=start_month,
+        end_month=end_month,
+    )
+
+
+@admin_bp.get("/reports/growth.csv")
+@permission_required("reports.view")
+def growth_report_csv():
+    """The growth table as CSV, so any figure can be hand-checked in a sheet."""
+    rows = monthly_growth(get_db(), months=_requested_months())
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "month",
+            "orders",
+            "revenue_paise",
+            "previous_month_revenue_paise",
+            "change_paise",
+            "growth_percent",
+            "running_revenue_paise",
+            "rolling_three_month_revenue_paise",
+        ]
+    )
+
+    for row in rows:
+        writer.writerow(
+            [
+                row["month"],
+                row["orders"],
+                row["revenue"],
+                "" if row["previous_revenue"] is None else row["previous_revenue"],
+                "" if row["change_paise"] is None else row["change_paise"],
+                "" if row["growth_percent"] is None else row["growth_percent"],
+                row["running_revenue"],
+                row["rolling_three_revenue"],
+            ]
+        )
+
+    response = make_response(output.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = "attachment; filename=pageturner-growth.csv"
+    return response
+
