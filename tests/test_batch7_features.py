@@ -13,6 +13,7 @@ Each test is written to fail on the pre-batch-7 code:
 These tests assert behaviour through the real routes wherever a route exists.
 """
 
+import base64
 import os
 import re
 import tempfile
