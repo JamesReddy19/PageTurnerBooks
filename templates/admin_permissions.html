@@ -39,6 +39,7 @@
                     <td class="centre">
                         {% if role == superuser_role %}
                         <input type="checkbox" checked disabled
+                               aria-label="All permissions, permanently held by the {{ superuser_role }} role"
                                title="The {{ superuser_role }} role always holds every permission">
                         {% else %}
                         <input type="checkbox" name="grant"
