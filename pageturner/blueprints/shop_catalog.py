@@ -5,6 +5,11 @@ from datetime import date, timedelta
 from flask import abort, render_template, request, session
 from ..db import get_db
 from ..helpers import current_user
+from ..reviews import (
+    AVERAGE_RATING_SQL,
+    REVIEW_COUNT_SQL,
+    helpful_vote_counts,
+)
 from .shop import shop_bp, customers_also_bought, recommended_books
 
 

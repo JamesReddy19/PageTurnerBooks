@@ -4,6 +4,7 @@ from datetime import datetime
 from flask import Blueprint, session
 from ..db import get_db
 from ..helpers import active_reservations, current_user, effective_book_price
+from ..reviews import AVERAGE_RATING_SQL
 
 shop_bp = Blueprint("shop", __name__)
 
