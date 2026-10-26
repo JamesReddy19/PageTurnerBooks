@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Audit log · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Audit log</h1>
+<p class="muted">
+  Every administrative action is written to a hash chain: each row stores the
+  hash of the row before it, so an edited, deleted, inserted or reordered row
+  breaks verification at a detectable point.
+</p>
+
+<section class="panel">
+<h2>Chain verification</h2>
+<p class="{% if verification.ok %}success-text{% else %}error-text{% endif %}">
+  {% if verification.ok %}✔{% else %}✖{% endif %}
+  {{ verification.reason }}
+</p>
+{% if not verification.ok %}
+<p class="muted">
+  First row that fails verification: {{ verification.first_broken_row_id }}.
+  Treat the audit trail as untrusted until this is investigated.
+</p>
+{% endif %}
+</section>
+
+<section class="panel">
+<h2>Most recent entries</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>When</th>
+<th>Actor</th>
+<th>Action</th>
+<th>Detail</th>
+<th>Row hash</th>
+</tr>
+</thead>
+<tbody>
+{% for row in rows %}
+<tr>
+<td>{{ row.id }}</td>
+<td>{{ row.created_at }}</td>
+<td>{{ row.actor_email or 'system' }}</td>
+<td>{{ row.action }}</td>
+<td>{{ row.detail }}</td>
+<td><code title="{{ row.row_hash }}">{{ (row.row_hash or '')[:12] }}…</code></td>
+</tr>
+{% else %}
+<tr>
+<td colspan="6">No administrative actions recorded yet.</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</section>
+{% endblock %}
