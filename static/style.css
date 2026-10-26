@@ -1550,6 +1550,18 @@ td form + form {
     margin: 1rem 0;
 }
 
+/* Requirement 74: direction of a month-over-month change.  Both colours come
+   from theme tokens, so the dark palette overrides them for free. */
+.positive {
+    color: var(--success);
+    font-variant-numeric: tabular-nums;
+}
+
+.negative {
+    color: var(--danger);
+    font-variant-numeric: tabular-nums;
+}
+
 .edit-book {
     padding: 1rem 0;
     border-bottom: 1px solid var(--line);
