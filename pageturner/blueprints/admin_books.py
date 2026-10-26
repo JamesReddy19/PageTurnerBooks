@@ -7,7 +7,33 @@ from flask import abort, flash, redirect, request, session, url_for
 
 from ..db import get_db
 from ..helpers import role_required, log_admin_action, add_notification, audit_action
+from ..pricing import apply_percentage, set_book_price
 from .admin import admin_bp, read_book_form, save_uploaded_image, save_categories_and_tags
+
+
+def read_book_version():
+    """Read the optimistic-locking version submitted with an edit form.
+
+    The version travels in a hidden field, so a missing or unparsable value
+    means the form was not produced by a current page.  Treat that as a
+    conflict rather than as "no check needed": silently overwriting a stale
+    edit is exactly what requirement 66 forbids.
+    """
+    raw = request.form.get("version", "").strip()
+
+    try:
+        version = int(raw)
+    except ValueError:
+        raise ValueError(
+            "This page is out of date. Reload the book list and edit again."
+        )
+
+    if version < 1:
+        raise ValueError(
+            "This page is out of date. Reload the book list and edit again."
+        )
+
+    return version
 
 
 def read_release_date():
