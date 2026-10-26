@@ -18,6 +18,7 @@ growth report and no ``pageturner.growth`` module.
 import csv
 import io
 import os
+import re
 import tempfile
 import unittest
 from datetime import date
