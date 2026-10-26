@@ -27,4 +27,18 @@
 </form>
 </section>
 
+<section class="panel">
+<h2>Your data</h2>
+<p class="muted">
+  Download a copy of everything PageTurner stores about you — account details,
+  orders and their items, loyalty ledger, reviews, wishlist, addresses, returns
+  and signed-in devices. The file is JSON and does not include your password.
+</p>
+<p>
+<a class="button secondary" href="{{ url_for('auth.export_my_data') }}">
+  Download my data (JSON)
+</a>
+</p>
+</section>
+
 {% endblock %}
