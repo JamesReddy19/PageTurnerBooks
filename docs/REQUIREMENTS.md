@@ -197,6 +197,48 @@ release — never on boot, so a restart can never reseed or wipe a live database
 
 ---
 
+## Gap list — what remains (47–76)
+
+**Done and verified by executed checks:** 47, 48, 49, 56, 57, 67, 75 (7 of 29).
+**Remaining: 22.** Ordered by dependency, cheapest first, so each batch leaves the
+app deployable.
+
+| Batch | Reqs | Missing capability (one line each) | New storage |
+|---|---|---|---|
+| 3 | 60 | Dark mode: no `localStorage`, no CSS-variable theme, no pre-paint script (white flash) | — |
+| 3 | 58 | Data export: `auth_profile` has no JSON download route, no `Content-Disposition` | — |
+| 3 | 54 | Price history: no `price_history`; price written in two places (`admin.py` INSERT, `admin_books.py` UPDATE), needs one `set_book_price()` choke point | `price_history` |
+| 3 | 55 | Bulk price change: no selection UI, and `execute` per book instead of one statement | — |
+| 3 | 66 | Optimistic locking: `books` has no `version` column; edit is a blind `UPDATE ... WHERE id=?` | `books.version` |
+| 3 | 68 | Audit log chain: `admin_log` has no `prev_hash`/`row_hash`; single chokepoint `log_admin_action()` makes this a one-function change | `admin_log.prev_hash`, `row_hash` |
+| 4 | 50 | Helpful votes: no `review_votes` table, no button, no count; needs `UNIQUE(user_id, review_id)` per Q2 above | `review_votes` |
+| 4 | 51 | Report a review: no `hidden` flag, no report table, no admin queue — **blocked on decision 1** | `review_reports`, `reviews.hidden` |
+| 4 | 52 | Request a book: no table, no form, no aggregation view; needs normalised title key + `COUNT(*)` ordering | `book_requests` |
+| 4 | 53 | Share a wishlist: `wishlist` exists but there is no share token, no `/w/<token>` route, no revoke | `wishlist_shares` |
+| 4 | 59 | Delete my account: no anonymise path, no password re-auth, sessions not invalidated — **blocked on decision 2** (`users.email NOT NULL UNIQUE`) | — |
+| 5 | 61 | Idempotent checkout: no `checkout_tokens`; refresh/Back re-posts and duplicates orders | `checkout_tokens` |
+| 5 | 62 | Edit order before packing: only `cancel`/`invoice`/`return` exist; `coupon_discount()` already re-checks `min_order_paise`/`usage_limit` for the re-price rule | — |
+| 5 | 63 | Pricing rules: no `pricing_rules` table; only coupon percent logic exists | `pricing_rules` |
+| 5 | 64 | Gift cards: no card/ledger tables; needs hash-only storage + ledger `SUM` balance — **decision 3 (simulated capture)** | `gift_cards`, `gift_card_ledger` |
+| 5 | 65 | Backorders: no backorder concept; `stock` is debited unconditionally at checkout — **decision 4 (no negative stock)** | `backorders` |
+| 6 | 69 | Notification outbox: `notifications` has no attempt counter/retry/give-up; outbox must be written in the same transaction as the event | `notification_outbox` |
+| 6 | 70 | Book-of-the-month: no `subscriptions`, no "run due" action | `subscriptions` |
+| 7 | 71 | TOTP 2FA: no `hmac`/`struct` TOTP, no secret column, no replay store | `users.totp_secret`, replay table |
+| 7 | 72 | API keys + scopes: no `api_keys`, `/api/` is unauthenticated, and `rate_limit()` is keyed by IP not key | `api_keys` |
+| 7 | 73 | Permissions table: `role_required` at **27 call sites**, no `permissions`/`role_permissions` — largest refactor, do last | `permissions`, `role_permissions` |
+| 8 | 74 | Growth report: no `LAG`/`SUM OVER`; CSV export already exists to hand-check the result | — |
+
+**Req 76 (tests continuously)** is only partly met today: 32 tests cover 77
+routes, so the shopping and security paths that already exist are mostly
+uncovered. Each batch above must add the tests for what it implements, and the
+batch is not "Done" until those tests fail-then-pass. Req 77 (`stress.py`) is
+sequenced after 61 and 65, because those are what make concurrent checkout safe.
+
+**Blocked on decisions 1–4 below** before any of 51, 59, 64, 65 can be coded
+honestly. Everything else can start immediately.
+
+---
+
 ## Open decisions (needed before coding these)
 
 1. **Req 51 — does a hidden review's rating still count in the average?**
