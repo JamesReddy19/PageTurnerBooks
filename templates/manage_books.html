@@ -178,6 +178,32 @@
                            accept=".jpg,.jpeg,.png,.webp">
                 </label>
 
+                {% set history = price_history.get(book.id, []) %}
+                {% if history %}
+                    <div class="full-width">
+                        <h3>Recent price changes</h3>
+                        <ul class="price-history">
+                            {% for change in history %}
+                                <li>
+                                    {% if change.old_price_paise is none %}
+                                        Set to {{ money(change.new_price_paise) }}
+                                    {% else %}
+                                        {{ money(change.old_price_paise) }} →
+                                        {{ money(change.new_price_paise) }}
+                                    {% endif %}
+                                    <span class="muted">
+                                        · {{ change.reason }}
+                                        · {{ change.changed_at }}
+                                        {% if change.actor_email %}
+                                            · {{ change.actor_email }}
+                                        {% endif %}
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
                 <div class="full-width">
                     <button type="submit">Save changes</button>
                 </div>
