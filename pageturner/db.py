@@ -132,14 +132,21 @@ def _migrate_columns(connection):
 def init_db():
     connection = get_db()
 
-    # Additive column migrations first, then the schema: see _migrate_columns
-    # for why the order matters on a database that predates a column.
+    # Additive column migrations run on both sides of the schema:
+    #  * before, so schema.sql's indexes over new columns (reviews.hidden) can be
+    #    created on a database that predates them;
+    #  * after, because a fresh database has no tables yet during the first pass,
+    #    so columns that only exist as migrations still need applying to the
+    #    tables schema.sql just created.
+    # The helper is idempotent, so the second pass is a no-op on an upgraded DB.
     _migrate_columns(connection)
 
     schema_path = Path(current_app.root_path).parent / "schema.sql"
     connection.executescript(
         schema_path.read_text(encoding="utf-8")
     )
+
+    _migrate_columns(connection)
 
     # Requirement 50/51/52/53 tables.  schema.sql declares these for fresh
     # installs; repeating them here migrates databases created before batch 4,
