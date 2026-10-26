@@ -344,11 +344,19 @@ def manage_books():
         "SELECT * FROM tags ORDER BY name"
     ).fetchall()
 
+    # Recent price changes per book, newest first (req 54/55 audit trail).
+    from ..pricing import price_history_for_books
+
+    price_history = price_history_for_books(
+        get_db(), [book["id"] for book in books], per_book=3
+    )
+
     return render_template(
         "manage_books.html",
         books=books,
         categories=categories,
         tags=tags,
+        price_history=price_history,
     )
 
 
