@@ -297,7 +297,12 @@ class ApiKeyTests(BatchSevenTestCase):
             "/api/me", headers={"Authorization": f"Bearer {token}"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json()["name"], "test key")
+
+        payload = response.get_json()
+        self.assertEqual(payload["key"]["name"], "test key")
+        self.assertEqual(payload["key"]["scopes"], ["books:read"])
+        # The plaintext token must not be echoed back by the API.
+        self.assertNotIn(token, response.data.decode())
 
     def test_a_revoked_key_stops_working_immediately(self):
         token, row = self.issue(["books:read"])
