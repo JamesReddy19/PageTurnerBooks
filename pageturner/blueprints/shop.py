@@ -3,7 +3,7 @@
 from datetime import datetime
 from flask import Blueprint, session
 from ..db import get_db
-from ..helpers import active_reservations, current_user
+from ..helpers import active_reservations, current_user, effective_book_price
 
 shop_bp = Blueprint("shop", __name__)
 
@@ -41,11 +41,18 @@ def get_cart_rows():
         if not book:
             continue
 
-        line_total = book["price_paise"] * quantity
+        # Requirement 47: the cart must charge the same price the catalog shows,
+        # so the flash-sale window is evaluated here rather than reading the
+        # list price directly. estimated_price is what the line is worth; the
+        # reservation check below uses book[quantity] by regular price, because
+        # a reservation is about stock, not money.
+        unit_price = effective_book_price(book)
+        line_total = unit_price * quantity
         subtotal += line_total
         items.append({
             "book": book,
             "quantity": quantity,
+            "unit_price": unit_price,
             "line_total": line_total
         })
 
