@@ -425,6 +425,26 @@ def place_order():
         points_discount = points_used * 10
         total = payable_before_points - points_discount
 
+        # Requirement 64: a gift card pays last, and only for what is left. The
+        # debit is a ledger row inside this transaction, so a failed order cannot
+        # consume the card and a replayed order cannot spend it twice.
+        gift_card_code = (request.form.get("gift_card_code") or "").strip()
+        gift_card_id = None
+        gift_card_paise = 0
+
+        if gift_card_code:
+            gift_card_id, gift_card_paise = giftcards.redeem_gift_card(
+                connection, gift_card_code, 0, total
+            )
+
+            if gift_card_id is None:
+                raise ValueError(
+                    "That gift card cannot be used - check the code, or whether "
+                    "it has expired or been cancelled."
+                )
+
+            total -= gift_card_paise
+
         # Points are earned on the amount actually paid, not the pre-discount
         # subtotal, so redeeming points cannot inflate future earnings.
         points_earned = loyalty_points_earned(total)
@@ -436,35 +456,40 @@ def place_order():
                 subtotal_paise, discount_paise, shipping_paise,
                 tax_paise, total_paise, coupon_code, pincode, status,
                 gift_wrap_paise, gift_message,
-                loyalty_points_earned, loyalty_points_redeemed
+                loyalty_points_earned, loyalty_points_redeemed,
+                rules_discount_paise, gift_card_paise, gift_card_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Placed', ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Placed', ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user_id, name, phone, address, subtotal, discount,
                 shipping, tax, total,
                 coupon["code"] if coupon else None, pincode,
                 gift_wrap_paise, gift_message or None,
-                points_earned, points_used
+                points_earned, points_used,
+                rules_discount, gift_card_paise, gift_card_id
             )
         )
 
         order_id = cursor.lastrowid
 
         for book, quantity, line_total in checked_items:
-            changed = connection.execute(
-                """
-                UPDATE books
-                SET stock = stock - ?
-                WHERE id = ? AND stock >= ?
-                """,
-                (quantity, book["id"], quantity)
-            ).rowcount
+            ship_now = ship_now_by_book.get(book["id"], quantity)
 
-            if changed != 1:
-                raise ValueError(
-                    f"Stock changed for {book['title']}. Please try again."
-                )
+            if ship_now:
+                changed = connection.execute(
+                    """
+                    UPDATE books
+                    SET stock = stock - ?
+                    WHERE id = ? AND stock >= ?
+                    """,
+                    (ship_now, book["id"], ship_now)
+                ).rowcount
+
+                if changed != 1:
+                    raise ValueError(
+                        f"Stock changed for {book['title']}. Please try again."
+                    )
 
             connection.execute(
                 """
@@ -476,18 +501,41 @@ def place_order():
                 (order_id, book["id"], quantity, line_total // quantity)
             )
 
-            # One ledger row per purchased line, inside the same transaction as
+            # One ledger row per shipped line, inside the same transaction as
             # the stock debit above, so the ledger and `books.stock` can never
             # disagree about a purchase.
-            connection.execute(
-                """
-                INSERT INTO stock_log(
-                    book_id, change_amount, reason, order_id, actor_user_id
+            if ship_now:
+                connection.execute(
+                    """
+                    INSERT INTO stock_log(
+                        book_id, change_amount, reason, order_id, actor_user_id
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (book["id"], -ship_now, "purchase", order_id, user_id)
                 )
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (book["id"], -quantity, "purchase", order_id, user_id)
-            )
+
+            # Requirement 65: whatever could not ship is queued, oldest-first on
+            # restock, so nothing is silently dropped and no stock is invented.
+            backordered = quantity - ship_now
+
+            if backordered > 0:
+                backorders.record_backorder(
+                    connection, book["id"], user_id, order_id, backordered
+                )
+
+                connection.execute(
+                    """
+                    INSERT INTO order_status_history(
+                        order_id, old_status, new_status, changed_by, note
+                    )
+                    VALUES (?, NULL, 'Placed', ?, ?)
+                    """,
+                    (
+                        order_id, user_id,
+                        f"{backordered} x {book['title']} on backorder"
+                    )
+                )
 
         # Requirement 49: the ledger is the single source of truth for the
         # balance, so both movements are written in this same transaction as the
@@ -521,6 +569,10 @@ def place_order():
                 """,
                 (coupon["id"], user_id, order_id)
             )
+
+        # Requirement 61: remember the order this token produced, so the next
+        # POST with the same token can be redirected instead of repeated.
+        idempotency.attach_order(connection, checkout_token, order_id)
 
         connection.execute(
             "DELETE FROM reservations WHERE cart_key = ?",
