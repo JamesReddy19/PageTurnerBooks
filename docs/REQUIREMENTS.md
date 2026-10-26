@@ -374,6 +374,54 @@ rely on a Python check where the database can enforce the rule.*
 
 ---
 
+## Requirements 121–140 — batch 9
+
+**Supply status.** Only requirement 128 arrived with its text. Requirements
+121–127 and 129–140 were not present in the message, the working tree, either
+branch, or any `.md`/`.txt` blob in the 390 commits of history (`git rev-list
+--all` grepped). They are **not implemented and not guessed at** — inventing
+twenty requirements would have produced code nobody asked for. Requirement 128
+was implemented in full; the rest are waiting on their text.
+
+### Requirement 128 — one authoritative free-delivery threshold of ₹500
+
+The project held three disagreeing ideas about delivery:
+
+1. `config.FREE_SHIPPING_PAISE` was `100000` — a ₹1000 threshold, not the ₹500
+   the brief states;
+2. checkout carried a hardcoded `8000` fallback for a pincode with no shipping
+   zone, while the pre-packing order edit read `config["SHIPPING_PAISE"]`, a key
+   that **was never defined** — so any order edited below the threshold raised
+   `KeyError` and the page 500'd instead of re-pricing;
+3. no screen stated the threshold, so the number could drift unnoticed.
+
+Resolution — one constant, read by both order paths and every screen:
+
+| Piece | Where | Value / behaviour |
+|---|---|---|
+| `FREE_SHIPPING_PAISE` | `pageturner/config.py` | `50_000` (₹500), integer paise, assigned **once** in the whole package |
+| `DEFAULT_SHIPPING_PAISE` | `pageturner/config.py` | `8_000`, the flat fee below the threshold when the pincode has no zone — replaces both the literal `8000` and the undefined `SHIPPING_PAISE` |
+| checkout | `shop_checkout.py` | `subtotal − discount >= FREE_SHIPPING_PAISE → 0`, else zone fee, else the config fee |
+| pre-pack edit | `shop_order_edit.py` | a lost free-delivery status charges the same config fee; the `KeyError` is gone |
+| screens | `templates/cart.html`, `templates/checkout.html` | rendered from `free_shipping_paise` exposed by the `__init__.py` context processor; the cart also states how much is still needed |
+
+The comparison is `>=`, so ₹500 exactly is free — the boundary is tested on both
+sides (₹500 → 0, ₹499.99 → fee). No schema change was required or made; the
+columns already existed. `instance/database.db` was copied to
+`instance/database.db.bak-*` before any edit anyway, and `.gitignore` now covers
+`instance/*.bak-*` so a database file can never be committed by accident.
+
+**Evidence** — `tests/test_requirement_128_shipping.py`, 12 tests. Six of them
+fail on the pre-fix code (verified by restoring `100000`): the constant value,
+free delivery at exactly the threshold, both edit-path cases, the both-screens
+render check, and the "how much more is needed" line. The `KeyError` is proven
+separately by restoring the old `config["SHIPPING_PAISE"]` line, which fails with
+`KeyError: 'SHIPPING_PAISE'` at `shop_order_edit.py:313`. The screen test moves
+the constant to `123_400` and asserts the pages then show ₹1,234 and no longer
+show ₹500 — which is what proves the templates do not hardcode the number.
+
+---
+
 ## Working protocol (per batch)
 
 1. Verify branch/HEAD/worktree clean; create a checkpoint tag.
