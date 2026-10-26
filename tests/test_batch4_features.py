@@ -111,6 +111,22 @@ class BatchFourTestCase(unittest.TestCase):
             connection.commit()
             return cursor.lastrowid
 
+    def add_user(self, email, name="Second Reader", password="Reading123"):
+        """Create an extra account directly, so a review can be attributed."""
+        from werkzeug.security import generate_password_hash
+
+        with self.app.app_context():
+            connection = get_db()
+            cursor = connection.execute(
+                """
+                INSERT INTO users (name, email, password_hash, role)
+                VALUES (?, ?, ?, 'customer')
+                """,
+                (name, email, generate_password_hash(password)),
+            )
+            connection.commit()
+            return cursor.lastrowid
+
     def add_review(self, book_id, user_id, rating=5, comment="Good", name="Reader"):
         with self.app.app_context():
             connection = get_db()
@@ -119,7 +135,7 @@ class BatchFourTestCase(unittest.TestCase):
                 INSERT INTO reviews (book_id, user_id, name, rating, comment)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (book_id, user_id, rating, comment, name),
+                (book_id, user_id, name, rating, comment),
             )
             connection.commit()
             return cursor.lastrowid
