@@ -30,6 +30,7 @@
        dark theme only has to override this block — not 90 selectors. */
     --ink-strong: #26332d;
     --teal-deep: #285b50;
+    --teal-hover: #104e47;
     --teal-light-strong: #d2e7df;
     --surface: #ffffff;
     --surface-warm: #fffdf8;
