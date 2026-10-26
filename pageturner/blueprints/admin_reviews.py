@@ -24,8 +24,7 @@ def review_moderation():
     if status not in STATUS_FILTERS:
         status = "open"
 
-    where = "" if status == "all" else "WHERE r.hidden = ?" if False else ""
-    params = []
+    where = ""
 
     if status == "open":
         where = (
@@ -95,7 +94,8 @@ def hide_review_route(review_id):
     ).fetchone()
 
     if review is None:
-        abort_missing("That review no longer exists.")
+        flash("That review no longer exists.", "error")
+        return redirect(url_for("admin.review_moderation"))
 
     hide_review(connection, review_id, current_user()["id"])
     connection.commit()
@@ -120,7 +120,8 @@ def keep_review_route(review_id):
     ).fetchone()
 
     if review is None:
-        abort_missing("That review no longer exists.")
+        flash("That review no longer exists.", "error")
+        return redirect(url_for("admin.review_moderation"))
 
     keep_review(connection, review_id, current_user()["id"])
     connection.commit()
@@ -133,21 +134,3 @@ def keep_review_route(review_id):
     flash("Review kept and public. Its reports were dismissed.", "success")
 
     return redirect(url_for("admin.review_moderation", status=request.args.get("status", "open")))
-
-
-def abort_missing(message):
-    """Deleting a row while the page is open should not be a 500."""
-    flash(message, "error")
-    raise _RedirectToQueue()
-
-
-from werkzeug.routing import BuildError  # noqa: E402  (kept local to the helper)
-
-
-class _RedirectToQueue(Exception):
-    pass
-
-
-@admin_bp.errorhandler(_RedirectToQueue)
-def _handle_redirect_to_queue(error):  # pragma: no cover - safety net
-    return redirect(url_for("admin.review_moderation"))
