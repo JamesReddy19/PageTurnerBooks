@@ -1,9 +1,14 @@
-"""Imported an existing PageTurner Books database into the new integer-paise schema.
+"""Imports an existing PageTurner Books database into the integer-paise schema.
+
+The source database is always opened read-only and is never modified or
+deleted. Only the target database is rewritten.
 """
 import argparse
-import sqlite3
+import secrets
 import shutil
+import sqlite3
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import datetime
 from pathlib import Path
 
 from pageturner import create_app
@@ -22,14 +27,29 @@ def columns(connection, table):
     return {row["name"] for row in connection.execute(f'PRAGMA table_info("{table}")')}
 
 
-target_path = Path(target_path).resolve()
+def datetime_now():
+    return datetime.now().isoformat(timespec="seconds")
+
+
+def migrate(source_path, target_path):
+    source_path = Path(source_path).resolve()
+    target_path = Path(target_path).resolve()
+
     if not source_path.exists():
         raise FileNotFoundError(f"Source database not found: {source_path}")
     if source_path == target_path:
         raise ValueError("Source and target must be different files. The source database is never overwritten.")
+
     source = sqlite3.connect(f"file:{source_path.as_posix()}?mode=ro", uri=True)
     source.row_factory = sqlite3.Row
-    app = create_app({"TESTING": True, "DATABASE": str(target_path), "ADMIN_EMAIL": "", "ADMIN_PASSWORD": ""})
+    app = create_app({
+        "TESTING": True,
+        "SECRET_KEY": secrets.token_hex(32),
+        "DATABASE": str(target_path),
+        "ADMIN_EMAIL": "",
+        "ADMIN_PASSWORD": "",
+    })
+
     with app.app_context():
         target = get_db()
         target.execute("PRAGMA foreign_keys = OFF")
@@ -77,9 +97,7 @@ target_path = Path(target_path).resolve()
                 source_item_columns = columns(source, "order_items")
                 for row in source.execute("SELECT * FROM order_items"):
                     price = row["price_paise"] if "price_paise" in source_item_columns else to_paise(row["price"])
-           def migrate(source_path, target_path):
-    source_path = Path(source_path).resolve()
-            target.execute("INSERT INTO order_items(id,order_id,book_id,quantity,price_paise,returned_quantity) VALUES (?,?,?,?,?,?)", (row["id"],row["order_id"],row["book_id"],row["quantity"],price,row["returned_quantity"] if "returned_quantity" in source_item_columns else 0))
+                    target.execute("INSERT INTO order_items(id,order_id,book_id,quantity,price_paise,returned_quantity) VALUES (?,?,?,?,?,?)", (row["id"],row["order_id"],row["book_id"],row["quantity"],price,row["returned_quantity"] if "returned_quantity" in source_item_columns else 0))
                     target.execute("INSERT INTO stock_log(book_id,change_amount,reason,order_id) VALUES (?,?,?,?)", (row["book_id"],-row["quantity"],"historical purchase",row["order_id"]))
             if has_table(source, "reviews"):
                 source_review_columns = columns(source, "reviews")
@@ -110,11 +128,6 @@ target_path = Path(target_path).resolve()
                 if old_file.is_file() and not (new_folder / old_file.name).exists():
                     shutil.copy2(old_file, new_folder / old_file.name)
     return target_path
-
-
-def datetime_now():
-    from datetime import datetime
-    return datetime.now().isoformat(timespec="seconds")
 
 
 if __name__ == "__main__":
