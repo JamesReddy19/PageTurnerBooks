@@ -58,9 +58,13 @@ class CheckoutLedgerTests(unittest.TestCase):
         )
 
     def place_order(self):
-        response = self.post(
+        # GET /checkout is what creates the stock reservation, so it must happen
+        # before the POST or the order is refused as expired.
+        token = self.token("/checkout")
+        response = self.client.post(
             "/checkout",
             data={
+                "csrf_token": token,
                 "name": "Ledger Reader",
                 "phone": "9876543210",
                 "new_address": "12 Main Road",
