@@ -293,4 +293,5 @@ from . import (  # noqa: E402,F401
     shop_checkout,
     shop_orders,
     shop_reviews,
+    shop_book_requests,
 )
