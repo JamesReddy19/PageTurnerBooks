@@ -617,3 +617,93 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+
+// 8. Mobile navigation (progressive enhancement).
+// The `js-nav` class is added here rather than by an inline pre-paint script:
+// if this file fails to load or is blocked, the narrow-screen stylesheet keeps
+// every link visible and usable instead of leaving an unreachable menu.
+document.documentElement.classList.add("js-nav");
+
+document.addEventListener("DOMContentLoaded", function () {
+    const navToggle = document.querySelector("#navToggle");
+    const primaryNav = document.querySelector("#primaryNav");
+
+    if (!navToggle || !primaryNav) {
+        return;
+    }
+
+    const isNarrowScreen = function () {
+        return window.matchMedia
+            ? window.matchMedia("(max-width: 900px)").matches
+            : window.innerWidth <= 900;
+    };
+
+    const setMenuOpen = function (open) {
+        navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        primaryNav.classList.toggle("is-open", open);
+    };
+
+    navToggle.addEventListener("click", function () {
+        setMenuOpen(navToggle.getAttribute("aria-expanded") !== "true");
+    });
+
+    // Escape closes the menu and returns focus to the button that opened it.
+    document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape" && event.key !== "Esc") {
+            return;
+        }
+
+        if (navToggle.getAttribute("aria-expanded") === "true") {
+            setMenuOpen(false);
+            navToggle.focus();
+        }
+    });
+
+    // A click anywhere outside the header closes the menu.
+    document.addEventListener("click", function (event) {
+        if (navToggle.getAttribute("aria-expanded") !== "true") {
+            return;
+        }
+
+        if (
+            primaryNav.contains(event.target) ||
+            navToggle.contains(event.target)
+        ) {
+            return;
+        }
+
+        setMenuOpen(false);
+    });
+
+    // Widening the window restores the inline desktop layout.
+    window.addEventListener("resize", function () {
+        if (!isNarrowScreen()) {
+            setMenuOpen(false);
+        }
+    });
+});
+
+// 9. Dismissible flash messages.
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".flash-dismiss").forEach(function (button) {
+        button.addEventListener("click", function () {
+            const flash = button.closest(".flash");
+
+            if (!flash) {
+                return;
+            }
+
+            const list = flash.parentElement;
+
+            flash.remove();
+
+            if (
+                list &&
+                list.classList.contains("flash-list") &&
+                !list.querySelector(".flash")
+            ) {
+                list.remove();
+            }
+        });
+    });
+});
