@@ -164,11 +164,16 @@ class DarkModeTemplateTests(unittest.TestCase):
         )
 
     def test_prepaint_script_survives_missing_or_blocked_storage(self):
-        script_position = self.base_template.index("pageturner-theme")
-        tail = self.base_template[script_position:script_position + 900]
+        # A blocked localStorage (Safari private mode, hardened browsers)
+        # would otherwise throw before the theme is set.
+        script_start = self.base_template.index(
+            "Requirement 60: resolve the theme"
+        )
+        script_end = self.base_template.index("</script>", script_start)
+        script = self.base_template[script_start:script_end]
 
-        self.assertIn("try {", tail)
-        self.assertIn("catch (error)", tail)
+        self.assertIn("try {", script)
+        self.assertIn("catch (error)", script)
 
     def test_header_offers_a_theme_toggle_on_every_page(self):
         response = self.client.get("/")
