@@ -132,61 +132,14 @@ def _migrate_columns(connection):
 def init_db():
     connection = get_db()
 
-    # Keep the project's existing schema initialization.
+    # Additive column migrations first, then the schema: see _migrate_columns
+    # for why the order matters on a database that predates a column.
+    _migrate_columns(connection)
+
     schema_path = Path(current_app.root_path).parent / "schema.sql"
     connection.executescript(
         schema_path.read_text(encoding="utf-8")
     )
-
-    # Additive migrations: existing rows and tables are preserved.
-    add_column_if_missing(
-        connection, "books", "release_date", "TEXT"
-    )
-    add_column_if_missing(
-        connection, "books", "sale_price_paise", "INTEGER"
-    )
-    add_column_if_missing(
-        connection, "books", "sale_start", "TEXT"
-    )
-    add_column_if_missing(
-        connection, "books", "sale_end", "TEXT"
-    )
-
-    add_column_if_missing(
-        connection, "orders", "gift_wrap_paise",
-        "INTEGER NOT NULL DEFAULT 0"
-    )
-    add_column_if_missing(
-        connection, "orders", "gift_message", "TEXT"
-    )
-    add_column_if_missing(
-        connection, "orders", "loyalty_points_earned",
-        "INTEGER NOT NULL DEFAULT 0"
-    )
-    add_column_if_missing(
-        connection, "orders", "loyalty_points_redeemed",
-        "INTEGER NOT NULL DEFAULT 0"
-    )
-
-    # Optimistic locking for concurrent editorial edits (requirement 66).
-    add_column_if_missing(
-        connection, "books", "version", "INTEGER NOT NULL DEFAULT 1"
-    )
-
-    # Hash-chained audit log (requirement 68).  Columns are added to existing
-    # databases here; schema.sql defines them for fresh installs.
-    add_column_if_missing(connection, "admin_log", "prev_hash", "TEXT")
-    add_column_if_missing(connection, "admin_log", "row_hash", "TEXT")
-
-    # Review moderation and account anonymization (requirements 50, 51, 59).
-    # Remember: hidden reviews must vanish from the average rating *and* the
-    # review count, so every rating query filters on this column.
-    add_column_if_missing(
-        connection, "reviews", "hidden", "INTEGER NOT NULL DEFAULT 0"
-    )
-    add_column_if_missing(connection, "reviews", "hidden_at", "TEXT")
-    add_column_if_missing(connection, "reviews", "hidden_by", "INTEGER")
-    add_column_if_missing(connection, "users", "anonymized_at", "TEXT")
 
     # Requirement 50/51/52/53 tables.  schema.sql declares these for fresh
     # installs; repeating them here migrates databases created before batch 4,
