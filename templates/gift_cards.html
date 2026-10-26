@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Gift cards · PageTurner Books{% endblock %}
+{% block content %}
+<h1>Gift cards</h1>
+<p class="muted">
+    A PageTurner gift card is redeemable at checkout. The code is shown once,
+    right after purchase — we only store a hash of it.
+</p>
+
+<section class="panel stack-form">
+    <h2>Buy a gift card</h2>
+    <form method="post" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <fieldset class="gift-amounts">
+            <legend>Choose an amount</legend>
+            {% for amount in amounts %}
+            <label class="gift-amount">
+                <input type="radio" name="amount_paise"
+                       value="{{ amount * 100 }}"
+                       {% if loop.first %}checked{% endif %}>
+                {{ money(amount * 100) }}
+            </label>
+            {% endfor %}
+        </fieldset>
+        <button>Buy gift card</button>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>Your gift cards</h2>
+    {% if cards %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Card</th>
+                    <th>Balance</th>
+                    <th>Bought</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for card in cards %}
+                <tr>
+                    <td>••••{{ card.code_last4 }}</td>
+                    <td>{{ money(card.balance_paise) }}</td>
+                    <td>{{ card.created_at }}</td>
+                    <td>
+                        {% if card.disabled_at %}Cancelled
+                        {% elif card.balance_paise <= 0 %}Spent
+                        {% else %}Active{% endif %}
+                    </td>
+                    <td>
+                        {% if not card.disabled_at and card.balance_paise > 0 %}
+                        <form method="post"
+                              action="{{ url_for('shop.disable_gift_card', card_id=card.id) }}"
+                              data-confirm="Cancel this card? Any remaining balance is lost.">
+                            <input type="hidden" name="csrf_token"
+                                   value="{{ csrf_token }}">
+                            <button class="danger action-button">Cancel</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">You have not bought a gift card yet.</p>
+    {% endif %}
+</section>
+{% endblock %}
