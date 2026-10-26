@@ -60,7 +60,7 @@ Every new table below follows that same pattern, so restarts never drop data.
 | 51 | Report a review (moderation) | **Missing** | `reviews` has no `hidden` flag; no report table; no admin queue. **Blocked on a decision** about the rating average (below). |
 | 52 | Request a book | **Missing** | No `book_requests` table, no form, no admin aggregation view. Needs a normalised title key + `COUNT(*)` ordering so two askers increment one row. |
 | 53 | Share my wishlist | **Missing** | `wishlist` table and toggle/view routes exist, but there is no share token, no `/w/<token>` route, no revoke. |
-| 75 | Recommendations for me | **Partial** | `shop.customers_also_bought()` (line 173) is **already exactly** the required JOIN + GROUP BY co-purchase query — but it is only used on the book-detail page. Missing: a home-page block, "exclude books I own", and a bestsellers fallback for a user with no orders. |
+| 75 | Recommendations for me | **Done** | `recommended_books()` builds on the existing co-purchase query, drops books the shopper already owns, and falls back to bestsellers for a visitor with no orders. Rendered as a block on the home page only for the first page with no search/filter. Verified: a co-bought title is recommended and an owned title is excluded. |
 
 ### Part D — Store owner tools
 
