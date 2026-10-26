@@ -44,6 +44,10 @@ def import_books_csv():
             if connection.total_changes > before:
                 inserted += 1
                 book_id = connection.execute("SELECT id FROM books WHERE title=? AND author=?", (row[0],row[1])).fetchone()["id"]
+                # Price history baseline for the new row (req 54 choke point).
+                set_book_price(
+                    connection, book_id, row[3], None, reason="csv import"
+                )
                 connection.execute("INSERT OR IGNORE INTO categories(name) VALUES (?)", (row[2],))
                 cat_id = connection.execute("SELECT id FROM categories WHERE name=?", (row[2],)).fetchone()["id"]
                 connection.execute("INSERT OR IGNORE INTO book_categories(book_id,category_id) VALUES (?,?)", (book_id,cat_id))
