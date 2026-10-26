@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Two-factor authentication · PageTurner Books{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h1>Two-factor authentication</h1>
+
+  {% if enabled %}
+    <p class="badge badge-success">Enabled</p>
+    <p>
+      Signing in asks for a code from your authenticator app. To turn this off
+      you must confirm your password.
+    </p>
+
+    <form method="post" class="stack">
+      <input type="hidden" name="action" value="disable" />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" required />
+      <button type="submit" class="button button-danger">
+        Turn off two-factor authentication
+      </button>
+    </form>
+
+  {% elif pending_secret %}
+    <p>
+      Add this key to your authenticator app, then enter the code it shows to
+      confirm. Two-factor authentication is not active until you confirm.
+    </p>
+
+    <dl class="facts">
+      <dt>Setup key</dt>
+      <dd><code class="secret">{{ pending_secret }}</code></dd>
+      <dt>URI</dt>
+      <dd><code class="secret">{{ provisioning_uri }}</code></dd>
+    </dl>
+
+    <form method="post" class="stack">
+      <input type="hidden" name="action" value="confirm" />
+      <label for="code">Code from your app</label>
+      <input
+        id="code"
+        name="code"
+        type="text"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        pattern="[0-9]{6}"
+        maxlength="6"
+        required
+      />
+      <button type="submit" class="button">Confirm and enable</button>
+    </form>
+
+  {% else %}
+    <p class="badge badge-muted">Off</p>
+    <p>
+      Add a second step to sign-in. After your password you will be asked for a
+      6-digit code from your authenticator app.
+    </p>
+
+    <form method="post" class="stack">
+      <input type="hidden" name="action" value="start" />
+      <button type="submit" class="button">Set up authenticator</button>
+    </form>
+  {% endif %}
+
+  <p class="muted small"><a href="{{ url_for('auth.profile') }}">Back to profile</a></p>
+</section>
+{% endblock %}
