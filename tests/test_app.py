@@ -208,6 +208,69 @@ class PageTurnerTests(unittest.TestCase):
     def test_26_health_endpoint(self):
         self.assertEqual(self.client.get("/health").json["status"], "ok")
 
+    def test_27_staff_can_process_orders_but_not_catalogue_or_money(self):
+        self.register_and_login()
+        with self.app.app_context():
+            get_db().execute("UPDATE users SET role='staff' WHERE email='reader@example.com'")
+            get_db().commit()
+
+        # Order fulfilment and message handling are the staff's job.
+        self.assertEqual(self.client.get("/admin/orders").status_code, 200)
+        self.assertEqual(self.client.get("/admin/messages").status_code, 200)
+
+        # Catalogue, pricing, coupons, reports, refunds and role changes stay admin-only.
+        for path in (
+            "/admin/books",
+            "/admin/coupons",
+            "/admin/reports",
+            "/admin/returns",
+            "/admin/sales",
+            "/admin/bundles",
+            "/admin/users",
+            "/admin/",
+        ):
+            self.assertEqual(self.client.get(path).status_code, 403, path)
+
+    def test_28_admin_appoints_staff_and_cannot_demote_self(self):
+        self.register_and_login()
+        with self.app.app_context():
+            connection = get_db()
+            connection.execute("UPDATE users SET role='admin' WHERE email='reader@example.com'")
+            connection.execute(
+                "INSERT INTO users(name,email,password_hash) VALUES (?,?,?)",
+                ("Sam", "sam@example.com", generate_password_hash("SamPass123")),
+            )
+            connection.commit()
+            admin_id = connection.execute("SELECT id FROM users WHERE email='reader@example.com'").fetchone()["id"]
+            sam_id = connection.execute("SELECT id FROM users WHERE email='sam@example.com'").fetchone()["id"]
+
+        self.assertEqual(self.client.get("/admin/users").status_code, 200)
+
+        response = self.post(f"/admin/users/{sam_id}/role", data={"role": "staff"})
+        self.assertEqual(response.status_code, 302)
+        with self.app.app_context():
+            self.assertEqual(get_db().execute("SELECT role FROM users WHERE id=?", (sam_id,)).fetchone()["role"], "staff")
+
+        # The new staff member can reach order fulfilment.
+        with self.app.app_context():
+            get_db().execute("UPDATE users SET role='staff' WHERE id=?", (admin_id,))
+            get_db().commit()
+        self.assertEqual(self.client.get("/admin/orders").status_code, 200)
+        with self.app.app_context():
+            get_db().execute("UPDATE users SET role='admin' WHERE id=?", (admin_id,))
+            get_db().commit()
+
+        # An admin cannot drop their own privileges (self-lockout guard).
+        self.post(f"/admin/users/{admin_id}/role", data={"role": "customer"})
+        with self.app.app_context():
+            self.assertEqual(get_db().execute("SELECT role FROM users WHERE id=?", (admin_id,)).fetchone()["role"], "admin")
+
+    def test_29_customer_cannot_manage_roles(self):
+        self.register_and_login()
+        self.assertEqual(self.client.get("/admin/users").status_code, 403)
+        response = self.post("/admin/users/1/role", data={"role": "admin"})
+        self.assertEqual(response.status_code, 403)
+
 
 if __name__ == "__main__":
     unittest.main()
