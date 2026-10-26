@@ -1,24 +1,44 @@
-"""Admin side of requirement 73 — editing the role/permission matrix.
+"""Admin editor for the role/permission matrix (requirement 73).
 
-Permission checks in the application read the ``role_permissions`` table (see
-``pageturner.permissions``), so an administrator can change what a role may do
-without a code change or a deploy.  This page is the editor for that table, and
-it deliberately refuses the two edits that would make the admin area
-unreachable:
+Permission checks read ``role_permissions`` through :mod:`pageturner.permissions`,
+so this page is the whole policy surface: what a ``staff`` account may reach is
+a table edit here, not a code change and a deploy.
 
-* ``admin.access`` cannot be removed from the ``admin`` role, and
-* the ``admin`` role itself cannot be deleted.
-
-Both are guarded here rather than in the database so the reason can be
-explained to the operator in plain language.
+The ``admin`` role is intentionally not editable.  It always holds the full
+catalogue (see ``permissions.SUPERUSER_ROLE``), which keeps the admin area
+reachable no matter what the matrix says.
 """
 
 from flask import flash, redirect, render_template, request, url_for
 
-from .. import permissions as permission_registry
+from .. import permissions as registry
 from ..db import get_db
 from ..helpers import log_admin_action, permission_required
 from .admin import admin_bp
+
+# Only the two operational roles are editable; customers get no admin grants.
+EDITABLE_ROLES = ("staff", "customer")
+
+
+def _roles(connection):
+    """Roles that appear on the matrix, in display order."""
+    known = {
+        row["role"]
+        for row in connection.execute(
+            "SELECT DISTINCT role FROM users WHERE role IS NOT NULL"
+        ).fetchall()
+    }
+
+    ordered = [registry.SUPERUSER_ROLE]
+
+    for role in EDITABLE_ROLES:
+        ordered.append(role)
+
+    # Any role an operator invented by hand still gets a column.
+    for role in sorted(known - set(ordered)):
+        ordered.append(role)
+
+    return ordered
 
 
 @admin_bp.get("/permissions")
@@ -26,18 +46,14 @@ from .admin import admin_bp
 def permission_matrix():
     connection = get_db()
 
-    roles = [row["code"] for row in connection.execute(
-        "SELECT code FROM roles ORDER BY code"
-    ).fetchall()]
-
     permissions = connection.execute(
         "SELECT code, description FROM permissions ORDER BY code"
     ).fetchall()
 
     granted = {
-        (row["role_code"], row["permission_code"])
+        (row["role"], row["permission_code"])
         for row in connection.execute(
-            "SELECT role_code, permission_code FROM role_permissions"
+            "SELECT role, permission_code FROM role_permissions"
         ).fetchall()
     }
 
@@ -48,9 +64,18 @@ def permission_matrix():
         ).fetchall()
     }
 
+    roles = _roles(connection)
+
+    # The superuser holds everything; show it that way rather than showing an
+    # empty row that implies it has no powers.
+    for permission in permissions:
+        granted.add((registry.SUPERUSER_ROLE, permission["code"]))
+
     return render_template(
         "admin_permissions.html",
         roles=roles,
+        editable_roles=EDITABLE_ROLES,
+        superuser_role=registry.SUPERUSER_ROLE,
         permissions=permissions,
         granted=granted,
         users_per_role=users_per_role,
@@ -60,68 +85,64 @@ def permission_matrix():
 @admin_bp.post("/permissions")
 @permission_required("roles.manage")
 def update_permission_matrix():
-    """Replace the matrix with what the form submitted.
+    """Apply the submitted matrix.
 
-    The form carries one ``grant`` checkbox per role/permission pair, so the
-    submitted set is the complete desired state.  Diffing it against the table
-    is what lets a single submit both grant and revoke.
+    The form sends one ``grant`` value per *ticked* checkbox, formatted
+    ``role:code``.  Because the page renders every pair, the submitted set is
+    the complete desired state for the editable roles — so a single submit can
+    both grant and revoke, and a role can be emptied.
     """
     connection = get_db()
 
-    roles = [row["code"] for row in connection.execute(
-        "SELECT code FROM roles ORDER BY code"
-    ).fetchall()]
-
     valid_permissions = {
-        row["code"] for row in connection.execute(
-            "SELECT code FROM permissions"
-        ).fetchall()
+        row["code"] for row in connection.execute("SELECT code FROM permissions")
     }
 
     submitted = set()
 
-    for pair in request.form.getlist("grant"):
-        role_code, _, permission_code = pair.partition(":")
+    for value in request.form.getlist("grant"):
+        role, _, code = value.partition(":")
 
-        if role_code in roles and permission_code in valid_permissions:
-            submitted.add((role_code, permission_code))
-
-    # The admin role must keep admin.access, otherwise nobody can load the
-    # pages needed to undo the mistake.
-    if ("admin", "admin.access") not in submitted:
-        flash(
-            "The admin role must keep the 'admin.access' permission.",
-            "error",
-        )
-        return redirect(url_for("admin.permission_matrix"))
+        # The superuser is not editable, so silently ignore stray values for it
+        # instead of letting the form rewrite the catalogue.
+        if role in EDITABLE_ROLES and code in valid_permissions:
+            submitted.add((role, code))
 
     current = {
-        (row["role_code"], row["permission_code"])
+        (row["role"], row["permission_code"])
         for row in connection.execute(
-            "SELECT role_code, permission_code FROM role_permissions"
+            "SELECT role, permission_code FROM role_permissions WHERE role != ?",
+            (registry.SUPERUSER_ROLE,),
         ).fetchall()
     }
 
-    to_add = submitted - current
-    to_remove = current - submitted
+    to_grant = sorted(submitted - current)
+    to_revoke = sorted(current - submitted)
 
     try:
-        connection.execute("BEGIN IMMEDIATE")
+        # log_admin_action appends to the hash-chained audit log through this
+        # same connection, so the change and its audit row commit together.
+        if to_grant:
+            connection.executemany(
+                """
+                INSERT OR IGNORE INTO role_permissions (role, permission_code)
+                VALUES (?, ?)
+                """,
+                to_grant,
+            )
 
-        connection.executemany(
-            """
-            INSERT OR IGNORE INTO role_permissions (role_code, permission_code)
-            VALUES (?, ?)
-            """,
-            sorted(to_add),
-        )
+        if to_revoke:
+            connection.executemany(
+                """
+                DELETE FROM role_permissions
+                WHERE role = ? AND permission_code = ?
+                """,
+                to_revoke,
+            )
 
-        connection.executemany(
-            """
-            DELETE FROM role_permissions
-            WHERE role_code = ? AND permission_code = ?
-            """,
-            sorted(to_remove),
+        log_admin_action(
+            "permissions.update",
+            f"granted={len(to_grant)} revoked={len(to_revoke)}",
         )
 
         connection.commit()
@@ -129,18 +150,15 @@ def update_permission_matrix():
         connection.rollback()
         raise
 
-    # The cache would otherwise serve the old matrix until the process
-    # restarts, which looks like the change silently failed.
-    permission_registry.invalidate_cache()
+    count = len(to_grant) + len(to_revoke)
 
-    log_admin_action(
-        "permissions.update",
-        f"granted={len(to_add)} revoked={len(to_remove)}",
-    )
-
-    flash(
-        f"Permissions saved: {len(to_add)} granted, {len(to_remove)} revoked.",
-        "success",
-    )
+    if count:
+        flash(
+            f"Permissions updated: {len(to_grant)} granted, "
+            f"{len(to_revoke)} revoked. The next request obeys the new matrix.",
+            "success",
+        )
+    else:
+        flash("No permission changes to save.", "error")
 
     return redirect(url_for("admin.permission_matrix"))
