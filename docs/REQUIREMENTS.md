@@ -113,9 +113,9 @@ Every new table below follows that same pattern, so restarts never drop data.
 |---|---|---|---|
 | 74 | Growth report with window functions | **Missing** | Reports are date-range aggregates; no `LAG` / `SUM OVER`. The CSV export already exists and can serve as the hand-check the acceptance criterion demands. |
 
-**Tally (29 requirements):** 7 **Done** (47, 48, 49, 56, 57, 67, 75) ·
-**0 Partial** · **22 Missing** — of which **2 are additionally Blocked** on a
-decision (51, 59).
+**Tally (29 requirements):** 13 **Done** (47, 48, 49, 54, 55, 56, 57, 58, 60,
+66, 67, 68, 75) · **0 Partial** · **16 Missing** — of which **2 are additionally
+Blocked** on a decision (51, 59).
 
 ---
 
@@ -222,18 +222,21 @@ release — never on boot, so a restart can never reseed or wipe a live database
 
 ## Gap list — what remains (47–76)
 
-**Done and verified by executed checks:** 47, 48, 49, 56, 57, 67, 75 (7 of 29).
-**Remaining: 22.** Ordered by dependency, cheapest first, so each batch leaves the
-app deployable.
+**Done and verified by executed checks:** 47, 48, 49, 54, 55, 56, 57, 58, 60, 66,
+67, 68, 75 (13 of 29). **Remaining: 16.** Ordered by dependency, cheapest first,
+so each batch leaves the app deployable.
+
+Batch 3 is complete; its rows are retained below only as a record of what shipped
+in that batch.
 
 | Batch | Reqs | Missing capability (one line each) | New storage |
 |---|---|---|---|
-| 3 | 60 | Dark mode: no `localStorage`, no CSS-variable theme, no pre-paint script (white flash) | — |
-| 3 | 58 | Data export: `auth_profile` has no JSON download route, no `Content-Disposition` | — |
-| 3 | 54 | Price history: no `price_history`; price written in two places (`admin.py` INSERT, `admin_books.py` UPDATE), needs one `set_book_price()` choke point | `price_history` |
-| 3 | 55 | Bulk price change: no selection UI, and `execute` per book instead of one statement | — |
-| 3 | 66 | Optimistic locking: `books` has no `version` column; edit is a blind `UPDATE ... WHERE id=?` | `books.version` |
-| 3 | 68 | Audit log chain: `admin_log` has no `prev_hash`/`row_hash`; single chokepoint `log_admin_action()` makes this a one-function change | `admin_log.prev_hash`, `row_hash` |
+| ~~3~~ | ~~60~~ | **Shipped.** Dark mode: no `localStorage`, no CSS-variable theme, no pre-paint script (white flash) | — |
+| ~~3~~ | ~~58~~ | **Shipped.** Data export: `auth_profile` has no JSON download route, no `Content-Disposition` | — |
+| ~~3~~ | ~~54~~ | **Shipped.** Price history: no `price_history`; price written in two places (`admin.py` INSERT, `admin_books.py` UPDATE), needs one `set_book_price()` choke point | `price_history` |
+| ~~3~~ | ~~55~~ | **Shipped.** Bulk price change: no selection UI, and `execute` per book instead of one statement | — |
+| ~~3~~ | ~~66~~ | **Shipped.** Optimistic locking: `books` has no `version` column; edit is a blind `UPDATE ... WHERE id=?` | `books.version` |
+| ~~3~~ | ~~68~~ | **Shipped.** Audit log chain: `admin_log` has no `prev_hash`/`row_hash`; single chokepoint `log_admin_action()` makes this a one-function change | `admin_log.prev_hash`, `row_hash` |
 | 4 | 50 | Helpful votes: no `review_votes` table, no button, no count; needs `UNIQUE(user_id, review_id)` per Q2 above | `review_votes` |
 | 4 | 51 | Report a review: no `hidden` flag, no report table, no admin queue — **blocked on decision 1** | `review_reports`, `reviews.hidden` |
 | 4 | 52 | Request a book: no table, no form, no aggregation view; needs normalised title key + `COUNT(*)` ordering | `book_requests` |
