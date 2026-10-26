@@ -80,6 +80,13 @@ def add_book():
 
         book_id = cursor.lastrowid
 
+        # Record the creation price in the price history (req 54): the book now
+        # has a price, so set_book_price's baseline path logs old_price = NULL.
+        set_book_price(
+            connection, book_id, price, session.get("user_id"),
+            reason="book created",
+        )
+
         save_categories_and_tags(
             book_id, category, request.form.get("tags", "")
         )
