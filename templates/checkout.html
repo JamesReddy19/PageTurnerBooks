@@ -47,7 +47,9 @@
 {% for item in items %}
 <p>{{ item.book.title }} × {{ item.quantity }} <strong>{{ money(item.line_total) }}</strong>
 </p>
-
+{% if item.unit_price < item.book.price_paise %}
+<p class="muted">On sale: {{ money(item.unit_price) }} each instead of {{ money(item.book.price_paise) }}.</p>
+{% endif %}
 {% endfor %}
 <hr>
 <p>Subtotal <strong>{{ money(subtotal) }}</strong>
