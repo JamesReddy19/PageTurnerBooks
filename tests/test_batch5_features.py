@@ -500,16 +500,29 @@ class BatchFiveTestCase(unittest.TestCase):
                 "the card should be empty after paying 20000",
             )
 
-        # The second order tries the same (now empty) card: it must not pay.
+        # The second order tries the same (now empty) card. checkout refuses the
+        # order instead of silently charging the customer the full price they
+        # did not agree to, and the empty card pays nothing.
         self.add_to_cart(book, 1)
         response = self.submit_order(self.checkout_payload(), gift_card_code=code)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
-            len(self.order_rows(user_id)), 2, "an empty card blocked the order"
+            len(self.order_rows(user_id)), 1, "an empty card must not be ignored"
         )
-        second = self.order_rows(user_id)[-1]
-        self.assertEqual(second["gift_card_paise"], 0)
-        self.assertGreater(second["total_paise"], 0)
+        with self.client.session_transaction() as session:
+            messages = [text for _category, text in session.get("_flashes", [])]
+        self.assertTrue(
+            any("gift card" in text.lower() for text in messages),
+            f"the shopper must be told why the card did not work: {messages}",
+        )
+
+        with self.app.app_context():
+            connection = get_db()
+            self.assertEqual(
+                giftcards.gift_card_balance(connection, card_id),
+                0,
+                "an empty card must never go negative",
+            )
 
     def test_gift_card_redemption_defers_its_ledger_row(self):
         """The first implementation inserted order_id = 0 and broke the FK."""
