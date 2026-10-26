@@ -233,8 +233,9 @@ def recommended_books(user, limit=5):
         # reader's own orders alone could only ever return books they own.
         rows = connection.execute(
             """
+            f"""
             SELECT b.*, COUNT(DISTINCT co.order_id) AS score,
-                   (SELECT AVG(r.rating) FROM reviews r WHERE r.book_id=b.id) AS average_rating
+                   {AVERAGE_RATING_SQL} AS average_rating
             FROM order_items anchor
             JOIN order_items co
               ON co.order_id = anchor.order_id
@@ -263,8 +264,9 @@ def recommended_books(user, limit=5):
         chosen = {row["id"] for row in rows}
         fallback = connection.execute(
             """
+            f"""
             SELECT b.*, COALESCE(SUM(oi.quantity), 0) AS units_sold,
-                   (SELECT AVG(r.rating) FROM reviews r WHERE r.book_id=b.id) AS average_rating
+                   {AVERAGE_RATING_SQL} AS average_rating
             FROM books b
             LEFT JOIN order_items oi ON oi.book_id = b.id
             WHERE b.stock > 0

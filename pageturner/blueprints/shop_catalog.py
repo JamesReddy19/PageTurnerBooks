@@ -111,8 +111,7 @@ def index():
 
     books = connection.execute(
         f"SELECT b.*, {relevance_sql}, "
-        "(SELECT AVG(r.rating) FROM reviews r "
-        "WHERE r.book_id=b.id) AS average_rating "
+        f"{AVERAGE_RATING_SQL} AS average_rating "
         f"FROM books b{where_sql} "
         f"ORDER BY {sort_sql} LIMIT ? OFFSET ?",
         query_params,
@@ -144,8 +143,7 @@ def index():
 
         recent_rows = connection.execute(
             "SELECT b.*, "
-            "(SELECT AVG(r.rating) FROM reviews r "
-            "WHERE r.book_id=b.id) AS average_rating "
+            f"{AVERAGE_RATING_SQL} AS average_rating "
             f"FROM books b WHERE b.id IN ({placeholders})",
             recent_ids,
         ).fetchall()
@@ -185,8 +183,8 @@ def book_detail(book_id):
 
     book = connection.execute(
         "SELECT b.*, "
-        "(SELECT AVG(r.rating) FROM reviews r "
-        "WHERE r.book_id=b.id) AS average_rating "
+        f"{AVERAGE_RATING_SQL} AS average_rating, "
+        f"{REVIEW_COUNT_SQL} AS review_count "
         "FROM books b WHERE b.id=?",
         (book_id,),
     ).fetchone()
@@ -256,8 +254,7 @@ def author_page(author_name):
     # One query gets the books, ratings, and total book count.
     books = connection.execute(
         "SELECT b.*, "
-        "(SELECT AVG(r.rating) FROM reviews r "
-        "WHERE r.book_id = b.id) AS average_rating, "
+        f"{AVERAGE_RATING_SQL} AS average_rating, "
         "COUNT(*) OVER() AS author_book_count "
         "FROM books b "
         "WHERE b.author = ? COLLATE NOCASE "
@@ -305,9 +302,7 @@ def compare_books():
     books = connection.execute(
         f"""
         SELECT b.*,
-               (SELECT AVG(r.rating)
-                FROM reviews r
-                WHERE r.book_id = b.id) AS average_rating
+               {AVERAGE_RATING_SQL} AS average_rating
         FROM books b
         WHERE b.id IN ({placeholders})
         """,
