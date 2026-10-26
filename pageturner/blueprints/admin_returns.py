@@ -20,7 +20,7 @@ def review_return(return_id, decision):
     connection = get_db()
     try:
         connection.execute("BEGIN IMMEDIATE")
-        returned = connection.execute("SELECT r.*,oi.order_id,oi.book_id FROM returns r JOIN order_items oi ON oi.id=r.order_item_id WHERE r.id=?", (return_id,)).fetchone()
+        returned = connection.execute("SELECT r.*,oi.order_id,oi.book_id,oi.price_paise FROM returns r JOIN order_items oi ON oi.id=r.order_item_id WHERE r.id=?", (return_id,)).fetchone()
         if not returned:
             abort(404)
         if returned["status"] != "Pending":
@@ -31,6 +31,14 @@ def review_return(return_id, decision):
             connection.execute("UPDATE order_items SET returned_quantity=returned_quantity+? WHERE id=?", (returned["quantity"],returned["order_item_id"]))
             connection.execute("UPDATE books SET stock=stock+? WHERE id=?", (returned["quantity"],returned["book_id"]))
             connection.execute("INSERT INTO stock_log(book_id,change_amount,reason,order_id,actor_user_id) VALUES (?,?,?,?,?)", (returned["book_id"],returned["quantity"],"approved return",returned["order_id"],session.get("user_id")))
+
+            # Requirement 49: points were earned on the refunded value, so take
+            # them back proportionally. price_paise is the per-copy price that
+            # was actually charged (requirement 47), so this matches the refund.
+            refunded_paise = returned["price_paise"] * returned["quantity"]
+            loyalty_claw_back_for_refund(
+                connection, returned["user_id"], returned["order_id"], refunded_paise
+            )
             title = connection.execute("SELECT title FROM books WHERE id=?", (returned["book_id"],)).fetchone()["title"]
             for wish in connection.execute("SELECT user_id FROM wishlist WHERE book_id=?", (returned["book_id"],)).fetchall():
                 add_notification(wish["user_id"], f"{title} is back in stock.", url_for("shop.book_detail", book_id=returned["book_id"]))
