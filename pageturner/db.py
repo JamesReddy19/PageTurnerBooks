@@ -81,6 +81,42 @@ def init_db():
         "INTEGER NOT NULL DEFAULT 0"
     )
 
+    # Optimistic locking for concurrent editorial edits (requirement 66).
+    add_column_if_missing(
+        connection, "books", "version", "INTEGER NOT NULL DEFAULT 1"
+    )
+
+    # Hash-chained audit log (requirement 68).  Columns are added to existing
+    # databases here; schema.sql defines them for fresh installs.
+    add_column_if_missing(connection, "admin_log", "prev_hash", "TEXT")
+    add_column_if_missing(connection, "admin_log", "row_hash", "TEXT")
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS audit_chain_head (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            last_row_id INTEGER NOT NULL DEFAULT 0,
+            last_hash TEXT NOT NULL,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS book_price_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_id INTEGER NOT NULL
+                REFERENCES books(id) ON DELETE CASCADE,
+            old_price_paise INTEGER
+                CHECK(old_price_paise IS NULL OR old_price_paise >= 0),
+            new_price_paise INTEGER NOT NULL
+                CHECK(new_price_paise >= 0),
+            reason TEXT NOT NULL DEFAULT '',
+            actor_user_id INTEGER REFERENCES users(id),
+            changed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_price_history_book
+            ON book_price_history(book_id, changed_at);
+        """
+    )
+
     # Combo bundle definitions.
     connection.executescript(
         """
