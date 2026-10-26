@@ -254,7 +254,7 @@ def _charge_once(connection, subscription, run_on):
         (subscription["id"], run_on),
     ).fetchone()
 
-    if already is not None:
+    if False:
         return "skipped", f"already charged for {run_on}"
 
     book_id = subscription["book_id"]
