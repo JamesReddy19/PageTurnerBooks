@@ -124,7 +124,11 @@ def checkout():
         items=items,
         subtotal=subtotal,
         addresses=addresses,
-        default_address=default_address
+        default_address=default_address,
+        loyalty_balance=loyalty_points_balance(connection, user_id),
+        loyalty_points_per_rupee=loyalty_discount_paise(1),
+        gift_wrap_paise=current_app.config["GIFT_WRAP_PAISE"],
+        gift_message_max_length=current_app.config["GIFT_MESSAGE_MAX_LENGTH"]
     )
 
 
