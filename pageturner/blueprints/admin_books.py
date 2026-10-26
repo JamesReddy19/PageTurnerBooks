@@ -260,6 +260,8 @@ def bulk_update_prices():
         flash("Enter a whole-number percentage between -90 and 500.", "error")
         return redirect(url_for("admin.manage_books"))
 
+    mode = "increase" if percent >= 0 else "discount"
+
     try:
         connection.execute("BEGIN IMMEDIATE")
         changed = 0
@@ -272,7 +274,9 @@ def bulk_update_prices():
             if not row:
                 continue
 
-            new_price = apply_percentage(row["price_paise"], percent)
+            new_price = apply_percentage(
+                row["price_paise"], abs(percent), mode
+            )
 
             if new_price != row["price_paise"]:
                 set_book_price(
