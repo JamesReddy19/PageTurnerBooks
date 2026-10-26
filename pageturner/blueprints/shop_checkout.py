@@ -15,6 +15,8 @@ from ..helpers import (
     loyalty_discount_paise,
     loyalty_record,
 )
+from .. import backorders, giftcards, idempotency, pricing_rules
+from ..helpers import add_notification
 from .shop import (
     shop_bp, get_cart_rows, coupon_discount,
     current_app_reservation_minutes
@@ -94,6 +96,12 @@ def checkout():
                     )
                 )
 
+            # Requirement 61: the form gets a single-use token, committed with
+            # the reservation so a token can never outlive its reservation.
+            checkout_token = idempotency.new_checkout_token(
+                connection, user_id
+            )
+
             connection.commit()
 
         except Exception as error:
@@ -121,6 +129,7 @@ def checkout():
 
     return render_template(
         "checkout.html",
+        checkout_token=checkout_token,
         items=items,
         subtotal=subtotal,
         addresses=addresses,
