@@ -330,7 +330,7 @@ class ApiKeyTests(BatchSevenTestCase):
         with self.app.app_context():
             connection = get_db()
             connection.execute(
-                "UPDATE api_keys SET token_hash = ? WHERE id = ?",
+                "UPDATE api_keys SET key_hash = ? WHERE id = ?",
                 (apikeys.hash_token(legacy), row["id"]),
             )
             connection.commit()
