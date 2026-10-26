@@ -4,6 +4,7 @@ import io
 from datetime import datetime, timedelta
 from flask import abort, flash, make_response, redirect, request, render_template, url_for
 from ..db import get_db
+from ..growth import DEFAULT_MONTHS, MAX_MONTHS, monthly_growth, month_window, summary as growth_summary
 from ..helpers import log_admin_action, permission_required
 from .admin import admin_bp
 
