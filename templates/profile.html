@@ -41,4 +41,11 @@
 </p>
 </section>
 
+<section class="panel danger-zone">
+  <h2>Close your account</h2>
+  <p class="muted">Permanently remove your personal details. Past orders stay
+  for accounting, but without your name, phone or address.</p>
+  <a class="button danger" href="{{ url_for('auth.delete_account_page') }}">Close my account</a>
+</section>
+
 {% endblock %}
