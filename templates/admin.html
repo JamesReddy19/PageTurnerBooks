@@ -192,14 +192,32 @@
             </a>
         </div>
 
+        {% set peak = daily|map(attribute='revenue')|max if daily else 0 %}
         <div class="revenue-chart-wrap">
-            <canvas
-                id="revenue-chart"
-                data-values="{{ daily|map(attribute='revenue')|join(',') }}"
-                data-labels="{{ daily|map(attribute='day')|join(',') }}"
-                role="img"
-                aria-label="Daily revenue in rupees for the last seven days"
-            ></canvas>
+            <figure class="revenue-chart" aria-label="Daily revenue in rupees for the last seven days">
+                <div class="revenue-plot">
+                    {% for row in daily %}
+                        {% set height = ((row.revenue / peak * 100) if peak else 0) %}
+                        <div class="revenue-col">
+                            <span class="revenue-value">{{ money(row.revenue) }}</span>
+                            <div class="revenue-track">
+                                <div
+                                    class="revenue-bar{% if not row.revenue %} is-empty{% endif %}"
+                                    style="--bar-height: {{ (height if row.revenue else 0)|round(2) }}%"
+                                    title="{{ row.day }}: {{ money(row.revenue) }} from {{ row.orders }} order(s)"
+                                ></div>
+                            </div>
+                            <span class="revenue-day">{{ row.day[8:10] }}/{{ row.day[5:7] }}</span>
+                        </div>
+                    {% else %}
+                        <p class="muted">No orders during this period.</p>
+                    {% endfor %}
+                </div>
+                <figcaption>
+                    Bar heights are relative to the best day in this period.
+                    Exact figures are listed in the table below.
+                </figcaption>
+            </figure>
         </div>
 
         <div class="table-wrap">
