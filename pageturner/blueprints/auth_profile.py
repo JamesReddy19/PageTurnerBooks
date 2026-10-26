@@ -1,7 +1,7 @@
 """Customer profile, signed-in device sessions and personal data export."""
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import (
     Response,
@@ -114,7 +114,7 @@ def export_my_data():
         )
 
     payload = {
-        "exported_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "exported_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "account": account,
         "orders": orders,
         "loyalty_ledger": _export_rows(
