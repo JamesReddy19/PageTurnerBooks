@@ -1543,17 +1543,6 @@ td form + form {
 }
 
 /* ------------------------------
-   17. Revenue chart
------------------------------- */
-
-#revenue-chart {
-    display: block;
-    width: 100%;
-    height: 220px;
-    margin-top: 1rem;
-}
-
-/* ------------------------------
    18. Medium screens
 ------------------------------ */
 
