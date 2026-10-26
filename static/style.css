@@ -3231,20 +3231,21 @@ nav.category-filters a.active {
   color: inherit;
 }
 
-/* Danger zone (account closure) */
+/* Danger zone (account closure) — colours resolve through the palette so the
+   dark theme overrides them automatically (req 60). */
 .danger-zone {
-  border-color: #b3261e;
+  border-color: var(--danger);
 }
 
 .button.danger,
 button.danger {
-  background: #b3261e;
-  color: #fff;
-  border-color: #b3261e;
+  background: var(--danger);
+  color: var(--paper);
+  border-color: var(--danger);
 }
 
 .notice {
-  border-left: 3px solid #b3261e;
+  border-left: 3px solid var(--danger);
   padding-left: 0.75rem;
   color: inherit;
 }
