@@ -57,10 +57,19 @@ def current_user():
     if not user_id:
         return None
 
-    return get_db().execute(
+    user = get_db().execute(
         "SELECT * FROM users WHERE id = ?",
         (user_id,),
     ).fetchone()
+
+    # Requirement 59: once an account is anonymized, an already-open session
+    # must stop being authenticated instead of lingering as a valid user.
+    if user is not None and user["anonymized_at"] is not None:
+        session.pop("user_id", None)
+        session.pop("session_token", None)
+        return None
+
+    return user
 
 
 def login_required(view):
