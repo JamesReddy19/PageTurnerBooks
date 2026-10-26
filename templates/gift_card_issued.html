@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Gift card issued · PageTurner Books{% endblock %}
+{% block content %}
+<h1>Gift card ready</h1>
+
+<div class="panel gift-card-code">
+    <p class="muted">Value {{ money(amount_paise) }}</p>
+    <p class="gift-code">{{ code }}</p>
+    <p class="muted">
+        This is the only time the code is shown — we store only a hash of it.
+        Copy it now, or give it to whoever the card is for.
+    </p>
+</div>
+
+<a class="button" href="{{ url_for('shop.gift_cards') }}">Back to gift cards</a>
+<a class="button secondary"
+   href="{{ url_for('shop.order_detail', order_id=order_id) }}">View the order</a>
+{% endblock %}
