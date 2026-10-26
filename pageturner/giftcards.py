@@ -147,8 +147,17 @@ def redeem_gift_card(connection, code, order_id, max_paise, now=None):
     """Spend up to ``max_paise`` from the card on ``order_id``.
 
     Returns ``(card_id, amount_paise)``; ``(None, 0)`` when the card does not
-    exist, is disabled, has expired or is empty.  The caller has already opened
-    the order transaction, so the debit commits or rolls back with the order.
+    exist, is disabled, has expired or has nothing left on it.  The caller has
+    already opened the order transaction, so the debit commits or rolls back
+    with the order.
+
+    ``order_id`` may be ``None`` when the card has to be priced *before* the
+    order row exists — which is exactly what checkout does, because the order
+    total depends on the card.  In that case no ledger row is written here and
+    the caller **must** call :func:`record_redemption` with the real order id
+    inside the same transaction.  ``gift_card_ledger.order_id`` is a foreign
+    key (``PRAGMA foreign_keys = ON``), so writing a placeholder such as 0 here
+    would abort the whole checkout with an IntegrityError.
     """
     card = find_gift_card(connection, code)
 
@@ -159,7 +168,27 @@ def redeem_gift_card(connection, code, order_id, max_paise, now=None):
     applied = min(balance, max(0, int(max_paise)))
 
     if applied <= 0:
-        return card["id"], 0
+        # An empty card cannot pay for anything; treat it like an unusable one
+        # rather than silently charging zero and leaving a dangling card id on
+        # the order.
+        return None, 0
+
+    if order_id is not None:
+        record_redemption(connection, card["id"], order_id, applied)
+
+    return card["id"], applied
+
+
+def record_redemption(connection, card_id, order_id, amount_paise):
+    """Write the debit for a redemption that was priced before the order row.
+
+    Raises ``ValueError`` for a nonsensical amount so a caller cannot mint
+    balance by passing a negative number.
+    """
+    amount_paise = int(amount_paise)
+
+    if amount_paise <= 0:
+        raise ValueError("A redemption must be for at least one paisa.")
 
     connection.execute(
         """
@@ -168,10 +197,8 @@ def redeem_gift_card(connection, code, order_id, max_paise, now=None):
         )
         VALUES (?, ?, ?, 'redeemed on order')
         """,
-        (card["id"], order_id, -applied),
+        (card_id, order_id, -amount_paise),
     )
-
-    return card["id"], applied
 
 
 def cards_for_user(connection, user_id):
