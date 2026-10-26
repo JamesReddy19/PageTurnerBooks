@@ -50,7 +50,7 @@ Every new table below follows that same pattern, so restarts never drop data.
 |---|---|---|---|
 | 47 | Flash sale with a timer | **Done** | `helpers.effective_book_price()` is now called from the cart, the checkout total, the product page and the order line, so the sale price reaches `order_items.price_paise` and the invoice without any later re-read of `books`. The product page renders the countdown from `sale_ends_in_seconds`. |
 | 48 | Gift option | **Done** | Checkout accepts a gift-wrap checkbox (₹50) and a message capped at 150 characters; both persist to `orders.gift_wrap_paise` / `orders.gift_message`, are added to the total, and print on the invoice. Jinja `autoescape` renders the message inert. |
-| 49 | Loyalty points | **Partial** | `points_ledger` table exists; `loyalty_points_balance` (SUM), `loyalty_points_earned` (`spent // 10000` = 1 pt / ₹100) and `loyalty_discount_paise` exist and are correct — **all zero callers**. No earn-on-order, no redeem-at-checkout, no reversal on cancel/return. |
+| 49 | Loyalty points | **Done** | Points are earned on order placement (`spent // 10000`), redeemable at checkout against the pre-tax subtotal, and reversed when an order is cancelled or refunded — the ledger `SUM` is the only balance, so no drift is possible. |
 
 ### Part C — Community
 
