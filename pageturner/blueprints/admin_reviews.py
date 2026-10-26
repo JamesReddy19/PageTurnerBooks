@@ -8,7 +8,7 @@ so a single decision updates every rating number on the site.
 from flask import flash, redirect, render_template, request, url_for
 
 from ..db import get_db
-from ..helpers import current_user, log_admin_action
+from ..helpers import current_user, log_admin_action, permission_required
 from ..reviews import REPORT_REASONS, hide_review, keep_review
 from .admin import admin_bp
 

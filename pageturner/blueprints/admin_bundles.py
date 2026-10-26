@@ -13,7 +13,7 @@ from flask import (
 )
 
 from ..db import get_db
-from ..helpers import rupees_to_paise, log_admin_action
+from ..helpers import rupees_to_paise, log_admin_action, permission_required
 from .admin import admin_bp
 
 

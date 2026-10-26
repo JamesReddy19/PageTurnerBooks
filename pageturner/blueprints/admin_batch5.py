@@ -8,7 +8,7 @@ from flask import flash, redirect, render_template, request, url_for
 
 from .. import backorders, pricing_rules
 from ..db import get_db
-from ..helpers import add_notification, log_admin_action
+from ..helpers import add_notification, log_admin_action, permission_required
 from .admin import admin_bp
 
 RULE_TYPES = ("category_percent", "book_percent", "min_quantity_percent")

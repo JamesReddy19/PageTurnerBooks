@@ -3,7 +3,7 @@ import sqlite3
 from datetime import datetime
 from flask import flash, redirect, request, url_for, render_template
 from ..db import get_db
-from ..helpers import log_admin_action, rupees_to_paise
+from ..helpers import log_admin_action, rupees_to_paise, permission_required
 from .admin import admin_bp
 
 @admin_bp.get("/coupons")

@@ -1,7 +1,7 @@
 """Staff and administrator order management."""
 from flask import abort, flash, redirect, request, session, url_for, render_template
 from ..db import get_db
-from ..helpers import log_admin_action, add_notification
+from ..helpers import log_admin_action, add_notification, permission_required
 from .admin import admin_bp, ALLOWED_STATUSES
 
 @admin_bp.get("/orders")

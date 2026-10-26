@@ -4,7 +4,7 @@ import io
 import sqlite3
 from flask import flash, redirect, request, url_for
 from ..db import get_db
-from ..helpers import log_admin_action, rupees_to_paise
+from ..helpers import log_admin_action, rupees_to_paise, permission_required
 from ..pricing import set_book_price
 from .admin import admin_bp
 

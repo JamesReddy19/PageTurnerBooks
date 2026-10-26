@@ -6,7 +6,7 @@ from datetime import date
 from flask import abort, flash, jsonify, redirect, request, session, url_for
 
 from ..db import get_db
-from ..helpers import log_admin_action, add_notification
+from ..helpers import log_admin_action, add_notification, permission_required
 from ..pricing import apply_percentage, set_book_price
 from .admin import admin_bp, read_book_form, save_uploaded_image, save_categories_and_tags
 
