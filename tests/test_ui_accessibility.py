@@ -57,15 +57,16 @@ def current_links(html):
 def unlabelled_controls(html):
     """Form controls that have no programmatic accessible name.
 
-    A control passes when it has ``aria-label``/``aria-labelledby``, or an
-    ``id`` referenced by a ``<label for=...>``, or it sits inside a wrapping
-    ``<label>``. Values typed into such a field are announced by screen readers
-    as an unlabelled edit box.
+    A control passes when it has ``aria-label``/``aria-labelledby``, when its
+    ``id`` is referenced by a ``<label for=...>``, or when it sits inside a
+    wrapping ``<label>``. Without one of those, a screen reader announces an
+    anonymous edit box and the value typed into it cannot be identified.
     """
     for_labels = set(re.findall(r'<label[^>]*\bfor="([^"]+)"', html))
-    wrapped = set()
-    for match in re.finditer(r"<label\b[^>]*>(.*?)</label>", html, re.S):
-        wrapped.update(re.findall(r'id="([^"]+)"', match.group(1)))
+    label_spans = [
+        (match.start(), match.end())
+        for match in re.finditer(r"<label\b[^>]*>.*?</label>", html, re.S)
+    ]
 
     problems = []
     for match in re.finditer(r"<(input|select|textarea)\b([^>]*)>", html):
@@ -79,7 +80,9 @@ def unlabelled_controls(html):
             continue
 
         control_id = re.search(r'\bid="([^"]+)"', attrs)
-        if control_id and control_id.group(1) in (for_labels | wrapped):
+        if control_id and control_id.group(1) in for_labels:
+            continue
+        if any(start <= match.start() < end for start, end in label_spans):
             continue
 
         problems.append(match.group(0)[:80])
