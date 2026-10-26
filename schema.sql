@@ -194,6 +194,72 @@ CREATE TABLE IF NOT EXISTS backorders (
  fulfilled_quantity INTEGER NOT NULL DEFAULT 0
 );
 
+-- Requirement 69: a transactional notification outbox. The business event and
+-- its delivery row are written on the same connection, inside the same
+-- transaction, so a rolled-back order can never email a customer about an order
+-- that does not exist. Attempts, backoff and give-up live on this row; the
+-- dispatcher in `pageturner.outbox` owns the retry policy.
+CREATE TABLE IF NOT EXISTS notification_outbox (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+ channel TEXT NOT NULL DEFAULT 'email' CHECK(channel IN ('email')),
+ recipient TEXT,
+ subject TEXT NOT NULL,
+ body TEXT NOT NULL,
+ dedupe_key TEXT UNIQUE,
+ status TEXT NOT NULL DEFAULT 'pending'
+  CHECK(status IN ('pending', 'sent', 'failed')),
+ attempts INTEGER NOT NULL DEFAULT 0,
+ max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts > 0),
+ next_attempt_at TEXT NOT NULL,
+ last_error TEXT,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ sent_at TEXT
+);
+
+-- Requirement 70: the monthly featured book. One pick per calendar month.
+CREATE TABLE IF NOT EXISTS book_of_the_month (
+ month TEXT PRIMARY KEY,
+ book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ status TEXT NOT NULL DEFAULT 'active'
+  CHECK(status IN ('active', 'paused', 'cancelled')),
+ quantity INTEGER NOT NULL DEFAULT 1 CHECK(quantity BETWEEN 1 AND 5),
+ next_run_on TEXT NOT NULL,
+ last_run_on TEXT,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ cancelled_at TEXT
+);
+
+-- Idempotency for the "run due" button: one charge per subscription per month,
+-- enforced by the database rather than by trusting the caller.
+CREATE TABLE IF NOT EXISTS subscription_runs (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+ run_on TEXT NOT NULL,
+ order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+ outcome TEXT NOT NULL,
+ note TEXT NOT NULL DEFAULT '',
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE(subscription_id, run_on)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_live_user
+ ON subscriptions(user_id) WHERE status IN ('active', 'paused');
+CREATE INDEX IF NOT EXISTS idx_subscriptions_due
+ ON subscriptions(status, next_run_on);
+CREATE INDEX IF NOT EXISTS idx_outbox_due
+ ON notification_outbox(status, next_attempt_at);
+CREATE INDEX IF NOT EXISTS idx_outbox_user
+ ON notification_outbox(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_runs_month
+ ON subscription_runs(run_on);
+
 CREATE INDEX IF NOT EXISTS idx_checkout_tokens_user
  ON checkout_tokens(user_id, used_at);
 CREATE INDEX IF NOT EXISTS idx_gift_card_ledger_card
