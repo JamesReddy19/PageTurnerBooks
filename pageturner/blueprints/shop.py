@@ -108,6 +108,15 @@ def save_quantity(book_id, quantity):
         cart[str(book_id)] = quantity
         session["cart"] = cart
 
+    backordered = max(quantity - available, 0)
+
+    if backordered:
+        plural = "copy is" if backordered == 1 else "copies are"
+        return True, (
+            f"Book added to your cart - {backordered} {plural} on backorder "
+            "and will ship as soon as it is restocked."
+        )
+
     return True, "Book added to your cart."
 
 
