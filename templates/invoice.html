@@ -41,9 +41,21 @@
 </div>
 <p>Subtotal: {{ money(order.subtotal_paise) }}</p>
 <p>Discount: −{{ money(order.discount_paise) }}</p>
+{% if order.gift_wrap_paise %}
+<p>Gift wrap: {{ money(order.gift_wrap_paise) }}</p>
+{% endif %}
+{% if order.loyalty_points_redeemed %}
+<p>Loyalty points redeemed ({{ order.loyalty_points_redeemed }} points): −{{ money(order.loyalty_points_redeemed * 10) }}</p>
+{% endif %}
 <p>Shipping: {{ money(order.shipping_paise) }}</p>
 <p>Tax: {{ money(order.tax_paise) }}</p>
 <h2>Total: {{ money(order.total_paise) }}</h2>
+{% if order.gift_message %}
+<p><strong>Gift message:</strong> {{ order.gift_message }}</p>
+{% endif %}
+{% if order.loyalty_points_earned %}
+<p>Points earned on this order: {{ order.loyalty_points_earned }}</p>
+{% endif %}
 </section>
 
 {% endblock %}
