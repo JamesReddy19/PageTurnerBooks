@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Offers & pricing rules · Admin{% endblock %}
+{% block content %}
+<h1>Offers &amp; pricing rules</h1>
+<p class="muted">
+    Rules apply automatically at checkout, on top of coupons. The list price on a
+    book never changes, so the price history stays a true record.
+</p>
+
+<section class="panel">
+    <h2>Add a rule</h2>
+    <form method="post" action="{{ url_for('admin.create_pricing_rule') }}"
+          class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Name
+            <input name="name" maxlength="80" required
+                   placeholder="Monsoon crime week">
+        </label>
+        <label>Rule type
+            <select name="rule_type" id="rule_type" required>
+                <option value="category_percent">Percent off a category</option>
+                <option value="book_percent">Percent off one book</option>
+                <option value="min_quantity_percent">Percent off once the cart holds N copies</option>
+            </select>
+        </label>
+        <label>Category (for category rules)
+            <select name="category">
+                <option value="">—</option>
+                {% for category in categories %}
+                <option value="{{ category }}">{{ category }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Book (for book rules)
+            <select name="book_id">
+                <option value="">—</option>
+                {% for book in books %}
+                <option value="{{ book.id }}">{{ book.title }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Minimum quantity (for cart rules)
+            <input name="min_quantity" type="number" min="1" value="1">
+        </label>
+        <label>Percent off
+            <input name="percent_off" type="number" min="1" max="90" required>
+        </label>
+        <button>Add rule</button>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>Rules</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Applies to</th>
+                    <th>Min qty</th>
+                    <th>Off</th>
+                    <th>State</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in rules %}
+                <tr>
+                    <td>{{ rule.name }}</td>
+                    <td>{{ rule.rule_type }}</td>
+                    <td>{{ rule.category or rule.book_id or '—' }}</td>
+                    <td>{{ rule.min_quantity }}</td>
+                    <td>{{ rule.percent_off }}%</td>
+                    <td>{% if rule.active %}Live{% else %}Off{% endif %}</td>
+                    <td>
+                        <form method="post"
+                              action="{{ url_for('admin.toggle_pricing_rule', rule_id=rule.id) }}">
+                            <input type="hidden" name="csrf_token"
+                                   value="{{ csrf_token }}">
+                            <button class="secondary action-button">
+                                {% if rule.active %}Switch off{% else %}Switch on{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7">No rules yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <a class="button secondary"
+       href="{{ url_for('admin.pricing_preview') }}">Preview on a sample cart</a>
+</section>
+{% endblock %}
