@@ -85,7 +85,7 @@ def set_book_price(connection, book_id, new_price_paise, actor_user_id=None,
         return True
 
     connection.execute(
-        "UPDATE books SET price_paise = ? WHERE id = ?",
+        "UPDATE books SET price_paise = ?, version = version + 1 WHERE id = ?",
         (new_price_paise, book_id),
     )
     connection.execute(
