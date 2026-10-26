@@ -599,6 +599,27 @@ def place_order():
             (order_id, user_id)
         )
 
+        # Requirement 69: the confirmation email is an *outbox row*, written
+        # here inside the order's own transaction and delivered later by
+        # `outbox.process_due()`. Sending inline would either announce an order
+        # that can still roll back, or lose the message if the process died
+        # between commit and send. The dedupe key is derived from the order, so
+        # the outbox can never hold two confirmations for one order.
+        outbox.enqueue(
+            connection,
+            user_id,
+            f"Order #{order_id} confirmed — PageTurner Books",
+            (
+                f"Hello {name},\n\n"
+                f"Thank you for your order #{order_id}.\n"
+                f"Items: {sum(quantity for _b, quantity, _t in checked_items)}\n"
+                f"Total paid: {money(total)}\n\n"
+                "We will email you again when your parcel ships."
+            ),
+            recipient=user["email"] if user else None,
+            dedupe_key=f"order:{order_id}:confirmed",
+        )
+
         if coupon:
             connection.execute(
                 """
