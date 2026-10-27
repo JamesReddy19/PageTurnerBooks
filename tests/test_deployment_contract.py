@@ -145,9 +145,14 @@ class SecretKeyTests(unittest.TestCase):
         assignment = re.search(r"^\s*SECRET_KEY\s*=\s*(.+)$", source, re.MULTILINE)
         self.assertIsNotNone(assignment)
         # Must read the environment and fall back to None, never to a literal.
-        self.assertIn("os.environ", assignment.group(1))
-        self.assertIn("or None", assignment.group(1))
-        self.assertNotRegex(assignment.group(1), r"['\"][^'\"]+['\"]")
+        value = assignment.group(1).strip()
+        self.assertIn("os.environ", value)
+        self.assertTrue(value.endswith("or None"))
+        # A bare string literal (e.g. SECRET_KEY = "changeme") is forbidden.
+        self.assertFalse(
+            value.startswith(("'", '"')),
+            "SECRET_KEY must not fall back to a hardcoded literal",
+        )
 
 
 class PersistenceConfigurationTests(unittest.TestCase):
