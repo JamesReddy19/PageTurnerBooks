@@ -260,7 +260,8 @@ def book_detail(book_id):
     session["recently_viewed"] = recent_ids[:5]
 
     reviews = connection.execute(
-        "SELECT * FROM reviews WHERE book_id=? ORDER BY id DESC",
+        "SELECT * FROM reviews WHERE book_id=? AND status='published' "
+        "ORDER BY id DESC",
         (book_id,),
     ).fetchall()
 
