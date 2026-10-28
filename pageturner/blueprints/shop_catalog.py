@@ -35,9 +35,23 @@ def index():
         "price": "b.price_paise",
         "newest": "b.created_at DESC, b.id DESC",
         "relevance": "relevance DESC, b.title COLLATE NOCASE",
+        "rating": "average_rating DESC, b.title COLLATE NOCASE",
+        "popularity": "sold DESC, b.title COLLATE NOCASE",
     }
 
     sort_sql = sort_options.get(sort, sort_options["title"])
+
+    # Optional filters: price range, minimum rating and stock availability.
+    min_price = parse_price_filter(request.args.get("min_price"))
+    max_price = parse_price_filter(request.args.get("max_price"))
+
+    try:
+        min_rating = int(request.args.get("min_rating", "0"))
+    except (ValueError, TypeError):
+        min_rating = 0
+
+    min_rating = min_rating if 1 <= min_rating <= 5 else 0
+    in_stock = request.args.get("in_stock", "").strip() in ("1", "true", "yes")
 
     try:
         page = max(1, int(request.args.get("page", "1")))
