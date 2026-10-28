@@ -503,4 +503,5 @@ from . import (  # noqa: E402,F401
     admin_import,
     admin_bundles,
     admin_sales,
+    admin_reviews,
 )
