@@ -214,11 +214,11 @@ class PageTurnerTests(unittest.TestCase):
         """Insert a book (and optionally a review) used by the filter tests."""
         with self.app.app_context():
             connection = get_db()
-            connection.execute(
+            cursor = connection.execute(
                 "INSERT INTO books(title,author,category,price_paise,stock) VALUES (?,?,?,?,?)",
                 (title, "Filter Author", "Filters", price_paise, stock),
             )
-            book_id = connection.execute("SELECT MAX(id) FROM books").fetchone()["id"]
+            book_id = cursor.lastrowid
             if rating:
                 connection.execute(
                     "INSERT INTO reviews(book_id,user_id,name,rating,comment,status) VALUES (?,?,?,?,?,?)",
@@ -263,7 +263,7 @@ class PageTurnerTests(unittest.TestCase):
             connection = get_db()
             review_id = connection.execute(
                 "SELECT id FROM reviews WHERE book_id=?", (book_id,)
-            ).fetchone()["id"]
+            ).fetchone()[0]
             connection.execute(
                 "INSERT INTO users(name,email,password_hash,role) VALUES (?,?,?,'admin')",
                 ("Admin", "admin@example.com", generate_password_hash("AdminPass123")),
@@ -271,7 +271,7 @@ class PageTurnerTests(unittest.TestCase):
             connection.commit()
             admin_id = connection.execute(
                 "SELECT id FROM users WHERE email='admin@example.com'"
-            ).fetchone()["id"]
+            ).fetchone()[0]
         with self.client.session_transaction() as session:
             session["user_id"] = admin_id
         listing = self.client.get("/admin/reviews")
@@ -287,7 +287,7 @@ class PageTurnerTests(unittest.TestCase):
         with self.app.app_context():
             status = get_db().execute(
                 "SELECT status FROM reviews WHERE id=?", (review_id,)
-            ).fetchone()["status"]
+            ).fetchone()[0]
         self.assertEqual(status, "hidden")
 
 
