@@ -4,7 +4,7 @@
 from datetime import date, timedelta
 from flask import abort, render_template, request, session
 from ..db import get_db
-from ..helpers import current_user
+from ..helpers import current_user, rupees_to_paise
 from .shop import shop_bp, customers_also_bought
 
 
