@@ -196,6 +196,23 @@ def dashboard():
         (start, end),
     ).fetchone()
 
+    # Previous seven days, used for the revenue trend indicator.
+    previous_end = start_date.isoformat()
+    previous_start = (
+        start_date - timedelta(days=7)
+    ).isoformat()
+
+    previous = connection.execute(
+        """
+        SELECT COALESCE(SUM(total_paise), 0) AS revenue
+        FROM orders
+        WHERE date(date) >= ?
+          AND date(date) < ?
+          AND status != 'Cancelled'
+        """,
+        (previous_start, previous_end),
+    ).fetchone()
+
     inventory = connection.execute(
         """
         SELECT COALESCE(SUM(stock), 0) AS total_stock
