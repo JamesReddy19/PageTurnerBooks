@@ -317,6 +317,53 @@ class PageTurnerTests(unittest.TestCase):
             ).fetchone()[0]
         self.assertEqual(status, "hidden")
 
+    def login_as_admin(self):
+        with self.app.app_context():
+            connection = get_db()
+            connection.execute(
+                "INSERT INTO users(name,email,password_hash,role) VALUES (?,?,?,'admin')",
+                ("Admin", "admin@example.com", generate_password_hash("AdminPass123")),
+            )
+            connection.commit()
+            admin_id = connection.execute(
+                "SELECT id FROM users WHERE email='admin@example.com'"
+            ).fetchone()[0]
+        with self.client.session_transaction() as session:
+            session["user_id"] = admin_id
+        return admin_id
+
+    def test_35_admin_dashboard_shows_kpi_cards(self):
+        self.login_as_admin()
+        response = self.client.get("/admin/")
+        self.assertEqual(response.status_code, 200)
+        for label in (
+            b"AVERAGE ORDER",
+            b"REVENUE TREND",
+            b"NEW CUSTOMERS",
+            b"PENDING RETURNS",
+        ):
+            self.assertIn(label, response.data)
+
+    def test_36_admin_dashboard_revenue_trend_is_computed(self):
+        self.login_as_admin()
+        with self.app.app_context():
+            connection = get_db()
+            connection.execute(
+                "INSERT INTO orders(user_id,name,phone,address,total_paise,date,status) "
+                "VALUES (NULL,'Buyer','9999999999','Somewhere',50000,date('now'),'Placed')"
+            )
+            connection.commit()
+        response = self.client.get("/admin/")
+        self.assertEqual(response.status_code, 200)
+        # Revenue is present in the current window and zero in the previous one.
+        self.assertIn(b"+100%", response.data)
+
+    def test_37_admin_dashboard_renders_category_chart(self):
+        self.login_as_admin()
+        response = self.client.get("/admin/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'id="category-chart"', response.data)
+
 
 if __name__ == "__main__":
     unittest.main()
