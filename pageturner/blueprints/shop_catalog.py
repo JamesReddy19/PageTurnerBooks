@@ -162,7 +162,9 @@ def index():
     books = connection.execute(
         f"SELECT b.*, {relevance_sql}, "
         "(SELECT AVG(r.rating) FROM reviews r "
-        "WHERE r.book_id=b.id) AS average_rating "
+        "WHERE r.book_id=b.id AND r.status='published') AS average_rating, "
+        "(SELECT COUNT(*) FROM order_items oi "
+        "WHERE oi.book_id=b.id) AS sold "
         f"FROM books b{where_sql} "
         f"ORDER BY {sort_sql} LIMIT ? OFFSET ?",
         query_params,
