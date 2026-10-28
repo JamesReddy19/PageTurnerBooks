@@ -230,7 +230,7 @@ class PageTurnerTests(unittest.TestCase):
     def test_27_catalog_price_range_filter(self):
         self.make_book("Price Filter Low", 10000)
         self.make_book("Price Filter High", 90000)
-        response = self.client.get("/?min_price=50000")
+        response = self.client.get("/?q=Price+Filter&min_price=500")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Price Filter High", response.data)
         self.assertNotIn(b"Price Filter Low", response.data)
@@ -238,7 +238,7 @@ class PageTurnerTests(unittest.TestCase):
     def test_28_catalog_in_stock_filter(self):
         self.make_book("Stock Filter Empty", 20000, stock=0)
         self.make_book("Stock Filter Available", 20000, stock=4)
-        response = self.client.get("/?in_stock=1")
+        response = self.client.get("/?q=Stock+Filter&in_stock=1")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Stock Filter Available", response.data)
         self.assertNotIn(b"Stock Filter Empty", response.data)
@@ -246,7 +246,7 @@ class PageTurnerTests(unittest.TestCase):
     def test_29_catalog_minimum_rating_filter(self):
         self.make_book("Rating Filter High", 20000, rating=5)
         self.make_book("Rating Filter Low", 20000, rating=2)
-        response = self.client.get("/?min_rating=4")
+        response = self.client.get("/?q=Rating+Filter&min_rating=4")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Rating Filter High", response.data)
         self.assertNotIn(b"Rating Filter Low", response.data)
