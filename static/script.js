@@ -619,6 +619,140 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // 12b. Draw the category sales chart on the admin dashboard.
+    const categoryCanvas = document.querySelector("#category-chart");
+
+    if (categoryCanvas) {
+        function drawCategoryChart() {
+            const context = categoryCanvas.getContext("2d");
+
+            if (!context) {
+                return;
+            }
+
+            const values = (categoryCanvas.dataset.values || "")
+                .split(",")
+                .map(function (value) {
+                    return Number(value.trim());
+                });
+
+            const labels = (categoryCanvas.dataset.labels || "")
+                .split(",")
+                .map(function (label) {
+                    return label.trim();
+                });
+
+            const validData = values.every(function (value) {
+                return Number.isFinite(value) && value >= 0;
+            });
+
+            const cssWidth = Math.max(
+                280,
+                Math.min(categoryCanvas.parentElement.clientWidth || 600, 760)
+            );
+
+            const cssHeight = 260;
+            const pixelRatio = window.devicePixelRatio || 1;
+
+            categoryCanvas.style.display = "block";
+            categoryCanvas.style.width = "100%";
+            categoryCanvas.style.maxWidth = cssWidth + "px";
+            categoryCanvas.style.height = cssHeight + "px";
+
+            categoryCanvas.width = Math.round(cssWidth * pixelRatio);
+            categoryCanvas.height = Math.round(cssHeight * pixelRatio);
+
+            context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+            context.clearRect(0, 0, cssWidth, cssHeight);
+
+            if (
+                values.length === 0 ||
+                !validData ||
+                values.every(function (value) {
+                    return value === 0;
+                })
+            ) {
+                context.fillStyle = "#78847b";
+                context.font = "12px sans-serif";
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.fillText(
+                    "No category sales recorded yet",
+                    cssWidth / 2,
+                    cssHeight / 2
+                );
+                return;
+            }
+
+            const left = 96;
+            const right = 44;
+            const top = 18;
+            const bottom = 26;
+            const plotWidth = cssWidth - left - right;
+            const plotHeight = cssHeight - top - bottom;
+
+            const maxValue = Math.max(...values, 1);
+            const rowHeight = plotHeight / values.length;
+            const barHeight = Math.min(24, rowHeight * 0.6);
+
+            context.textBaseline = "middle";
+
+            values.forEach(function (value, index) {
+                const y =
+                    top + index * rowHeight + (rowHeight - barHeight) / 2;
+                const barWidth = (value / maxValue) * plotWidth;
+
+                context.fillStyle = "#28745c";
+                context.beginPath();
+
+                if (typeof context.roundRect === "function") {
+                    context.roundRect(
+                        left,
+                        y,
+                        Math.max(0, barWidth),
+                        barHeight,
+                        [0, 5, 5, 0]
+                    );
+                } else {
+                    context.rect(left, y, Math.max(0, barWidth), barHeight);
+                }
+
+                context.fill();
+
+                context.fillStyle = "#25352e";
+                context.font = "11px sans-serif";
+                context.textAlign = "left";
+
+                const label = labels[index] || "Category " + (index + 1);
+
+                context.save();
+                context.textAlign = "right";
+                context.fillText(label, left - 10, y + barHeight / 2);
+                context.restore();
+
+                context.fillStyle = "#59675d";
+                context.textAlign = "left";
+                context.fillText(
+                    value.toLocaleString("en-IN") + " copies",
+                    left + Math.max(0, barWidth) + 8,
+                    y + barHeight / 2
+                );
+            });
+        }
+
+        drawCategoryChart();
+
+        let categoryResizeTimer = null;
+
+        window.addEventListener("resize", function () {
+            clearTimeout(categoryResizeTimer);
+
+            categoryResizeTimer = setTimeout(function () {
+                drawCategoryChart();
+            }, 150);
+        });
+    }
+
     // 13. Compare books selected across different catalog pages.
     const compareForm = document.querySelector("#compareForm");
     const compareStorageKey = "pageturner_compare_book_ids";
