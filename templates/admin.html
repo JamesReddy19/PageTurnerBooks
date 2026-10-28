@@ -55,6 +55,48 @@
             <small>Copies in non-cancelled orders</small>
         </article>
 
+        <article class="stat-card admin-stat-average">
+            <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true">₹</span>
+                <span class="stat-label">AVERAGE ORDER</span>
+            </div>
+            <strong>{{ money(average_order_value) }}</strong>
+            <small>Average value of an order in the last 7 days</small>
+        </article>
+
+        <article class="stat-card admin-stat-trend">
+            <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true">
+                    {% if revenue_change > 0 %}▲{% elif revenue_change < 0 %}▼{% else %}–{% endif %}
+                </span>
+                <span class="stat-label">REVENUE TREND</span>
+            </div>
+            <strong>
+                {% if revenue_change > 0 %}+{{ revenue_change }}%
+                {% elif revenue_change < 0 %}{{ revenue_change }}%
+                {% else %}0%{% endif %}
+            </strong>
+            <small>Versus the previous 7 days ({{ money(previous_revenue) }})</small>
+        </article>
+
+        <article class="stat-card admin-stat-customers">
+            <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true">✦</span>
+                <span class="stat-label">NEW CUSTOMERS</span>
+            </div>
+            <strong>{{ new_customers }}</strong>
+            <small>Accounts created in the last 7 days</small>
+        </article>
+
+        <article class="stat-card admin-stat-returns">
+            <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true">↩</span>
+                <span class="stat-label">PENDING RETURNS</span>
+            </div>
+            <strong>{{ pending_returns }}</strong>
+            <small>Return requests awaiting review</small>
+        </article>
+
     </section>
 
     <!-- Admin management links -->
