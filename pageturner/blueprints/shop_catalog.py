@@ -8,6 +8,24 @@ from ..helpers import current_user, rupees_to_paise
 from .shop import shop_bp, customers_also_bought
 
 
+def parse_price_filter(value):
+    """Convert a rupee price filter into paise, or None when unset/invalid."""
+    if value is None:
+        return None
+
+    text = str(value).strip()
+
+    if not text:
+        return None
+
+    try:
+        paise = rupees_to_paise(text)
+    except ValueError:
+        return None
+
+    return paise if paise > 0 else None
+
+
 @shop_bp.get("/")
 def index():
     connection = get_db()
