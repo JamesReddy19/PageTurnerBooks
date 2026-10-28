@@ -217,6 +217,16 @@
                     <li class="empty-list-item">No category sales yet.</li>
                 {% endfor %}
             </ul>
+
+            <div class="revenue-chart-wrap admin-category-chart-wrap">
+                <canvas
+                    id="category-chart"
+                    data-values="{{ category_sales|map(attribute='sold')|join(',') }}"
+                    data-labels="{{ category_sales|map(attribute='name')|join(',') }}"
+                    role="img"
+                    aria-label="Copies sold for each of the top five categories"
+                ></canvas>
+            </div>
         </section>
 
     </div>
