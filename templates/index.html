@@ -183,9 +183,80 @@
                 <option value="newest" {% if sort == 'newest' %}selected{% endif %}>
                     Newest
                 </option>
+                <option value="rating" {% if sort == 'rating' %}selected{% endif %}>
+                    Top rated
+                </option>
+                <option value="popularity" {% if sort == 'popularity' %}selected{% endif %}>
+                    Most popular
+                </option>
             </select>
         </form>
     </div>
+
+    <!-- Filters: price range, minimum rating and stock availability -->
+    <form
+        action="{{ url_for('shop.index') }}"
+        method="GET"
+        class="sorting-form filter-form"
+        aria-label="Filter books"
+    >
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="sort" value="{{ sort }}">
+
+        {% if category and not category.isdigit() %}
+            <input type="hidden" name="category" value="{{ category }}">
+        {% endif %}
+
+        {% for category_id in category_ids %}
+            <input type="hidden" name="category" value="{{ category_id }}">
+        {% endfor %}
+
+        <label for="min-price">Min price</label>
+        <input
+            type="number"
+            id="min-price"
+            name="min_price"
+            min="0"
+            step="1"
+            value="{{ min_price }}"
+            placeholder="0"
+        >
+
+        <label for="max-price">Max price</label>
+        <input
+            type="number"
+            id="max-price"
+            name="max_price"
+            min="0"
+            step="1"
+            value="{{ max_price }}"
+            placeholder="Any"
+        >
+
+        <label for="min-rating">Minimum rating</label>
+        <select id="min-rating" name="min_rating">
+            <option value="0" {% if not min_rating %}selected{% endif %}>Any</option>
+            {% for value in [3, 4, 5] %}
+                <option value="{{ value }}" {% if min_rating == value %}selected{% endif %}>
+                    {{ value }}+ stars
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="in-stock">Availability</label>
+        <select id="in-stock" name="in_stock">
+            <option value="" {% if not in_stock %}selected{% endif %}>All books</option>
+            <option value="1" {% if in_stock %}selected{% endif %}>In stock only</option>
+        </select>
+
+        <button type="submit" class="add-button">Apply filters</button>
+
+        {% if min_price or max_price or min_rating or in_stock %}
+            <a href="{{ url_for('shop.index', q=query, sort=sort) }}" class="page-link">
+                Clear
+            </a>
+        {% endif %}
+    </form>
 
     <!-- Step 45: Compare two selected books -->
     <form
