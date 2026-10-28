@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Review moderation · PageTurner Books
+{% endblock %}
+{% block content %}
+<h1>Review moderation</h1>
+<p class="muted">
+    Hidden reviews are kept in the database but are not shown to shoppers and
+    no longer count towards a book's average rating.
+</p>
+
+<section class="panel">
+    <h2>Filters</h2>
+    <p>
+        <a href="{{ url_for('admin.reviews') }}">All ({{ counts.get('published', 0) + counts.get('hidden', 0) }})</a>
+        ·
+        <a href="{{ url_for('admin.reviews', status='published') }}">Published ({{ counts.get('published', 0) }})</a>
+        ·
+        <a href="{{ url_for('admin.reviews', status='hidden') }}">Hidden ({{ counts.get('hidden', 0) }})</a>
+    </p>
+</section>
+
+<section class="panel">
+    <h2>Reviews</h2>
+    <div class="table-wrap">
+    <table>
+<thead>
+<tr>
+<th>Book</th>
+<th>Customer</th>
+<th>Rating</th>
+<th>Comment</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>
+{% for review in reviews %}
+<tr>
+<td>{{ review.book_title or 'Removed book' }}</td>
+<td>{{ review.name }}</td>
+<td>{{ review.rating }}/5</td>
+<td>{{ review.comment }}</td>
+<td>{{ review.status }}</td>
+<td>
+<form method="post" action="{{ url_for('admin.set_review_status', review_id=review.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<input type="hidden" name="status" value="{{ 'hidden' if review.status == 'published' else 'published' }}">
+<button class="secondary">{{ 'Hide' if review.status == 'published' else 'Publish' }}</button>
+</form>
+<form method="post" action="{{ url_for('admin.delete_review', review_id=review.id) }}" data-confirm="Delete this review permanently?">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="danger">Delete</button>
+</form>
+</td>
+</tr>
+{% else %}
+<tr>
+<td colspan="6">No reviews found.</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+    </div>
+</section>
+
+{% endblock %}
