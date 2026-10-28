@@ -208,6 +208,88 @@ class PageTurnerTests(unittest.TestCase):
     def test_26_health_endpoint(self):
         self.assertEqual(self.client.get("/health").json["status"], "ok")
 
+    # --- Batch 1: catalog filters and review moderation ---
+
+    def make_book(self, title, price_paise, stock=10, rating=0, review_status="published"):
+        """Insert a book (and optionally a review) used by the filter tests."""
+        with self.app.app_context():
+            connection = get_db()
+            connection.execute(
+                "INSERT INTO books(title,author,category,price_paise,stock) VALUES (?,?,?,?,?)",
+                (title, "Filter Author", "Filters", price_paise, stock),
+            )
+            book_id = connection.execute("SELECT MAX(id) FROM books").fetchone()["id"]
+            if rating:
+                connection.execute(
+                    "INSERT INTO reviews(book_id,user_id,name,rating,comment,status) VALUES (?,?,?,?,?,?)",
+                    (book_id, None, "Reviewer", rating, "Solid read", review_status),
+                )
+            connection.commit()
+        return book_id
+
+    def test_27_catalog_price_range_filter(self):
+        self.make_book("Price Filter Low", 10000)
+        self.make_book("Price Filter High", 90000)
+        response = self.client.get("/?min_price=50000")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Price Filter High", response.data)
+        self.assertNotIn(b"Price Filter Low", response.data)
+
+    def test_28_catalog_in_stock_filter(self):
+        self.make_book("Stock Filter Empty", 20000, stock=0)
+        self.make_book("Stock Filter Available", 20000, stock=4)
+        response = self.client.get("/?in_stock=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Stock Filter Available", response.data)
+        self.assertNotIn(b"Stock Filter Empty", response.data)
+
+    def test_29_catalog_minimum_rating_filter(self):
+        self.make_book("Rating Filter High", 20000, rating=5)
+        self.make_book("Rating Filter Low", 20000, rating=2)
+        response = self.client.get("/?min_rating=4")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Rating Filter High", response.data)
+        self.assertNotIn(b"Rating Filter Low", response.data)
+
+    def test_30_hidden_review_is_not_public(self):
+        book_id = self.make_book("Hidden Review Book", 20000, rating=1, review_status="hidden")
+        response = self.client.get(f"/book/{book_id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(b"Solid read", response.data)
+
+    def test_31_admin_can_moderate_reviews(self):
+        book_id = self.make_book("Moderated Review Book", 20000, rating=4)
+        with self.app.app_context():
+            connection = get_db()
+            review_id = connection.execute(
+                "SELECT id FROM reviews WHERE book_id=?", (book_id,)
+            ).fetchone()["id"]
+            connection.execute(
+                "INSERT INTO users(name,email,password_hash,role) VALUES (?,?,?,'admin')",
+                ("Admin", "admin@example.com", generate_password_hash("AdminPass123")),
+            )
+            connection.commit()
+            admin_id = connection.execute(
+                "SELECT id FROM users WHERE email='admin@example.com'"
+            ).fetchone()["id"]
+        with self.client.session_transaction() as session:
+            session["user_id"] = admin_id
+        listing = self.client.get("/admin/reviews")
+        self.assertEqual(listing.status_code, 200)
+        self.assertIn(b"Moderated Review Book", listing.data)
+        token = self.token("/admin/reviews")
+        response = self.client.post(
+            f"/admin/reviews/{review_id}/status",
+            data={"csrf_token": token, "status": "hidden"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        with self.app.app_context():
+            status = get_db().execute(
+                "SELECT status FROM reviews WHERE id=?", (review_id,)
+            ).fetchone()["status"]
+        self.assertEqual(status, "hidden")
+
 
 if __name__ == "__main__":
     unittest.main()
