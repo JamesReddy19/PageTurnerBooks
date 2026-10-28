@@ -65,6 +65,12 @@ def init_db():
         connection, "books", "sale_end", "TEXT"
     )
 
+    # Review moderation: hidden reviews stay in the table but are not shown.
+    add_column_if_missing(
+        connection, "reviews", "status",
+        "TEXT NOT NULL DEFAULT 'published'"
+    )
+
     add_column_if_missing(
         connection, "orders", "gift_wrap_paise",
         "INTEGER NOT NULL DEFAULT 0"
