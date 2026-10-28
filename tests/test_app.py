@@ -257,6 +257,33 @@ class PageTurnerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotIn(b"Solid read", response.data)
 
+    def test_32_api_supports_price_and_stock_filters(self):
+        self.make_book("API Filter Low", 10000)
+        self.make_book("API Filter High", 90000)
+        response = self.client.get("/api/books?q=API+Filter&min_price=500")
+        self.assertEqual(response.status_code, 200)
+        titles = [item["title"] for item in response.json["books"]]
+        self.assertIn("API Filter High", titles)
+        self.assertNotIn("API Filter Low", titles)
+
+    def test_33_api_pagination_metadata(self):
+        response = self.client.get("/api/books?page=1&page_size=2")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json
+        self.assertEqual(payload["page"], 1)
+        self.assertEqual(payload["page_size"], 2)
+        self.assertLessEqual(len(payload["books"]), 2)
+        self.assertGreaterEqual(payload["total"], len(payload["books"]))
+
+    def test_34_api_book_detail_includes_published_reviews_only(self):
+        book_id = self.make_book("API Review Book", 20000, rating=5, review_status="published")
+        self.make_book("API Hidden Book", 20000, rating=1, review_status="hidden")
+        response = self.client.get(f"/api/books/{book_id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["review_count"], 1)
+        self.assertEqual(len(response.json["reviews"]), 1)
+        self.assertEqual(response.json["average_rating"], 5.0)
+
     def test_31_admin_can_moderate_reviews(self):
         book_id = self.make_book("Moderated Review Book", 20000, rating=4)
         with self.app.app_context():
