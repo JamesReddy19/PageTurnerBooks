@@ -197,7 +197,8 @@ def index():
         recent_rows = connection.execute(
             "SELECT b.*, "
             "(SELECT AVG(r.rating) FROM reviews r "
-            "WHERE r.book_id=b.id) AS average_rating "
+            "WHERE r.book_id=b.id AND r.status='published') "
+            "AS average_rating "
             f"FROM books b WHERE b.id IN ({placeholders})",
             recent_ids,
         ).fetchall()
@@ -237,7 +238,8 @@ def book_detail(book_id):
     book = connection.execute(
         "SELECT b.*, "
         "(SELECT AVG(r.rating) FROM reviews r "
-        "WHERE r.book_id=b.id) AS average_rating "
+        "WHERE r.book_id=b.id AND r.status='published') "
+        "AS average_rating "
         "FROM books b WHERE b.id=?",
         (book_id,),
     ).fetchone()
@@ -358,7 +360,8 @@ def compare_books():
         SELECT b.*,
                (SELECT AVG(r.rating)
                 FROM reviews r
-                WHERE r.book_id = b.id) AS average_rating
+                WHERE r.book_id = b.id
+                  AND r.status='published') AS average_rating
         FROM books b
         WHERE b.id IN ({placeholders})
         """,
