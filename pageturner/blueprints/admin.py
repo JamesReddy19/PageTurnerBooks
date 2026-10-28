@@ -322,6 +322,43 @@ def dashboard():
         """
     ).fetchall()
 
+    # Average order value for the current seven-day window.
+    average_order_value = (
+        summary["revenue"] // summary["order_count"]
+        if summary["order_count"]
+        else 0
+    )
+
+    # Percentage change in revenue against the previous seven days.
+    if previous["revenue"]:
+        revenue_change = round(
+            ((summary["revenue"] - previous["revenue"])
+             / previous["revenue"]) * 100
+        )
+    elif summary["revenue"]:
+        revenue_change = 100
+    else:
+        revenue_change = 0
+
+    new_customers = connection.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM users
+        WHERE role = 'customer'
+          AND date(created_at) >= ?
+          AND date(created_at) < ?
+        """,
+        (start, end),
+    ).fetchone()["count"]
+
+    pending_returns = connection.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM returns
+        WHERE status = 'Pending'
+        """
+    ).fetchone()["count"]
+
     return render_template(
         "admin.html",
         summary=summary,
@@ -332,6 +369,11 @@ def dashboard():
         statuses=statuses,
         daily=daily,
         category_sales=category_sales,
+        average_order_value=average_order_value,
+        previous_revenue=previous["revenue"],
+        revenue_change=revenue_change,
+        new_customers=new_customers,
+        pending_returns=pending_returns,
     )
 
 
