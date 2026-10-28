@@ -127,7 +127,7 @@
 
     <nav class="category-filters" aria-label="Book categories">
         <a
-            href="{{ url_for('shop.index', q=query, sort=sort) }}"
+            href="{{ url_for('shop.index', q=query, sort=sort, min_price=min_price, max_price=max_price, min_rating=min_rating, in_stock='1' if in_stock else '') }}"
             class="{% if not category and not category_ids %}active{% endif %}"
         >
             All books
@@ -135,7 +135,7 @@
 
         {% for item in categories %}
             <a
-                href="{{ url_for('shop.index', q=query, category=item['id'], sort=sort) }}"
+                href="{{ url_for('shop.index', q=query, category=item['id'], sort=sort, min_price=min_price, max_price=max_price, min_rating=min_rating, in_stock='1' if in_stock else '') }}"
                 class="{% if category|string == item['id']|string %}active{% endif %}"
             >
                 {{ item['name'] }} <span>{{ item['book_count'] }}</span>
@@ -252,7 +252,7 @@
         <button type="submit" class="add-button">Apply filters</button>
 
         {% if min_price or max_price or min_rating or in_stock %}
-            <a href="{{ url_for('shop.index', q=query, sort=sort) }}" class="page-link">
+            <a href="{{ url_for('shop.index', q=query, sort=sort, min_price=min_price, max_price=max_price, min_rating=min_rating, in_stock='1' if in_stock else '') }}" class="page-link">
                 Clear
             </a>
         {% endif %}
@@ -419,7 +419,7 @@
         <nav class="pagination" aria-label="Book pages">
             {% if page > 1 %}
                 <a
-                    href="{{ url_for('shop.index', q=query, category=category, sort=sort, page=page - 1) }}"
+                    href="{{ url_for('shop.index', q=query, category=category, sort=sort, page=page - 1, min_price=min_price, max_price=max_price, min_rating=min_rating, in_stock='1' if in_stock else '') }}"
                     class="page-link"
                 >
                     ← Previous
@@ -430,7 +430,7 @@
 
             {% if page < page_count %}
                 <a
-                    href="{{ url_for('shop.index', q=query, category=category, sort=sort, page=page + 1) }}"
+                    href="{{ url_for('shop.index', q=query, category=category, sort=sort, page=page + 1, min_price=min_price, max_price=max_price, min_rating=min_rating, in_stock='1' if in_stock else '') }}"
                     class="page-link"
                 >
                     Next →
