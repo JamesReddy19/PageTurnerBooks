@@ -121,6 +121,24 @@ def index():
         )
         where_params.extend([category, category])
 
+    if min_price is not None:
+        conditions.append("b.price_paise >= ?")
+        where_params.append(min_price)
+
+    if max_price is not None:
+        conditions.append("b.price_paise <= ?")
+        where_params.append(max_price)
+
+    if min_rating:
+        conditions.append(
+            "(SELECT AVG(r.rating) FROM reviews r "
+            "WHERE r.book_id=b.id AND r.status='published') >= ?"
+        )
+        where_params.append(min_rating)
+
+    if in_stock:
+        conditions.append("b.stock > 0")
+
     where_sql = (
         " WHERE " + " AND ".join(conditions)
         if conditions
