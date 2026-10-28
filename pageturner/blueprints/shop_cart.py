@@ -127,7 +127,7 @@ def add_review(book_id):
         flash("Choose a rating from 1 to 5 and enter a comment.", "error")
     else:
         try:
-            connection.execute("INSERT INTO reviews(book_id,user_id,name,rating,comment) VALUES (?,?,?,?,?)", (book_id, user["id"], user["name"], rating, comment))
+            connection.execute("INSERT INTO reviews(book_id,user_id,name,rating,comment,status) VALUES (?,?,?,?,?,'published')", (book_id, user["id"], user["name"], rating, comment))
             connection.commit()
             flash("Thank you for reviewing this book.", "success")
         except sqlite3.IntegrityError:
