@@ -146,7 +146,7 @@ def books():
             BOOK_SELECT
             + where_sql
             + f" ORDER BY {relevance_sql} DESC, {order_sql} LIMIT ? OFFSET ?",
-            [like, like] + where_params + [page_size, (page - 1) * page_size],
+            where_params + [like, like, page_size, (page - 1) * page_size],
         ).fetchall()
     else:
         rows = connection.execute(
