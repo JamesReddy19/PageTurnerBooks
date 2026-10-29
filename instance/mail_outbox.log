@@ -1734,3 +1734,30 @@ Hello Smoke Reader,
 Your PageTurner Books account is ready.
 
 
+--- 2026-10-29T09:08:35 ---
+To: smoke@example.com
+From: no-reply@pageturnerbooks.local
+Subject: Welcome to PageTurner Books
+
+Hello Smoke Reader,
+
+Your PageTurner Books account is ready.
+
+
+--- 2026-10-29T09:08:35 ---
+To: smoke@example.com
+From: no-reply@pageturnerbooks.local
+Subject: PageTurner Books order #1 confirmation
+
+Thank you for your order #1.
+
+Your order is recorded as 'Placed'. Payment is simulated in this
+project: no gateway was contacted and no money was charged.
+
+Total: INR 1257.90
+Payment method: card_simulated
+Payment status: Simulated - paid
+Reference: SIM-EE83EC576E
+
+You can view the order in your account.
+
