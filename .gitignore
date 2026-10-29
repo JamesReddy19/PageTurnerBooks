@@ -7,3 +7,4 @@ backups/
 static/uploads/*
 !.gitkeep
 .env
+instance/mail_outbox.log
