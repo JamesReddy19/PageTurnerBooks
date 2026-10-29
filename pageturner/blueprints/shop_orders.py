@@ -1,6 +1,7 @@
 """Order history, tracking, cancellation, invoices and returns."""
 from flask import abort, flash, redirect, render_template, request, session, url_for
 from ..db import get_db
+from ..payments import payment_for_order
 from ..helpers import current_user, login_required, add_notification, ORDER_STATUS_TRANSITIONS
 from .shop import shop_bp
 
@@ -25,7 +26,8 @@ def order_detail(order_id):
         abort(404)
     items = connection.execute("SELECT oi.*,b.title,b.author,b.image FROM order_items oi JOIN books b ON b.id=oi.book_id WHERE oi.order_id=?", (order_id,)).fetchall()
     history = connection.execute("SELECT * FROM order_status_history WHERE order_id=? ORDER BY id", (order_id,)).fetchall()
-    return render_template("order.html", order=order, items=items, history=history)
+    payment = payment_for_order(connection, order_id)
+    return render_template("order.html", order=order, items=items, history=history, payment=payment)
 
 
 @shop_bp.post("/order/<int:order_id>/cancel")
