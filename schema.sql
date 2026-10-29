@@ -53,6 +53,9 @@ CREATE TABLE IF NOT EXISTS contact_messages (id INTEGER PRIMARY KEY AUTOINCREMEN
 CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, message TEXT NOT NULL, link TEXT NOT NULL DEFAULT '/', is_read INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS returns (id INTEGER PRIMARY KEY AUTOINCREMENT, order_item_id INTEGER NOT NULL REFERENCES order_items(id), user_id INTEGER NOT NULL REFERENCES users(id), quantity INTEGER NOT NULL CHECK(quantity > 0), reason TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Pending' CHECK(status IN ('Pending','Approved','Rejected')), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, reviewed_by INTEGER REFERENCES users(id), reviewed_at TEXT);
 CREATE TABLE IF NOT EXISTS shipping_zones (prefix TEXT PRIMARY KEY, fee_paise INTEGER NOT NULL DEFAULT 5000);
+-- Simulated payment record. No real gateway is contacted; status and method are
+-- stored so the order page can state clearly what was (not) charged.
+CREATE TABLE IF NOT EXISTS payments (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE, method TEXT NOT NULL, status TEXT NOT NULL, amount_paise INTEGER NOT NULL DEFAULT 0, reference TEXT NOT NULL, is_simulated INTEGER NOT NULL DEFAULT 1 CHECK(is_simulated IN (0,1)), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 
 CREATE INDEX IF NOT EXISTS idx_books_category ON books(category);
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
