@@ -10,6 +10,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..db import get_db
 from ..helpers import current_user, login_required, make_reset_token
+from ..mail import send_email, smtp_configured
 from .auth_helpers import save_login_session
 
 
@@ -39,6 +40,14 @@ def register():
                     (name, email, generate_password_hash(password)),
                 )
                 connection.commit()
+
+                # Welcome message: real SMTP when configured, otherwise the
+                # local outbox file. Never blocks registration.
+                send_email(
+                    email,
+                    "Welcome to PageTurner Books",
+                    f"Hello {name},\n\nYour PageTurner Books account is ready.\n",
+                )
 
                 flash("Your account has been created. Please log in.", "success")
                 return redirect(url_for("auth.login"))
@@ -202,12 +211,25 @@ def password_reset_request():
             )
             get_db().commit()
 
-            # No email server is configured, so show the token for this demo.
-            reset_token = token
-            flash(
-                "For this no-email demo, use the one-time token shown below within 15 minutes.",
-                "success",
-            )
+            if smtp_configured():
+                # Real delivery: the token is emailed and not shown on screen.
+                send_email(
+                    email,
+                    "PageTurner Books password reset",
+                    "Use this one-time token within 15 minutes:\n\n"
+                    f"{token}\n",
+                )
+                flash(
+                    "A reset token has been emailed to that address. It expires in 15 minutes.",
+                    "success",
+                )
+            else:
+                # No SMTP configured, so show the token for this demo.
+                reset_token = token
+                flash(
+                    "For this no-email demo, use the one-time token shown below within 15 minutes.",
+                    "success",
+                )
         else:
             flash(
                 "If that account exists, a reset token has been created.",
