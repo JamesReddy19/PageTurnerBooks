@@ -966,6 +966,86 @@
 }
 
 /* --------------------------------
+   11. Seven-day sales bar chart (CSS only, Requirement 56)
+   Plain HTML boxes sized with percentage heights. No JavaScript and
+   no chart library are used to render this chart.
+--------------------------------- */
+
+.admin-dashboard .sales-bar-chart {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 12px;
+    align-items: end;
+    padding: 22px 18px 14px;
+    margin-bottom: 22px;
+    background: #ffffff;
+    border: 1px solid #e5e2da;
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(24, 63, 51, 0.06);
+    overflow-x: auto;
+}
+
+.admin-dashboard .sales-bar-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 46px;
+}
+
+.admin-dashboard .sales-bar-track {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    height: 160px;
+    background: linear-gradient(180deg, #f7f5ef 0%, #efede4 100%);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.admin-dashboard .sales-bar-fill {
+    width: 100%;
+    min-height: 3px;
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(180deg, var(--admin-green) 0%, var(--admin-forest) 100%);
+}
+
+.admin-dashboard .sales-bar-fill.is-empty {
+    background: #ddd8ca;
+}
+
+.admin-dashboard .sales-bar-amount {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--admin-forest);
+    white-space: nowrap;
+}
+
+.admin-dashboard .sales-bar-day {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4a4a45;
+}
+
+.admin-dashboard .sales-bar-orders {
+    font-size: 0.68rem;
+    color: #7b7b74;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .admin-dashboard .sales-bar-track {
+        height: 120px;
+    }
+
+    .admin-dashboard .sales-bar-chart {
+        gap: 8px;
+        padding: 16px 12px 12px;
+    }
+}
+
+/* --------------------------------
    12. Reduced motion accessibility
 --------------------------------- */
 
