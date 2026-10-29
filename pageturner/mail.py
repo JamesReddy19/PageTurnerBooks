@@ -26,9 +26,14 @@ def smtp_configured(app=None):
 
 
 def _outbox_path(app):
-    folder = Path(app.instance_path)
-    folder.mkdir(parents=True, exist_ok=True)
-    return folder / "mail_outbox.log"
+    configured = app.config.get("MAIL_OUTBOX")
+    if configured:
+        path = Path(configured)
+    else:
+        path = Path(app.instance_path) / "mail_outbox.log"
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def send_email(to_address, subject, body, app=None):
