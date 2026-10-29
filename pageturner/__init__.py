@@ -28,6 +28,14 @@ def create_app(test_config=None):
     # Make sure the instance directory exists.
     os.makedirs(app.instance_path, exist_ok=True)
 
+    # Production safety check: never run publicly with the development key.
+    if not app.config.get("TESTING") and not os.environ.get("SECRET_KEY"):
+        if app.config["SECRET_KEY"] == Config.SECRET_KEY:
+            app.logger.warning(
+                "SECRET_KEY is the development default. Set the SECRET_KEY "
+                "environment variable before deploying."
+            )
+
     # Close database connections after each request.
     app.teardown_appcontext(close_db)
 
