@@ -364,6 +364,92 @@ class PageTurnerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'id="category-chart"', response.data)
 
+    def place_order(self, payment_method="cod"):
+        self.register_and_login()
+        self.post("/cart/add/1", {"quantity": "1"})
+        token = self.token("/checkout")
+        data = {
+            "csrf_token": token,
+            "name": "Reader",
+            "phone": "9876543210",
+            "new_address": "12 Main Road",
+            "pincode": "500001",
+        }
+        if payment_method is not None:
+            data["payment_method"] = payment_method
+        return self.client.post("/checkout", data=data, follow_redirects=True)
+
+    def test_38_admin_served_by_css(self):
+        """Requirement 56: the seven-day chart must be pure HTML + CSS."""
+        self.login_as_admin()
+        response = self.client.get("/admin/")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode()
+
+        chart_start = html.index('class="sales-bar-chart"')
+        chart_end = html.index("</div>", html.index('class="sales-bar-orders"', chart_start))
+        chart = html[chart_start:chart_end]
+
+        self.assertIn("sales-bar-fill", chart)
+        self.assertIn('style="height:', chart)
+        self.assertNotIn("<script", chart.lower())
+        self.assertNotIn("<canvas", chart.lower())
+        self.assertEqual(html.lower().count("<canvas"), 1)  # only the separate canvas chart
+
+        with open(os.path.join(os.path.dirname(__file__), "..", "templates", "admin.html")) as handle:
+            template = handle.read()
+        self.assertNotIn("Chart(", template)
+        self.assertNotIn("chart.js", template.lower())
+
+    def test_39_checkout_records_simulated_payment(self):
+        response = self.place_order("card_simulated")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Simulated", response.data)
+        with self.app.app_context():
+            order = get_db().execute("SELECT * FROM orders").fetchone()
+            payment = get_db().execute("SELECT * FROM payments").fetchone()
+        self.assertEqual(order["status"], "Placed")
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment["order_id"], order["id"])
+        self.assertEqual(payment["method"], "card_simulated")
+        self.assertEqual(payment["amount_paise"], order["total_paise"])
+        self.assertEqual(payment["is_simulated"], 1)
+        self.assertTrue(payment["reference"].startswith("SIM-"))
+
+    def test_40_cash_on_delivery_payment_is_pending(self):
+        response = self.place_order("cod")
+        self.assertEqual(response.status_code, 200)
+        with self.app.app_context():
+            payment = get_db().execute("SELECT * FROM payments").fetchone()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment["method"], "cod")
+        self.assertEqual(payment["status"], "Pending collection")
+
+    def test_41_checkout_rejects_missing_or_unknown_payment_method(self):
+        for method in (None, "bitcoin"):
+            with self.subTest(method=method):
+                self.tearDown()
+                self.setUp()
+                response = self.place_order(method)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(b"payment method", response.data.lower())
+                with self.app.app_context():
+                    count = get_db().execute("SELECT COUNT(*) FROM payments").fetchone()[0]
+                    orders = get_db().execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+                self.assertEqual(count, 0)
+                self.assertEqual(orders, 0)
+
+    def test_42_order_confirmation_email_is_written_to_outbox(self):
+        response = self.place_order("upi_simulated")
+        self.assertEqual(response.status_code, 200)
+        outbox = os.path.join(self.app.instance_path, "mail_outbox.log")
+        self.assertTrue(os.path.exists(outbox))
+        with open(outbox, encoding="utf-8") as handle:
+            contents = handle.read()
+        self.assertIn("reader@example.com", contents)
+        self.assertIn("order #", contents.lower())
+        self.assertIn("simulated", contents.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
