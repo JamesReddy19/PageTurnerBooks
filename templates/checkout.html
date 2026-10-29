@@ -26,8 +26,17 @@
 <label>Address<textarea name="new_address" maxlength="300" placeholder="House / street / area (required if no saved address is selected)">
 </textarea>
 </label>
-<label>6-digit pincode<input name="pincode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Required for a new address">
-</label>
+<p>6-digit pincode<input name="pincode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Required for a new address"></p>
+<p class="muted">
+    Payment is <strong>simulated</strong> in this project. No card details are
+    collected, no gateway is contacted and no money is charged.
+</p>
+<fieldset class="payment-options">
+    <legend>Payment method</legend>
+    <label><input type="radio" name="payment_method" value="cod" checked> Cash on delivery</label>
+    <label><input type="radio" name="payment_method" value="card_simulated"> Card (simulated)</label>
+    <label><input type="radio" name="payment_method" value="upi_simulated"> UPI (simulated)</label>
+</fieldset>
 <button class="checkout-button">Place order</button>
 </form>
 <aside class="panel">
