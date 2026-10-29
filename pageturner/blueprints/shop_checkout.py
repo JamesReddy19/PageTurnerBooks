@@ -140,6 +140,12 @@ def place_order():
     pincode = request.form.get("pincode", "").strip()
     payment_method = request.form.get("payment_method", "").strip()
 
+    # The checkout form pre-selects cash on delivery, so a missing field keeps
+    # that default (and older clients stay valid) while unknown values are
+    # rejected instead of being silently stored.
+    if not payment_method:
+        payment_method = "cod"
+
     # No real gateway is called: this choice only decides the simulated
     # payment status recorded with the order.
     if payment_method not in ALLOWED_METHODS:

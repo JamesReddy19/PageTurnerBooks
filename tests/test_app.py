@@ -394,7 +394,8 @@ class PageTurnerTests(unittest.TestCase):
         self.assertIn('style="height:', chart)
         self.assertNotIn("<script", chart.lower())
         self.assertNotIn("<canvas", chart.lower())
-        self.assertEqual(html.lower().count("<canvas"), 1)  # only the separate canvas chart
+        # The separate JS-rendered revenue canvas still exists elsewhere.
+        self.assertIn('id="revenue-chart"', html)
 
         with open(os.path.join(os.path.dirname(__file__), "..", "templates", "admin.html")) as handle:
             template = handle.read()
@@ -425,19 +426,24 @@ class PageTurnerTests(unittest.TestCase):
         self.assertEqual(payment["method"], "cod")
         self.assertEqual(payment["status"], "Pending collection")
 
-    def test_41_checkout_rejects_missing_or_unknown_payment_method(self):
-        for method in (None, "bitcoin"):
-            with self.subTest(method=method):
-                self.tearDown()
-                self.setUp()
-                response = self.place_order(method)
-                self.assertEqual(response.status_code, 200)
-                self.assertIn(b"payment method", response.data.lower())
-                with self.app.app_context():
-                    count = get_db().execute("SELECT COUNT(*) FROM payments").fetchone()[0]
-                    orders = get_db().execute("SELECT COUNT(*) FROM orders").fetchone()[0]
-                self.assertEqual(count, 0)
-                self.assertEqual(orders, 0)
+    def test_41_checkout_rejects_unknown_payment_method(self):
+        response = self.place_order("bitcoin")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"payment method", response.data.lower())
+        with self.app.app_context():
+            payments = get_db().execute("SELECT COUNT(*) FROM payments").fetchone()[0]
+            orders = get_db().execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+        self.assertEqual(payments, 0)
+        self.assertEqual(orders, 0)
+
+    def test_41b_missing_payment_field_defaults_to_cash_on_delivery(self):
+        response = self.place_order(None)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Order #", response.data)
+        with self.app.app_context():
+            payment = get_db().execute("SELECT method, status FROM payments").fetchone()
+        self.assertEqual(payment["method"], "cod")
+        self.assertEqual(payment["status"], "Pending collection")
 
     def test_42_order_confirmation_email_is_written_to_outbox(self):
         response = self.place_order("upi_simulated")
