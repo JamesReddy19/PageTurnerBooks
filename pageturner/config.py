@@ -30,5 +30,9 @@ class Config:
     MAIL_DEFAULT_SENDER = os.environ.get(
         "MAIL_DEFAULT_SENDER", "no-reply@pageturnerbooks.local"
     )
+    # Where the offline fallback writes when MAIL_SERVER is empty. Defaults to
+    # instance/mail_outbox.log; tests point this at a temporary file so they
+    # never append to the checked-out project's outbox.
+    MAIL_OUTBOX = os.environ.get("MAIL_OUTBOX", "")
 
     DEBUG = False
