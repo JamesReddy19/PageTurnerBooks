@@ -7,6 +7,7 @@ from flask import (
 )
 from ..db import get_db
 from ..helpers import login_required, active_reservations
+from ..payments import ALLOWED_METHODS, charge, record_payment
 from .shop import (
     shop_bp, get_cart_rows, coupon_discount,
     current_app_reservation_minutes
@@ -136,6 +137,13 @@ def place_order():
     address_id = request.form.get("address_id", "").strip()
     new_address = request.form.get("new_address", "").strip()[:300]
     pincode = request.form.get("pincode", "").strip()
+    payment_method = request.form.get("payment_method", "").strip()
+
+    # No real gateway is called: this choice only decides the simulated
+    # payment status recorded with the order.
+    if payment_method not in ALLOWED_METHODS:
+        flash("Choose a payment method.", "error")
+        return redirect(url_for("shop.checkout"))
 
     if not name or not phone.isdigit() or len(phone) != 10:
         flash(
@@ -368,6 +376,11 @@ def place_order():
             VALUES (?, NULL, 'Placed', ?, 'Order created')
             """,
             (order_id, user_id)
+        )
+
+        # Simulated payment: no gateway is contacted and no money moves.
+        record_payment(
+            connection, order_id, charge(payment_method, total)
         )
 
         if coupon:
