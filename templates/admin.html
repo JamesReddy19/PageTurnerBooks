@@ -258,6 +258,26 @@
             ></canvas>
         </div>
 
+        {# Requirement 56: seven-day sales bar chart built with HTML + CSS only.
+           No JavaScript and no chart library are involved: the bar heights are
+           plain percentage values in the style attribute. #}
+        {% set peak = (daily|map(attribute='revenue')|max) or 1 %}
+        <div class="sales-bar-chart" role="img"
+             aria-label="Seven-day sales bar chart, revenue in rupees per day">
+            {% for row in daily %}
+                {% set share = (row.revenue / peak * 100) if peak else 0 %}
+                <div class="sales-bar-column">
+                    <span class="sales-bar-amount">{{ money(row.revenue) }}</span>
+                    <div class="sales-bar-track">
+                        <div class="sales-bar-fill{{ '' if row.revenue else ' is-empty' }}"
+                             style="height: {{ (share if row.revenue else 0)|round(1) }}%"></div>
+                    </div>
+                    <span class="sales-bar-day">{{ row.day[5:] }}</span>
+                    <span class="sales-bar-orders">{{ row.orders }} order{{ '' if row.orders == 1 else 's' }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
         <div class="table-wrap">
             <table>
                 <thead>
