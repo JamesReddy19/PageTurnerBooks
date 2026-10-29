@@ -128,9 +128,46 @@ Backups use `sqlite3.Connection.backup()` so the app can be running. The script 
 
 All money columns end in `_paise`. Convert rupees to paise by multiplying the decimal amount by 100, then use integer calculations. Use `?` placeholders for values. `queries.sql` contains the twelve required examples; use SQLite's command line or a SQLite viewer to run them. Query 9 needs a book ID, and queries 11–12 need the parameters shown in their comments.
 
-## 10. Known project boundaries
+## 10. Payments (simulated, not a real gateway)
 
-- Password reset tokens are shown on the reset page because the assignment excludes an email server. A real service would deliver the token privately and would not display it on the page.
+`pageturner/payments.py` records a payment for every order, but **no payment provider is contacted**. Nothing is charged and no card data is collected or stored.
+
+- Checkout offers cash on delivery, card (simulated) and UPI (simulated).
+- Each order gets one row in the `payments` table with an amount, a `SIM-…` reference and `is_simulated = 1`.
+- Card/UPI are stored as `Simulated - paid`; cash on delivery is stored as `Pending collection`.
+- The checkout page, the order page and the confirmation email all state that the payment is simulated.
+- Only the methods in `ALLOWED_METHODS` are accepted; an unknown value is rejected instead of stored.
+
+To use a real gateway you would replace `charge()` with the provider SDK call, verify the provider webhook signature server-side, and only then mark the order as paid. That work is **not** done here and should not be assumed from the presence of the `payments` table.
+
+## 11. Email delivery
+
+`pageturner/mail.py` sends an order confirmation after checkout:
+
+- If `MAIL_SERVER` is set, messages are sent through that SMTP server (`MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USERNAME`, `MAIL_PASSWORD`). This is real delivery and needs real credentials, which this project does not ship.
+- If `MAIL_SERVER` is empty (the default), messages are appended to `instance/mail_outbox.log` so the flow is testable offline. **This is not email delivery.**
+
+Delivery problems are logged and never roll back an order. Password-reset tokens are still displayed on the reset page, because no mail service is configured by default.
+
+## 12. Production deployment
+
+1. Install dependencies: `pip install -r requirements.txt` (installs Flask, plus gunicorn on Linux/macOS).
+2. Configure the environment (see `.env.example`). At minimum set a strong `SECRET_KEY`; set `COOKIE_SECURE=1` when serving over HTTPS; set `ADMIN_EMAIL`/`ADMIN_PASSWORD` only for the first boot, then remove them.
+3. Start a real WSGI server — do not use `app.py`, which enables the debug reloader:
+
+   ```bash
+   gunicorn --workers 3 --bind 0.0.0.0:8000 wsgi:app
+   ```
+
+4. Put a TLS-terminating reverse proxy in front of it, keep `instance/` on persistent storage, and schedule `python backup.py` for backups.
+5. Health check: `GET /health`. Logs go to stdout/stderr from gunicorn.
+
+If `SECRET_KEY` is not set the app logs a warning at startup because the fallback key is public and unsuitable for a deployed site.
+
+## 13. Known project boundaries
+
+- Payments are simulated (section 10); no provider, webhook or real charge exists.
+- Email is only real when SMTP is configured; otherwise it goes to a local outbox file (section 11).
+- No deployment has been performed from this repository; the gunicorn/`wsgi.py` instructions are provided but not executed.
 - Notifications are created for order-status changes, return decisions and wishlist stock changes. There is no background worker; expired reservations are cleaned during checkout requests.
 - Shipping-zone prefixes are starter example data in `pageturner/db.py`; update them to match any rules your project evaluator provides.
-- Payments are not processed; checkout records an order as placed. No payment provider or extra framework is used.
