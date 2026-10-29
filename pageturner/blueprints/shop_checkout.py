@@ -7,7 +7,8 @@ from flask import (
 )
 from ..db import get_db
 from ..helpers import login_required, active_reservations
-from ..payments import ALLOWED_METHODS, charge, record_payment
+from ..payments import ALLOWED_METHODS, charge, payment_for_order, record_payment
+from ..mail import send_order_confirmation
 from .shop import (
     shop_bp, get_cart_rows, coupon_discount,
     current_app_reservation_minutes
@@ -379,9 +380,8 @@ def place_order():
         )
 
         # Simulated payment: no gateway is contacted and no money moves.
-        record_payment(
-            connection, order_id, charge(payment_method, total)
-        )
+        payment = charge(payment_method, total)
+        record_payment(connection, order_id, payment)
 
         if coupon:
             connection.execute(
@@ -415,6 +415,24 @@ def place_order():
 
     session.pop("cart", None)
     session.pop("coupon_code", None)
+
+    # Confirmation email: real SMTP when configured, otherwise a local outbox
+    # file. Delivery problems never block the order.
+    try:
+        order_row = connection.execute(
+            "SELECT * FROM orders WHERE id = ?", (order_id,)
+        ).fetchone()
+        user_row = connection.execute(
+            "SELECT email FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+        if order_row and user_row:
+            send_order_confirmation(
+                order_row,
+                user_row["email"],
+                payment_for_order(connection, order_id),
+            )
+    except Exception:  # noqa: BLE001
+        current_app.logger.warning("Order confirmation email skipped")
 
     flash("Your order has been placed successfully.", "success")
     return redirect(url_for("shop.order_detail", order_id=order_id))
