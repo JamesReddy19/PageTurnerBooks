@@ -57,6 +57,22 @@
 <p class="total-line">Total <strong>{{ money(order.total_paise) }}</strong>
 </p>
 
+{% if payment %}
+<section class="payment-summary">
+    <h2>Payment</h2>
+    <p>Method <strong>{{ payment.method|replace('_simulated', '')|replace('cod', 'Cash on delivery')|title }}</strong></p>
+    <p>Status <strong>{{ payment.status }}</strong></p>
+    <p class="muted">
+        Reference {{ payment.reference }} · recorded at {{ payment.created_at }}
+    </p>
+    {% if payment.is_simulated %}
+        <p class="simulated-badge">
+            Simulated payment — no real gateway was contacted and no money was charged.
+        </p>
+    {% endif %}
+</section>
+{% endif %}
+
 <div class="order-actions">
     <a class="button secondary action-button"
        href="{{ url_for('shop.invoice', order_id=order.id) }}">
