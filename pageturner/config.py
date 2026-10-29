@@ -19,3 +19,16 @@ class Config:
     FREE_SHIPPING_PAISE = 100000
     TAX_PERCENT = 5
     RESERVATION_MINUTES = 5
+
+    # Email delivery. Without MAIL_SERVER the app writes messages to
+    # instance/mail_outbox.log instead of sending them.
+    MAIL_SERVER = os.environ.get("MAIL_SERVER", "")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "1") == "1"
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
+    MAIL_DEFAULT_SENDER = os.environ.get(
+        "MAIL_DEFAULT_SENDER", "no-reply@pageturnerbooks.local"
+    )
+
+    DEBUG = False
