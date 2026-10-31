@@ -19,6 +19,9 @@ class PageTurnerTests(unittest.TestCase):
             "UPLOAD_FOLDER": os.path.join(self.temp_dir.name, "uploads"),
             "ADMIN_EMAIL": "",
             "ADMIN_PASSWORD": "",
+            # Keep test mail out of the checked-out project's instance folder.
+            "MAIL_SERVER": "",
+            "MAIL_OUTBOX": os.path.join(self.temp_dir.name, "mail_outbox.log"),
         })
         self.client = self.app.test_client()
 
