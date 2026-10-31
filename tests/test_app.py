@@ -451,13 +451,26 @@ class PageTurnerTests(unittest.TestCase):
     def test_42_order_confirmation_email_is_written_to_outbox(self):
         response = self.place_order("upi_simulated")
         self.assertEqual(response.status_code, 200)
-        outbox = os.path.join(self.app.instance_path, "mail_outbox.log")
+        outbox = self.app.config["MAIL_OUTBOX"]
         self.assertTrue(os.path.exists(outbox))
         with open(outbox, encoding="utf-8") as handle:
             contents = handle.read()
         self.assertIn("reader@example.com", contents)
         self.assertIn("order #", contents.lower())
         self.assertIn("simulated", contents.lower())
+        self.assertIn("upi_simulated", contents)
+
+    def test_43_test_mail_never_touches_project_outbox(self):
+        """Tests must not append to the checked-out project's instance folder."""
+        project_outbox = os.path.join(self.app.instance_path, "mail_outbox.log")
+        before = os.path.getsize(project_outbox) if os.path.exists(project_outbox) else 0
+        self.place_order("cod")
+        after = os.path.getsize(project_outbox) if os.path.exists(project_outbox) else 0
+        self.assertEqual(before, after)
+        self.assertNotEqual(
+            os.path.realpath(project_outbox),
+            os.path.realpath(self.app.config["MAIL_OUTBOX"]),
+        )
 
 
 if __name__ == "__main__":
