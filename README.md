@@ -145,7 +145,9 @@ To use a real gateway you would replace `charge()` with the provider SDK call, v
 `pageturner/mail.py` sends an order confirmation after checkout:
 
 - If `MAIL_SERVER` is set, messages are sent through that SMTP server (`MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USERNAME`, `MAIL_PASSWORD`). This is real delivery and needs real credentials, which this project does not ship.
-- If `MAIL_SERVER` is empty (the default), messages are appended to `instance/mail_outbox.log` so the flow is testable offline. **This is not email delivery.**
+- If `MAIL_SERVER` is empty (the default), messages are appended to `instance/mail_outbox.log` so the flow is testable offline. **This is not email delivery.** Set `MAIL_OUTBOX` to put that file somewhere else.
+
+The outbox is a runtime artifact and is listed in `.gitignore`. It contains whatever addresses are used while testing, so never commit it. Automated tests point `MAIL_OUTBOX` at a temporary file and assert that the project's own outbox is untouched.
 
 Delivery problems are logged and never roll back an order. Password-reset tokens are still displayed on the reset page, because no mail service is configured by default.
 
