@@ -472,6 +472,74 @@ class PageTurnerTests(unittest.TestCase):
             os.path.realpath(self.app.config["MAIL_OUTBOX"]),
         )
 
+    def test_44_admin_supporting_pages_render(self):
+        """Coupons, returns, bundles and reports pages were previously untested."""
+        self.login_as_admin()
+        for path in ("/admin/coupons", "/admin/returns", "/admin/bundles", "/admin/reports"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200, f"{path} failed to render")
+            self.assertGreater(len(response.data), 500, f"{path} rendered an empty page")
+
+    def test_45_reports_csv_exports_orders_in_range(self):
+        with self.app.app_context():
+            connection = get_db()
+            connection.execute(
+                "INSERT INTO orders(user_id,name,phone,address,total_paise,date,status) "
+                "VALUES (NULL,'Buyer','9999999999','Somewhere',50000,date('now'),'Placed')"
+            )
+            connection.commit()
+        self.login_as_admin()
+        response = self.client.get("/admin/reports.csv")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/csv", response.headers["Content-Type"])
+        body = response.data.decode()
+        self.assertTrue(body.startswith("order_id,date,customer,status,"), body[:80])
+        self.assertIn("Buyer", body)
+
+    def test_46_orders_export_csv_includes_orders(self):
+        with self.app.app_context():
+            connection = get_db()
+            connection.execute(
+                "INSERT INTO orders(user_id,name,phone,address,total_paise,date,status) "
+                "VALUES (NULL,'ExportMe','8888888888','Elsewhere',75000,date('now'),'Placed')"
+            )
+            connection.commit()
+        self.login_as_admin()
+        response = self.client.get("/admin/export/orders.csv")
+        self.assertEqual(response.status_code, 200)
+        body = response.data.decode()
+        self.assertTrue(body.startswith("id,date,name,phone,address,status,"), body[:80])
+        self.assertIn("ExportMe", body)
+        self.assertIn("attachment", response.headers["Content-Disposition"])
+
+    def test_47_reports_csv_rejects_invalid_date_range(self):
+        self.login_as_admin()
+        response = self.client.get("/admin/reports.csv?start=2026-01-05&end=2026-01-01")
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get("/admin/reports.csv?start=not-a-date&end=2026-01-01")
+        self.assertEqual(response.status_code, 400)
+
+    def test_48_compare_requires_exactly_two_books(self):
+        """Documents the real contract: repeated book_ids, not a single 'ids' list."""
+        response = self.client.get("/compare")
+        self.assertEqual(response.status_code, 400)
+
+        response = self.client.get("/compare?book_ids=1&book_ids=1")
+        self.assertEqual(response.status_code, 400)
+
+        response = self.client.get("/compare?book_ids=1&book_ids=9999")
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.get("/compare?book_ids=1&book_ids=2")
+        self.assertEqual(response.status_code, 200)
+        with self.app.app_context():
+            titles = [
+                row["title"]
+                for row in get_db().execute("SELECT title FROM books WHERE id IN (1,2)").fetchall()
+            ]
+        for title in titles:
+            self.assertIn(title.encode(), response.data)
+
 
 if __name__ == "__main__":
     unittest.main()
